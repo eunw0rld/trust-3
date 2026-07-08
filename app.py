@@ -122,11 +122,12 @@ HTML_PAGE = """<!DOCTYPE html>
   <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-white border-x border-gray-100">
 
     <!-- 상단 로고 -->
-    <header class="px-5 pt-6 pb-4">
+    <header class="px-5 pt-6 pb-4 flex items-center justify-between">
       <p class="text-lg font-bold tracking-tight">Skin<span class="text-orange-500">Trip</span></p>
+      <button id="editProfileBtn" type="button" class="hidden text-gray-400 hover:text-orange-500 text-lg leading-none" title="내 정보 수정">✏️</button>
     </header>
 
-    <!-- 상단 탭 (등록 완료 전에는 표시하지 않음) -->
+    <!-- 상단 탭 (등록 완료 전에는 표시하지 않음, 완료 후에는 등록 탭을 숨김) -->
     <nav id="tabNav" class="hidden border-b border-gray-100 px-5">
       <button type="button" data-tab="register" data-label="등록" class="tab-btn active flex-1 py-3 text-sm font-semibold text-center">등록</button>
       <button type="button" data-tab="inuse" data-label="사용중" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용중</button>
@@ -138,10 +139,72 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-6">
 
-        <!-- 등록 (1): 내 피부 프로필 -->
-        <div id="register-step1" class="space-y-8">
+        <!-- 등록 (0): 보유 화장품 촬영 -->
+        <div id="register-step0" class="space-y-8">
 
           <div>
+            <h2 class="text-base font-bold mb-1">보유 화장품을 촬영해주세요</h2>
+            <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
+
+            <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-orange-400 hover:text-orange-500 transition">
+              <span class="text-3xl">📷</span>
+              <span class="text-sm font-semibold">탭해서 촬영하기</span>
+              <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
+            </label>
+            <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+
+            <!-- 인식 중 -->
+            <div id="scanningState" class="hidden border border-gray-100 rounded-2xl p-3 mt-3">
+              <div class="flex items-center gap-3">
+                <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
+                  <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                    <div id="scanningBar" class="h-full bg-orange-400 rounded-full" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 인식 결과 확인 -->
+            <div id="scanResult" class="hidden border border-orange-200 bg-orange-50 rounded-2xl p-3 mt-3">
+              <div class="flex items-center gap-3 mb-3">
+                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-[10px] font-semibold text-orange-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
+                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-orange-400" />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-orange-400"></select>
+                <button id="confirmScanBtn" type="button" class="px-4 rounded-lg bg-orange-500 text-white text-sm font-bold">추가</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 갖고 있는 화장품 리스트 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
+            <div id="cosmeticRows" class="space-y-2 mb-3"></div>
+            <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
+              직접 입력하기
+            </button>
+          </div>
+
+          <div>
+            <p id="step0Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
+            <button id="step0ToStep1Btn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+              다음
+            </button>
+          </div>
+
+        </div>
+
+        <!-- 등록 (1): 내 피부 프로필 -->
+        <div id="register-step1" class="hidden space-y-8">
+
+          <div>
+            <button id="step1ToStep0Btn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
             <h2 class="text-base font-bold mb-1">내 피부 프로필</h2>
             <p class="text-sm text-gray-400 mb-4">여행 루틴을 조정할 때 기준이 되는 정보예요</p>
 
@@ -180,18 +243,9 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- 보유 화장품 -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">보유 화장품</h3>
-            <div id="cosmeticRows" class="space-y-2 mb-3"></div>
-            <button id="addCosmeticRowBtn" type="button" class="w-full border border-dashed border-gray-300 rounded-lg py-2.5 text-sm font-semibold text-gray-500 hover:border-orange-400 hover:text-orange-500 transition">
-              + 화장품 추가
-            </button>
-          </div>
-
           <div>
             <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
-            <button id="toStep2Btn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+            <button id="step1ToStep2Btn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
               다음
             </button>
           </div>
@@ -202,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div id="register-step2" class="hidden space-y-8">
 
           <div>
-            <button id="toStep1Btn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
+            <button id="step2ToStep1Btn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
             <h2 class="text-base font-bold mb-1">여행지와 여행 계획을 알려주세요</h2>
             <p class="text-sm text-gray-400 mb-4">입력한 여행지 기후에 맞춰 루틴을 조정해드려요</p>
 
@@ -393,17 +447,26 @@ HTML_PAGE = """<!DOCTYPE html>
       }
     }
 
-    // 등록 완료 전에는 상단 탭(등록/사용중/사용후) 자체를 숨김
+    // 등록 완료 전에는 상단 탭(등록/사용중/사용후) 자체를 숨기고,
+    // 완료 후에는 등록 탭을 탭 바에서 빼고 대신 헤더의 수정 아이콘으로만 되돌아갈 수 있게 함
     function updateTabLockUI() {
       tabButtons.forEach((btn) => {
         const locked = btn.dataset.tab !== 'register' && !onboardingComplete;
         btn.classList.toggle('locked', locked);
         btn.textContent = locked ? `🔒 ${btn.dataset.label}` : btn.dataset.label;
+        if (btn.dataset.tab === 'register') {
+          btn.classList.toggle('hidden', onboardingComplete);
+        }
       });
       const tabNav = document.getElementById('tabNav');
       tabNav.classList.toggle('hidden', !onboardingComplete);
       tabNav.classList.toggle('flex', onboardingComplete);
+      document.getElementById('editProfileBtn').classList.toggle('hidden', !onboardingComplete);
     }
+
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+      switchTab('register');
+    });
 
     function showWarning(id, message) {
       const warning = document.getElementById(id);
@@ -415,15 +478,23 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById(id).classList.add('hidden');
     }
 
-    // 등록 1/2 단계 중 현재 보이는 쪽에 경고 메시지를 띄움
+    // 등록 0/1/2 단계 중 현재 보이는 쪽에 경고 메시지를 띄움
+    const registerStepWarningIds = {
+      step0: 'step0Warning',
+      step1: 'step1Warning',
+      step2: 'step2Warning',
+    };
     function showRegisterWarning(message) {
-      const step1Visible = !document.getElementById('register-step1').classList.contains('hidden');
-      showWarning(step1Visible ? 'step1Warning' : 'step2Warning', message);
+      const visibleStep = Object.keys(registerStepWarningIds).find(
+        (stepName) => !document.getElementById(`register-${stepName}`).classList.contains('hidden')
+      );
+      showWarning(registerStepWarningIds[visibleStep || 'step0'], message);
     }
 
     function showRegisterStep(stepName) {
-      document.getElementById('register-step1').classList.toggle('hidden', stepName !== 'step1');
-      document.getElementById('register-step2').classList.toggle('hidden', stepName !== 'step2');
+      Object.keys(registerStepWarningIds).forEach((key) => {
+        document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
+      });
     }
 
     tabButtons.forEach((btn) => {
@@ -472,7 +543,7 @@ HTML_PAGE = """<!DOCTYPE html>
       return { valid: missing.length === 0, missing };
     }
 
-    document.getElementById('toStep2Btn').addEventListener('click', () => {
+    document.getElementById('step1ToStep2Btn').addEventListener('click', () => {
       const result = validateStep1();
       if (!result.valid) {
         showWarning('step1Warning', `${result.missing.join(', ')}을(를) 먼저 입력해주세요`);
@@ -482,8 +553,12 @@ HTML_PAGE = """<!DOCTYPE html>
       showRegisterStep('step2');
     });
 
-    document.getElementById('toStep1Btn').addEventListener('click', () => {
+    document.getElementById('step2ToStep1Btn').addEventListener('click', () => {
       showRegisterStep('step1');
+    });
+
+    document.getElementById('step1ToStep0Btn').addEventListener('click', () => {
+      showRegisterStep('step0');
     });
 
     // 피부 고민 칩 토글 (중복 선택 가능)
@@ -519,18 +594,103 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     const cosmeticRows = document.getElementById('cosmeticRows');
-    const mockCosmetics = [
-      { name: '이니스프리 그린티 클렌징폼', category: 'cleanser' },
-      { name: '라운드랩 자작나무 수분 토너', category: 'toner' },
-      { name: '라네즈 워터뱅크 에멀전', category: 'emulsion' },
-      { name: '닥터자르트 세라마이딘 크림', category: 'cream' },
-    ];
-    mockCosmetics.forEach(({ name, category }) => {
-      cosmeticRows.appendChild(buildCosmeticRow(name, category));
-    });
 
     document.getElementById('addCosmeticRowBtn').addEventListener('click', () => {
       cosmeticRows.appendChild(buildCosmeticRow('', cosmeticCategories[0].value));
+    });
+
+    // 화장품이 추가/삭제될 때마다 카운트 배지 갱신
+    const cosmeticCountBadge = document.getElementById('cosmeticCountBadge');
+    function updateCosmeticCountBadge() {
+      const count = cosmeticRows.querySelectorAll('.cosmetic-row').length;
+      cosmeticCountBadge.textContent = count > 0 ? `(${count})` : '';
+    }
+    new MutationObserver(updateCosmeticCountBadge).observe(cosmeticRows, { childList: true });
+    updateCosmeticCountBadge();
+
+    // 화장품 사진 촬영 → 인식 중 애니메이션 → 인식 결과 확인 인터랙션
+    const scanResultCategorySelect = document.getElementById('scanResultCategory');
+    scanResultCategorySelect.innerHTML = cosmeticCategories
+      .map((c) => `<option value="${c.value}">${c.label}</option>`)
+      .join('');
+
+    const mockRecognizedProducts = [
+      { name: '이니스프리 그린티 클렌징폼', category: 'cleanser' },
+      { name: '라운드랩 자작나무 수분 토너', category: 'toner' },
+      { name: '라네즈 워터뱅크 에센스', category: 'essence' },
+      { name: '설화수 자음 로션', category: 'lotion' },
+      { name: '닥터자르트 세라마이딘 크림', category: 'cream' },
+      { name: '라네즈 워터뱅크 에멀전', category: 'emulsion' },
+      { name: '아이소이 브루쿤달 선크림', category: 'sunscreen' },
+      { name: '헤라 선메이트 선크림', category: 'sunscreen' },
+      { name: '토니모리 시카 클렌징폼', category: 'cleanser' },
+      { name: '마몽드 로즈워터 토너', category: 'toner' },
+    ];
+
+    const cosmeticPhotoInput = document.getElementById('cosmeticPhotoInput');
+    const scanningState = document.getElementById('scanningState');
+    const scanningThumb = document.getElementById('scanningThumb');
+    const scanningBar = document.getElementById('scanningBar');
+    const scanResult = document.getElementById('scanResult');
+    const scanResultThumb = document.getElementById('scanResultThumb');
+    const scanResultName = document.getElementById('scanResultName');
+
+    cosmeticPhotoInput.addEventListener('change', () => {
+      const file = cosmeticPhotoInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const photoDataUrl = reader.result;
+
+        scanResult.classList.add('hidden');
+        scanningThumb.src = photoDataUrl;
+        scanningBar.style.width = '0%';
+        scanningState.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          scanningBar.style.transition = 'width 1.3s ease-out';
+          scanningBar.style.width = '100%';
+        });
+
+        setTimeout(() => {
+          scanningState.classList.add('hidden');
+
+          const picked = mockRecognizedProducts[Math.floor(Math.random() * mockRecognizedProducts.length)];
+          scanResultThumb.src = photoDataUrl;
+          scanResultName.value = picked.name;
+          scanResultCategorySelect.value = picked.category;
+          scanResult.classList.remove('hidden');
+          hideWarning('step0Warning');
+        }, 1400);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('confirmScanBtn').addEventListener('click', () => {
+      const name = scanResultName.value.trim();
+      if (!name) return;
+      cosmeticRows.appendChild(buildCosmeticRow(name, scanResultCategorySelect.value));
+      scanResult.classList.add('hidden');
+      cosmeticPhotoInput.value = '';
+    });
+
+    // 등록 0단계 → 1단계 이동 조건: 화장품 1개 이상 등록
+    function validateStep0() {
+      const missing = [];
+      if (getMyProducts().length === 0) {
+        missing.push('보유 화장품');
+      }
+      return { valid: missing.length === 0, missing };
+    }
+
+    document.getElementById('step0ToStep1Btn').addEventListener('click', () => {
+      const result = validateStep0();
+      if (!result.valid) {
+        showWarning('step0Warning', `${result.missing.join(', ')}을(를) 먼저 등록해주세요`);
+        return;
+      }
+      hideWarning('step0Warning');
+      showRegisterStep('step1');
     });
 
     // 등록 페이지에 입력된 보유 화장품을 { name, category } 배열로 읽어옴
