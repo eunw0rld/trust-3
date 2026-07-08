@@ -33,6 +33,10 @@ HTML_PAGE = """<!DOCTYPE html>
     color: #111827;
     border-bottom-color: #f97316;
   }
+  .tab-btn.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
   .skin-btn {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -76,9 +80,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- 상단 탭 -->
     <nav class="flex border-b border-gray-100 px-5">
-      <button type="button" data-tab="register" class="tab-btn active flex-1 py-3 text-sm font-semibold text-center">등록</button>
-      <button type="button" data-tab="inuse" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용중</button>
-      <button type="button" data-tab="afteruse" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용후</button>
+      <button type="button" data-tab="register" data-label="등록" class="tab-btn active flex-1 py-3 text-sm font-semibold text-center">등록</button>
+      <button type="button" data-tab="inuse" data-label="사용중" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용중</button>
+      <button type="button" data-tab="afteruse" data-label="사용후" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용후</button>
     </nav>
 
     <main class="px-5">
@@ -124,6 +128,14 @@ HTML_PAGE = """<!DOCTYPE html>
         <div>
           <h3 class="text-sm font-semibold text-gray-700 mb-3">나와 비슷한 피부타입 사용자 리뷰</h3>
           <div id="reviewList" class="space-y-3"></div>
+        </div>
+
+        <!-- 온보딩 완료 -->
+        <div>
+          <p id="onboardingWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
+          <button id="completeOnboardingBtn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+            다음 단계로
+          </button>
         </div>
 
       </section>
@@ -260,15 +272,42 @@ HTML_PAGE = """<!DOCTYPE html>
       inuse: document.getElementById('screen-inuse'),
       afteruse: document.getElementById('screen-afteruse'),
     };
+    let onboardingComplete = false;
+
+    function switchTab(tabName) {
+      tabButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
+      Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
+      if (tabName === 'inuse') {
+        refreshAdjustedRoutine();
+      }
+    }
+
+    // 등록 미완료 시 사용중/사용후 탭을 잠금 표시
+    function updateTabLockUI() {
+      tabButtons.forEach((btn) => {
+        const locked = btn.dataset.tab !== 'register' && !onboardingComplete;
+        btn.classList.toggle('locked', locked);
+        btn.textContent = locked ? `🔒 ${btn.dataset.label}` : btn.dataset.label;
+      });
+    }
+
+    function showOnboardingWarning(message) {
+      const warning = document.getElementById('onboardingWarning');
+      warning.textContent = message;
+      warning.classList.remove('hidden');
+    }
+
+    function hideOnboardingWarning() {
+      document.getElementById('onboardingWarning').classList.add('hidden');
+    }
+
     tabButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
-        tabButtons.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        Object.values(screens).forEach((s) => s.classList.add('hidden'));
-        screens[btn.dataset.tab].classList.remove('hidden');
-        if (btn.dataset.tab === 'inuse') {
-          refreshAdjustedRoutine();
+        if (btn.dataset.tab !== 'register' && !onboardingComplete) {
+          showOnboardingWarning('등록 페이지를 먼저 완료해야 다음 단계로 넘어갈 수 있어요');
+          return;
         }
+        switchTab(btn.dataset.tab);
       });
     });
 
@@ -387,6 +426,32 @@ HTML_PAGE = """<!DOCTYPE html>
         }))
         .filter((product) => product.name);
     }
+
+    // 등록(온보딩) 완료 조건: 피부 고민 1개 이상, 보유 화장품 1개 이상
+    function validateOnboarding() {
+      const missing = [];
+      if (document.querySelectorAll('.concern-chip.active').length === 0) {
+        missing.push('피부 고민');
+      }
+      if (getMyProducts().length === 0) {
+        missing.push('보유 화장품');
+      }
+      return { valid: missing.length === 0, missing };
+    }
+
+    document.getElementById('completeOnboardingBtn').addEventListener('click', () => {
+      const result = validateOnboarding();
+      if (!result.valid) {
+        showOnboardingWarning(`${result.missing.join(', ')}을(를) 먼저 입력해주세요`);
+        return;
+      }
+      onboardingComplete = true;
+      updateTabLockUI();
+      hideOnboardingWarning();
+      switchTab('inuse');
+    });
+
+    updateTabLockUI();
 
     // 도시별 mock 기후 데이터
     const weatherData = {
