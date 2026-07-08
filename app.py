@@ -239,7 +239,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- 알림 목업 -->
         <div>
-          <p class="text-xs font-semibold text-gray-400 mb-1">DAY 2 · 도쿄</p>
+          <p id="tripDayLabel" class="text-xs font-semibold text-gray-400 mb-1">DAY 2 · 도쿄</p>
           <h2 class="text-base font-bold mb-1">여행 중 알림</h2>
           <p class="text-xs text-gray-400 mb-3">실제 앱에서는 푸시 알림으로 도착해요. 아래는 미리보기예요</p>
           <div class="space-y-3">
@@ -275,29 +275,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 일정 기반 기후 안내 -->
         <div>
           <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
-          <div class="border border-gray-100 rounded-xl divide-y divide-gray-100">
-            <div class="flex items-center justify-between px-4 py-3">
-              <div>
-                <p class="text-sm font-semibold">Day 1 · 도쿄</p>
-                <p class="text-xs text-gray-400">맑음</p>
-              </div>
-              <p class="text-sm text-gray-600">28°C · 습도 65%</p>
-            </div>
-            <div class="flex items-center justify-between px-4 py-3 bg-orange-50">
-              <div>
-                <p class="text-sm font-semibold">Day 2 · 도쿄 (오늘)</p>
-                <p class="text-xs text-orange-500 font-semibold">습도 상승 주의</p>
-              </div>
-              <p class="text-sm text-gray-600">29°C · 습도 78%</p>
-            </div>
-            <div class="flex items-center justify-between px-4 py-3">
-              <div>
-                <p class="text-sm font-semibold">Day 3 · 도쿄</p>
-                <p class="text-xs text-gray-400">흐림</p>
-              </div>
-              <p class="text-sm text-gray-600">27°C · 습도 70%</p>
-            </div>
-          </div>
+          <div id="climateTable" class="border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
         </div>
 
         <!-- 오늘의 루틴 조정 제안 -->
@@ -594,13 +572,20 @@ HTML_PAGE = """<!DOCTYPE html>
 
     updateTabLockUI();
 
-    // 도시별 mock 기후 데이터
+    // 도시별 mock 기후 데이터 (등록 2단계 여행지 선택값과 동일한 key 사용)
     const weatherData = {
       singapore: { temp: 32, humidity: 85, uvi: 9 },
       tokyo: { temp: 29, humidity: 78, uvi: 8 },
       bangkok: { temp: 34, humidity: 78, uvi: 10 },
       dubai: { temp: 40, humidity: 25, uvi: 11 },
       paris: { temp: 22, humidity: 55, uvi: 4 },
+    };
+    const destinationLabels = {
+      singapore: '싱가포르',
+      tokyo: '일본',
+      bangkok: '태국',
+      dubai: '아랍에미리트',
+      paris: '프랑스',
     };
 
     // 기후 + 보유 화장품을 기준으로 기존 루틴에서 뺄 것/조정할 것을 계산
@@ -687,9 +672,47 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     }
 
+    // 등록 2단계에서 선택한 여행지를 사용중 탭의 알림/기후 안내에도 동일하게 반영
+    function renderTripOverview() {
+      const label = destinationLabels[currentTripDestination] || '여행지';
+      document.getElementById('tripDayLabel').textContent = `DAY 2 · ${label}`;
+
+      const weather = weatherData[currentTripDestination];
+      let todayCondition = '쾌적한 날씨';
+      if (weather.humidity >= 70) {
+        todayCondition = '습도 상승 주의';
+      } else if (weather.humidity <= 30) {
+        todayCondition = '건조 주의';
+      } else if (weather.uvi >= 8) {
+        todayCondition = '자외선 주의';
+      }
+
+      const days = [
+        { dayLabel: 'Day 1', suffix: '', temp: weather.temp - 1, humidity: weather.humidity - 13, condition: '맑음', highlight: false },
+        { dayLabel: 'Day 2', suffix: ' (오늘)', temp: weather.temp, humidity: weather.humidity, condition: todayCondition, highlight: true },
+        { dayLabel: 'Day 3', suffix: '', temp: weather.temp - 2, humidity: weather.humidity - 8, condition: '흐림', highlight: false },
+      ];
+
+      const climateTable = document.getElementById('climateTable');
+      climateTable.innerHTML = '';
+      days.forEach((day) => {
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between px-4 py-3${day.highlight ? ' bg-orange-50' : ''}`;
+        row.innerHTML = `
+          <div>
+            <p class="text-sm font-semibold">${day.dayLabel} · ${label}${day.suffix}</p>
+            <p class="text-xs ${day.highlight ? 'text-orange-500 font-semibold' : 'text-gray-400'}">${day.condition}</p>
+          </div>
+          <p class="text-sm text-gray-600">${day.temp}°C · 습도 ${day.humidity}%</p>
+        `;
+        climateTable.appendChild(row);
+      });
+    }
+
     // 사용중 탭의 여행지 기준으로 조정 제안 계산 (등록 2단계에서 선택한 여행지로 갱신됨)
     let currentTripDestination = 'tokyo';
     function refreshAdjustedRoutine() {
+      renderTripOverview();
       const activeSkinBtn = document.querySelector('.skin-btn.active');
       const skinType = activeSkinBtn ? activeSkinBtn.dataset.skin : 'oily';
       const result = getAdjustedRoutine(currentTripDestination, skinType, getMyProducts());
