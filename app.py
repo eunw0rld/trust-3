@@ -124,7 +124,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4 flex items-center justify-between">
       <p class="text-lg font-bold tracking-tight">Skin<span class="text-orange-500">Trip</span></p>
-      <button id="editProfileBtn" type="button" class="hidden text-gray-400 hover:text-orange-500 text-lg leading-none" title="내 정보 수정">✏️</button>
+      <button id="editProfileBtn" type="button" class="hidden text-xs text-gray-400 hover:text-orange-500 underline">여행지 수정하기</button>
     </header>
 
     <!-- 상단 탭 (등록 완료 전에는 표시하지 않음, 완료 후에는 등록 탭을 숨김) -->
