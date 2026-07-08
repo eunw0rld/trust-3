@@ -71,10 +71,10 @@ HTML_PAGE = """<!DOCTYPE html>
     position: absolute;
     width: 46%;
     aspect-ratio: 3 / 4;
-    background: linear-gradient(160deg, #fdba74 0%, #f97316 100%);
+    background: linear-gradient(160deg, #93c5fd 0%, #2563eb 100%);
     border-radius: 26%;
     transform: rotate(45deg);
-    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.25);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
   }
   .mascot-gem .mascot-face {
     transform: translate(-50%, -50%) rotate(-45deg);
@@ -83,9 +83,9 @@ HTML_PAGE = """<!DOCTYPE html>
     position: absolute;
     width: 62%;
     aspect-ratio: 1 / 1;
-    background: linear-gradient(160deg, #fdba74 0%, #f97316 100%);
+    background: linear-gradient(160deg, #93c5fd 0%, #2563eb 100%);
     clip-path: polygon(50% 2%, 60% 32.7%, 91.6% 26%, 70% 50%, 91.6% 74%, 60% 67.3%, 50% 98%, 40% 67.3%, 8.4% 74%, 30% 50%, 8.4% 26%, 40% 32.7%);
-    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.25);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
   }
   .mascot-face {
     position: absolute;
@@ -132,7 +132,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
     <div>
-      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-orange-500 text-white text-base font-bold shadow-lg shadow-orange-200">
+      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-blue-500 text-white text-base font-bold shadow-lg shadow-blue-200">
         처음 시작해요
       </button>
       <button id="skipStartBtn" type="button" class="w-full text-center text-xs text-gray-400 underline mt-4">
