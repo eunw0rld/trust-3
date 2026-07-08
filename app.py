@@ -143,6 +143,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div id="register-step0" class="space-y-8">
 
           <div>
+            <button id="step0ToLandingBtn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
             <h2 class="text-base font-bold mb-1">보유 화장품을 촬영해주세요</h2>
             <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
 
@@ -422,13 +423,18 @@ HTML_PAGE = """<!DOCTYPE html>
     setTimeout(scheduleResize, 300); // Tailwind CDN(JIT) 스타일 주입 이후 재계산
     scheduleResize();
 
-    // 랜딩 페이지 → 앱 화면 전환
+    // 랜딩 페이지 ↔ 앱 화면 전환
     function enterApp() {
       document.getElementById('screen-landing').classList.add('hidden');
       document.getElementById('appContainer').classList.remove('hidden');
     }
+    function exitToLanding() {
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('screen-landing').classList.remove('hidden');
+    }
     document.getElementById('startBtn').addEventListener('click', enterApp);
     document.getElementById('skipStartBtn').addEventListener('click', enterApp);
+    document.getElementById('step0ToLandingBtn').addEventListener('click', exitToLanding);
 
     // 상단 탭 전환
     const tabButtons = document.querySelectorAll('.tab-btn');
