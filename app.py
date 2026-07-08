@@ -102,7 +102,7 @@ HTML_PAGE = """<!DOCTYPE html>
   <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100 flex flex-col px-6 pt-12 pb-8">
 
     <div>
-      <h1 class="text-2xl font-bold leading-snug mb-3">
+      <h1 class="text-2xl font-bold leading-snug mb-3 text-blue-600">
         여행 갈 때마다,<br />피부도 함께 챙겨봐요
       </h1>
       <p class="text-sm text-gray-400 leading-relaxed">
