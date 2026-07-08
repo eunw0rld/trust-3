@@ -67,45 +67,79 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #fff7ed;
     color: #ea580c;
   }
+  .mascot-gem {
+    position: absolute;
+    width: 46%;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(160deg, #fdba74 0%, #f97316 100%);
+    border-radius: 26%;
+    transform: rotate(45deg);
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.25);
+  }
+  .mascot-gem .mascot-face {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+  .mascot-star {
+    position: absolute;
+    width: 62%;
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(160deg, #fdba74 0%, #f97316 100%);
+    clip-path: polygon(50% 2%, 60% 32.7%, 91.6% 26%, 70% 50%, 91.6% 74%, 60% 67.3%, 50% 98%, 40% 67.3%, 8.4% 74%, 30% 50%, 8.4% 26%, 40% 32.7%);
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.25);
+  }
+  .mascot-face {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44%;
+    transform: translate(-50%, -50%);
+  }
 </style>
 </head>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 ============ -->
-  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100 flex flex-col justify-between px-6 py-10">
-    <div></div>
-    <div class="text-center">
-      <p class="text-3xl font-bold tracking-tight mb-3">Skin<span class="text-orange-500">Trip</span></p>
-      <p class="text-sm text-gray-500 leading-relaxed">
-        여행지 기후에 맞춰<br />내 스킨케어 루틴을 조정해드려요
+  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100 flex flex-col px-6 pt-12 pb-8">
+
+    <div>
+      <h1 class="text-2xl font-bold leading-snug mb-3">
+        여행 갈 때마다,<br />피부도 함께 챙겨봐요
+      </h1>
+      <p class="text-sm text-gray-400 leading-relaxed">
+        여행지 기후에 맞춰 스킨케어 루틴을 조정해주는<br />SkinTrip과 함께 떠나볼까요
       </p>
-      <div class="mt-10 space-y-4 text-left">
-        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-          <span class="text-xl">🧴</span>
-          <div>
-            <p class="text-sm font-semibold">등록</p>
-            <p class="text-xs text-gray-400">내 피부 타입과 보유 화장품 저장</p>
-          </div>
+    </div>
+
+    <div class="relative flex-1 my-8">
+      <div class="mascot-star" style="right: 4%; bottom: 6%;">
+        <div class="mascot-face">
+          <svg viewBox="0 0 60 40">
+            <ellipse cx="18" cy="16" rx="5" ry="7" fill="#292524" transform="rotate(-8 18 16)" />
+            <ellipse cx="42" cy="16" rx="5" ry="7" fill="#292524" transform="rotate(8 42 16)" />
+            <path d="M20 24 Q30 32 40 24" stroke="#292524" stroke-width="3" fill="none" stroke-linecap="round" />
+          </svg>
         </div>
-        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-          <span class="text-xl">☀️</span>
-          <div>
-            <p class="text-sm font-semibold">사용중</p>
-            <p class="text-xs text-gray-400">여행 중 기후에 맞춘 루틴 알림</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-          <span class="text-xl">📋</span>
-          <div>
-            <p class="text-sm font-semibold">사용후</p>
-            <p class="text-xs text-gray-400">귀국 후 피부 피드백과 케어 제안</p>
-          </div>
+      </div>
+      <div class="mascot-gem" style="left: 8%; top: 6%;">
+        <div class="mascot-face">
+          <svg viewBox="0 0 60 40">
+            <ellipse cx="18" cy="16" rx="5" ry="7" fill="#292524" transform="rotate(-8 18 16)" />
+            <ellipse cx="42" cy="16" rx="5" ry="7" fill="#292524" transform="rotate(8 42 16)" />
+            <path d="M20 24 Q30 32 40 24" stroke="#292524" stroke-width="3" fill="none" stroke-linecap="round" />
+          </svg>
         </div>
       </div>
     </div>
-    <button id="startBtn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
-      시작하기
-    </button>
+
+    <div>
+      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-orange-500 text-white text-base font-bold shadow-lg shadow-orange-200">
+        처음 시작해요
+      </button>
+      <button id="skipStartBtn" type="button" class="w-full text-center text-xs text-gray-400 underline mt-4">
+        둘러보기
+      </button>
+    </div>
+
   </div>
 
   <!-- ============ 앱 화면 ============ -->
@@ -304,10 +338,12 @@ HTML_PAGE = """<!DOCTYPE html>
 
   <script>
     // 랜딩 페이지 → 앱 화면 전환
-    document.getElementById('startBtn').addEventListener('click', () => {
+    function enterApp() {
       document.getElementById('screen-landing').classList.add('hidden');
       document.getElementById('appContainer').classList.remove('hidden');
-    });
+    }
+    document.getElementById('startBtn').addEventListener('click', enterApp);
+    document.getElementById('skipStartBtn').addEventListener('click', enterApp);
 
     // 상단 탭 전환
     const tabButtons = document.querySelectorAll('.tab-btn');
