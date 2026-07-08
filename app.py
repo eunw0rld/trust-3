@@ -71,7 +71,45 @@ HTML_PAGE = """<!DOCTYPE html>
 </head>
 <body class="font-sans text-gray-900">
 
-  <div class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100">
+  <!-- ============ 랜딩 페이지 ============ -->
+  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100 flex flex-col justify-between px-6 py-10">
+    <div></div>
+    <div class="text-center">
+      <p class="text-3xl font-bold tracking-tight mb-3">Skin<span class="text-orange-500">Trip</span></p>
+      <p class="text-sm text-gray-500 leading-relaxed">
+        여행지 기후에 맞춰<br />내 스킨케어 루틴을 조정해드려요
+      </p>
+      <div class="mt-10 space-y-4 text-left">
+        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+          <span class="text-xl">🧴</span>
+          <div>
+            <p class="text-sm font-semibold">등록</p>
+            <p class="text-xs text-gray-400">내 피부 타입과 보유 화장품 저장</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+          <span class="text-xl">☀️</span>
+          <div>
+            <p class="text-sm font-semibold">사용중</p>
+            <p class="text-xs text-gray-400">여행 중 기후에 맞춘 루틴 알림</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+          <span class="text-xl">📋</span>
+          <div>
+            <p class="text-sm font-semibold">사용후</p>
+            <p class="text-xs text-gray-400">귀국 후 피부 피드백과 케어 제안</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button id="startBtn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+      시작하기
+    </button>
+  </div>
+
+  <!-- ============ 앱 화면 ============ -->
+  <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-white border-x border-gray-100">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
@@ -265,6 +303,12 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <script>
+    // 랜딩 페이지 → 앱 화면 전환
+    document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('screen-landing').classList.add('hidden');
+      document.getElementById('appContainer').classList.remove('hidden');
+    });
+
     // 상단 탭 전환
     const tabButtons = document.querySelectorAll('.tab-btn');
     const screens = {
