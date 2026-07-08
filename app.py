@@ -337,6 +337,37 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <script>
+    // 현재 보이는 화면의 실제 높이에 맞춰 Streamlit iframe 높이를 동적으로 조정
+    // (고정 높이를 쓰면 화면마다 내용 길이가 달라 불필요한 스크롤이 생김)
+    function resizeFrame() {
+      try {
+        if (window.frameElement) {
+          window.frameElement.style.height = `${document.documentElement.scrollHeight}px`;
+        }
+      } catch (e) {
+        // 프레임에 접근할 수 없는 환경이면 무시
+      }
+    }
+    let resizeScheduled = false;
+    function scheduleResize() {
+      if (resizeScheduled) return;
+      resizeScheduled = true;
+      requestAnimationFrame(() => {
+        resizeScheduled = false;
+        resizeFrame();
+      });
+    }
+    new MutationObserver(scheduleResize).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('load', scheduleResize);
+    setTimeout(scheduleResize, 300); // Tailwind CDN(JIT) 스타일 주입 이후 재계산
+    scheduleResize();
+
     // 랜딩 페이지 → 앱 화면 전환
     function enterApp() {
       document.getElementById('screen-landing').classList.add('hidden');
@@ -650,4 +681,4 @@ HTML_PAGE = """<!DOCTYPE html>
 """
 
 
-components.html(HTML_PAGE, height=900, scrolling=True)
+components.html(HTML_PAGE, height=700, scrolling=False)
