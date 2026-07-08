@@ -3,6 +3,15 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="SkinTrip", layout="centered")
 
+st.markdown(
+    """
+    <style>
+      .block-container { padding-top: 1.5rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="ko">
 <head>
