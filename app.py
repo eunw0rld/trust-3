@@ -297,6 +297,18 @@ HTML_PAGE = """<!DOCTYPE html>
     font-weight: 600;
     border: 1px solid #fed7aa;
   }
+  /* 구글 캘린더 연동 mock 뱃지 */
+  .calendar-sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #1a73e8;
+    background: #e8f0fe;
+    padding: 4px 9px;
+    border-radius: 9999px;
+  }
   /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
   .map-store-list-item.active-store-item {
     background-color: #fff7ed;
@@ -390,6 +402,19 @@ HTML_PAGE = """<!DOCTYPE html>
         <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
         <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 내 위치 확인 직후, 캘린더에 다가오는 여행 일정이 있을 때 뜨는 "다음 여행지" 카드 -->
+  <div id="calendarTripModal" class="hidden fixed inset-0 z-50">
+    <div id="calendarTripBackdrop" class="absolute inset-0 bg-black/40"></div>
+    <div class="trip-destination-sheet absolute inset-x-0 bottom-0 bg-white rounded-t-3xl p-5 pb-7">
+      <div class="flex items-start justify-between mb-3">
+        <span class="calendar-sync-badge">🗓️ Google Calendar 연동됨</span>
+        <button id="calendarTripCloseBtn" type="button" class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 text-sm flex items-center justify-center shrink-0">✕</button>
+      </div>
+      <p id="calendarTripText" class="text-base font-bold leading-snug mb-4"></p>
+      <button id="calendarTripGoBtn" type="button" class="w-full py-3 rounded-xl bg-orange-500 text-white text-sm font-bold">이 여행지로 이동</button>
     </div>
   </div>
 
@@ -1160,6 +1185,26 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
     // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
+    // 구글 캘린더 연동 mock: 실제 OAuth 없이, 연동된 것처럼 보이는 데모용 일정 데이터
+    const calendarEvents = [
+      { title: '밀라노 출장', location: '밀라노', startDate: '2026-08-15', endDate: '2026-08-19' },
+    ];
+
+    // 오늘 날짜 기준으로 가장 가까운 미래의 캘린더 일정을 찾음
+    function getNextUpcomingTrip() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const upcoming = calendarEvents
+        .filter((ev) => new Date(ev.startDate) >= today)
+        .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      return upcoming[0] || null;
+    }
+
+    function formatEventDate(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+    }
+
     // 지도 탭: MapLibre GL JS (globe projection) — 처음 지도 탭을 열 때 한 번만 초기화
     let mapInstance = null;
     let cityMarkers = [];
@@ -1234,9 +1279,15 @@ HTML_PAGE = """<!DOCTYPE html>
           .setLngLat([myLng, myLat])
           .addTo(mapInstance);
 
-        // 내 위치 확인 애니메이션이 끝난 직후 여행지 추천 bottom sheet를 1회 표시
+        // 내 위치 확인 애니메이션이 끝난 직후: 캘린더에 다가오는 여행 일정이 있으면
+        // 그 카드를 먼저 보여주고, 없을 때만 "어디로 여행 가실 예정이신가요?" 모달 표시
         mapInstance.once('moveend', () => {
-          showTripDestinationModal();
+          const nextTrip = getNextUpcomingTrip();
+          if (nextTrip) {
+            showCalendarTripModal(nextTrip);
+          } else {
+            showTripDestinationModal();
+          }
         });
       }, 1000);
     }
@@ -1284,6 +1335,35 @@ HTML_PAGE = """<!DOCTYPE html>
 
     document.getElementById('tripDestinationCloseBtn').addEventListener('click', closeTripDestinationModal);
     document.getElementById('tripDestinationBackdrop').addEventListener('click', closeTripDestinationModal);
+
+    // 내 위치 확인 직후, 캘린더에 다가오는 여행 일정이 있을 때 뜨는 "다음 여행지" 카드
+    // (googleTripDestinationModal과 같은 트리거 시점을 공유하므로 tripDestinationModalShown 플래그를 함께 씀)
+    let pendingCalendarTrip = null;
+    function showCalendarTripModal(event) {
+      if (tripDestinationModalShown) return;
+      tripDestinationModalShown = true;
+      pendingCalendarTrip = event;
+      document.getElementById('calendarTripText').textContent =
+        `📅 다음 여행지는 여기예요 — ${event.location} (${formatEventDate(event.startDate)})`;
+      document.getElementById('calendarTripModal').classList.remove('hidden');
+    }
+
+    function closeCalendarTripModal() {
+      document.getElementById('calendarTripModal').classList.add('hidden');
+      if (mapInstance) {
+        mapInstance.flyTo({ center: [127.1112, 37.3947], zoom: 13, duration: 1200, essential: true });
+      }
+    }
+
+    document.getElementById('calendarTripCloseBtn').addEventListener('click', closeCalendarTripModal);
+    document.getElementById('calendarTripBackdrop').addEventListener('click', closeCalendarTripModal);
+    document.getElementById('calendarTripGoBtn').addEventListener('click', () => {
+      document.getElementById('calendarTripModal').classList.add('hidden');
+      if (pendingCalendarTrip) {
+        const match = findCityMatch(pendingCalendarTrip.location);
+        if (match) flyToCity(match.key, match.weather);
+      }
+    });
 
     document.getElementById('tripDestinationSearchInput').addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
