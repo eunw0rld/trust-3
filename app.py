@@ -19,7 +19,8 @@ HTML_PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SkinTrip — 여행지 스킨케어 플래너</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/globe.gl"></script>
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -754,19 +755,19 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 4. 지도 페이지 ============ -->
       <section id="screen-map" class="hidden py-6 space-y-4">
         <div>
-          <h2 class="text-base font-bold mb-1">내 주위 화장품 매장</h2>
-          <p class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
+          <h2 id="mapStoreListTitle" class="text-base font-bold mb-1">내 주위 화장품 매장</h2>
+          <p id="mapStoreListSubtitle" class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
         </div>
 
         <div class="relative w-full">
-          <div id="globeViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+          <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
           <div class="absolute top-3 left-3 right-3 z-10">
             <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white/95 shadow-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
             <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 text-xs font-medium text-red-400">찾을 수 없어요</p>
           </div>
         </div>
 
-        <div class="space-y-2">
+        <div id="mapStoreList" class="space-y-2">
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
             <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
@@ -1030,30 +1031,58 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
     // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
-    // 지도 탭: globe.gl 3D 지구본 (처음 지도 탭을 열 때 한 번만 초기화)
-    let globeInstance = null;
-    function initGlobeIfNeeded() {
-      if (globeInstance) return;
-      const el = document.getElementById('globeViz');
-      if (!el || typeof Globe === 'undefined') return;
-      globeInstance = Globe()(el)
-        .backgroundColor('rgba(0,0,0,0)')
-        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-        .width(el.clientWidth)
-        .height(el.clientHeight);
-      window.addEventListener('resize', () => {
-        if (!globeInstance) return;
-        globeInstance.width(el.clientWidth).height(el.clientHeight);
+    // 지도 탭: MapLibre GL JS (globe projection) — 처음 지도 탭을 열 때 한 번만 초기화
+    let mapInstance = null;
+    let cityMarkers = [];
+    let currentCityStores = [];
+
+    function initMapIfNeeded() {
+      if (mapInstance) return;
+      const el = document.getElementById('mapViz');
+      if (!el || typeof maplibregl === 'undefined') return;
+
+      mapInstance = new maplibregl.Map({
+        container: el,
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [20, 15],
+        zoom: 1.3,
+        attributionControl: false,
       });
 
-      // 검색창: 나라/도시 이름(한글 또는 영어 일부)으로 weatherData를 찾아 지구본을 그 위치로 회전+확대
+      mapInstance.on('load', () => {
+        try {
+          // MapOptions 생성자에는 projection이 없어서 setProjection()으로 globe 투영을 켜야 함
+          mapInstance.setProjection({ type: 'globe' });
+        } catch (e) {
+          console.error('setProjection 오류:', e);
+        }
+        try {
+          // 초기 지구본 화면의 우주/대기 배경을 어둡지 않고 밝고 깔끔한 톤으로
+          mapInstance.setSky({
+            'sky-color': '#eaf6ff',
+            'sky-horizon-blend': 0.8,
+            'horizon-color': '#ffffff',
+            'horizon-fog-blend': 0.6,
+            'fog-color': '#eaf6ff',
+            'fog-ground-blend': 0.5,
+          });
+        } catch (e) {
+          console.error('setSky 오류:', e);
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        if (mapInstance) mapInstance.resize();
+      });
+
+      // 검색창: 나라/도시 이름(한글 또는 영어 일부)으로 weatherData를 찾아 지도를 그 위치로 flyTo
       document.getElementById('globeSearchInput').addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
-        searchCityOnGlobe();
+        searchCityOnMap();
       });
     }
 
-    function searchCityOnGlobe() {
+    function searchCityOnMap() {
       const input = document.getElementById('globeSearchInput');
       const notFound = document.getElementById('globeSearchNotFound');
       const query = input.value.trim().toLowerCase();
@@ -1068,12 +1097,81 @@ HTML_PAGE = """<!DOCTYPE html>
       const match = matchKey ? weatherData[matchKey] : null;
       if (match && match.lat != null && match.lng != null) {
         notFound.classList.add('hidden');
-        if (globeInstance) {
-          globeInstance.pointOfView({ lat: match.lat, lng: match.lng, altitude: 0.5 }, 1200);
-        }
+        flyToCity(matchKey, match);
       } else {
         notFound.classList.remove('hidden');
       }
+    }
+
+    // 도시 좌표로 부드럽게 확대(zoom 11 이상 → globe 투영이 자연스럽게 평면 지도처럼 전환됨)
+    function flyToCity(cityKey, weather) {
+      if (!mapInstance) return;
+      mapInstance.flyTo({ center: [weather.lng, weather.lat], zoom: 11, speed: 0.6, curve: 1.4, essential: true });
+      mapInstance.once('moveend', () => {
+        renderCityStoreMarkers(cityKey, weather);
+      });
+    }
+
+    function clearCityMarkers() {
+      cityMarkers.forEach((m) => m.remove());
+      cityMarkers = [];
+    }
+
+    // 도시 확대가 끝나면 storeData의 매장들을 도시 중심 근처 mock 좌표에 주황색 마커로 표시
+    function renderCityStoreMarkers(cityKey, weather) {
+      clearCityMarkers();
+      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const baseStores = storeData[storeKey] || [];
+      const offsets = [
+        [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
+      ];
+      currentCityStores = baseStores.map((store, i) => {
+        const off = offsets[i % offsets.length];
+        return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
+      });
+      currentCityStores.forEach((store) => {
+        const popup = new maplibregl.Popup({ offset: 18, closeButton: false }).setHTML(`
+          <p style="font-weight:700;font-size:12px;margin-bottom:2px;">${store.name}</p>
+          <p style="font-size:11px;color:#3182f6;margin-bottom:2px;">${store.category}</p>
+          <p style="font-size:11px;color:#9ca3af;">${store.distance}</p>
+        `);
+        const marker = new maplibregl.Marker({ color: '#f97316' })
+          .setLngLat([store.lng, store.lat])
+          .setPopup(popup)
+          .addTo(mapInstance);
+        store.marker = marker;
+        cityMarkers.push(marker);
+      });
+      renderMapStoreList(cityKey, currentCityStores);
+    }
+
+    // 지도 아래 매장 리스트 카드: 클릭 시 지도가 해당 매장 마커로 다시 flyTo
+    function renderMapStoreList(cityKey, stores) {
+      document.getElementById('mapStoreListTitle').textContent = `${cityKey} 근처 화장품 매장`;
+      document.getElementById('mapStoreListSubtitle').textContent = '지도에 표시된 마커를 눌러도 위치를 확인할 수 있어요 (mock)';
+      const list = document.getElementById('mapStoreList');
+      if (stores.length === 0) {
+        list.innerHTML = '<p class="text-xs text-gray-400 py-2">아직 등록된 매장 정보가 없어요</p>';
+        return;
+      }
+      list.innerHTML = stores.map((store, i) => `
+        <button type="button" class="map-store-list-item w-full flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 text-left" data-index="${i}">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold truncate">${store.name}</p>
+            <p class="text-xs text-gray-400 truncate">${store.category} · ${store.products.join(', ')}</p>
+          </div>
+          <p class="text-xs text-gray-500 shrink-0">${store.distance}</p>
+        </button>
+      `).join('');
+      list.querySelectorAll('.map-store-list-item').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const store = currentCityStores[Number(btn.dataset.index)];
+          if (!mapInstance || !store) return;
+          mapInstance.flyTo({ center: [store.lng, store.lat], zoom: 15, speed: 0.8, essential: true });
+          if (store.marker) store.marker.togglePopup();
+        });
+      });
     }
 
     function switchTab(tabName) {
@@ -1092,7 +1190,7 @@ HTML_PAGE = """<!DOCTYPE html>
           }
           renderCommunityFeed();
         } else if (tabName === 'map') {
-          initGlobeIfNeeded();
+          initMapIfNeeded();
         }
       } catch (e) {
         console.error(`switchTab('${tabName}') 렌더링 중 오류:`, e);
@@ -1651,6 +1749,35 @@ HTML_PAGE = """<!DOCTYPE html>
       필리핀: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
       헝가리: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
       호주: { temp: 33, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+    };
+
+    // 지구본 마커를 클릭했을 때 보여줄 도시별 mock 매장 데이터 (weatherData의 en 필드를 소문자로 변환한 값이 키)
+    const storeData = {
+      singapore: [
+        { name: 'Watsons Orchard', category: '드럭스토어', distance: '0.3km', products: ['진정 크림', '쿨링 미스트'] },
+        { name: 'Guardian Bugis', category: '드럭스토어', distance: '0.8km', products: ['수분 세럼', '선크림'] },
+        { name: 'Sephora ION', category: '뷰티 편집샵', distance: '1.2km', products: ['진정 마스크팩'] },
+      ],
+      tokyo: [
+        { name: '@cosme store 시부야', category: '뷰티 편집샵', distance: '0.4km', products: ['수분 크림', '아이크림'] },
+        { name: '마츠모토키요시 신주쿠', category: '드럭스토어', distance: '0.6km', products: ['선크림', '립밤'] },
+        { name: '로프트 긴자', category: '라이프스타일샵', distance: '1.5km', products: ['핸드크림'] },
+      ],
+      bangkok: [
+        { name: 'Eveandboy 시암', category: '뷰티 편집샵', distance: '0.5km', products: ['쿨링 토너', '피지 흡수 패드'] },
+        { name: 'Boots 수쿰빗', category: '드럭스토어', distance: '0.9km', products: ['워터프루프 선크림', '미스트'] },
+        { name: 'Watsons MBK', category: '드럭스토어', distance: '1.1km', products: ['블로팅 페이퍼'] },
+      ],
+      dubai: [
+        { name: 'Sephora 두바이몰', category: '뷰티 편집샵', distance: '0.7km', products: ['수분 세럼', '저자극 선크림'] },
+        { name: 'Boots 알와슬', category: '드럭스토어', distance: '1.0km', products: ['진정 젤', '핸드크림'] },
+        { name: 'Bath & Body Works 몰오브에미리츠', category: '라이프스타일샵', distance: '1.8km', products: ['립밤'] },
+      ],
+      paris: [
+        { name: 'Sephora 샹젤리제', category: '뷰티 편집샵', distance: '0.3km', products: ['수분 크림', '립틴트'] },
+        { name: 'Monoprix 오페라', category: '드럭스토어', distance: '0.9km', products: ['올인원 로션'] },
+        { name: 'Marionnaud 생라자르', category: '뷰티 편집샵', distance: '1.4km', products: ['선쿠션'] },
+      ],
     };
 
     // 커뮤니티 피드 ('리뷰, 국가_수질 추가 DB' 원본에서 5개 지원 국가 리뷰 전체(국가별 10건, 총 50건) 반영
