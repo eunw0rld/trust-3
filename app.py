@@ -26,19 +26,29 @@ HTML_PAGE = """<!DOCTYPE html>
         fontFamily: {
           sans: ['"Pretendard"', '"Apple SD Gothic Neo"', '"Malgun Gothic"', 'sans-serif'],
         },
+        colors: {
+          // SkinTrip 디자인 시스템의 유일한 포인트 컬러 (토스 스타일 블루)
+          brand: {
+            50: '#EFF6FF',
+            100: '#DCE9FE',
+            400: '#5B9DF9',
+            500: '#3182F6',
+            600: '#1B64DA',
+          },
+        },
       },
     },
   };
 </script>
 <style>
   body {
-    background: #f7f7f7;
+    background: #f3f4f6;
   }
   .bottom-nav-btn {
     color: #9ca3af;
   }
   .bottom-nav-btn.active {
-    color: #f97316;
+    color: #3182f6;
   }
   .skin-btn {
     border: 1px solid #e5e7eb;
@@ -46,9 +56,9 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #ffffff;
   }
   .skin-btn.active {
-    border-color: #f97316;
-    background: #fff7ed;
-    color: #ea580c;
+    border-color: #3182f6;
+    background: #eff6ff;
+    color: #1b64da;
   }
   .gender-btn {
     border: 1px solid #e5e7eb;
@@ -56,9 +66,9 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #ffffff;
   }
   .gender-btn.active {
-    border-color: #f97316;
-    background: #fff7ed;
-    color: #ea580c;
+    border-color: #3182f6;
+    background: #eff6ff;
+    color: #1b64da;
   }
   .feedback-btn {
     border: 1px solid #e5e7eb;
@@ -66,9 +76,9 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #ffffff;
   }
   .feedback-btn.active {
-    border-color: #f97316;
-    background: #fff7ed;
-    color: #ea580c;
+    border-color: #3182f6;
+    background: #eff6ff;
+    color: #1b64da;
   }
   .concern-chip {
     border: 1px solid #e5e7eb;
@@ -76,16 +86,37 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #ffffff;
   }
   .concern-chip.active {
-    border-color: #f97316;
-    background: #fff7ed;
-    color: #ea580c;
+    border-color: #3182f6;
+    background: #eff6ff;
+    color: #1b64da;
+  }
+  /* 버튼을 누를 때 살짝 눌리는 느낌 (절제된 인터랙션 포인트) */
+  button {
+    transition: transform 0.1s ease;
+  }
+  button:active {
+    transform: scale(0.96);
+  }
+  /* 화면/단계 전환 시 부드러운 페이드 */
+  @keyframes screenFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .screen-transition {
+    animation: screenFadeIn 0.22s ease;
   }
 </style>
 </head>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 ============ -->
-  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-white border-x border-gray-100 flex flex-col px-6 pt-12 pb-8">
+  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-gray-50 border-x border-gray-100 flex flex-col px-6 pt-12 pb-8">
 
     <div>
       <h1 class="text-2xl font-bold leading-snug mb-3">
@@ -102,7 +133,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
     <div>
-      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-orange-500 text-white text-base font-bold shadow-lg shadow-orange-200">
+      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-brand-500 text-white text-base font-bold">
         처음 시작해요
       </button>
       <button id="googleLoginBtn" type="button" class="w-full py-3.5 rounded-2xl border border-gray-200 text-gray-700 text-sm font-semibold flex items-center justify-center gap-2 mt-3">
@@ -128,8 +159,8 @@ HTML_PAGE = """<!DOCTYPE html>
         <p class="text-base font-bold mb-1">여행 일정 연동</p>
         <p class="text-sm text-gray-500 mb-5">구글 캘린더와 연동하면 여행지와 일정을 자동으로 채워드려요. 지금 연동하시겠어요?</p>
         <div class="space-y-2">
-          <button id="syncYesBtn" type="button" class="w-full py-3 rounded-lg bg-orange-500 text-white text-sm font-bold">네, 연동할게요</button>
-          <button id="syncNoBtn" type="button" class="w-full py-3 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold">아니오</button>
+          <button id="syncYesBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">네, 연동할게요</button>
+          <button id="syncNoBtn" type="button" class="w-full py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold">아니오</button>
           <button id="syncLaterBtn" type="button" class="w-full py-2 text-xs text-gray-400 underline">조금 이따가 할게요</button>
         </div>
       </div>
@@ -137,11 +168,11 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 앱 화면 ============ -->
-  <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-white border-x border-gray-100">
+  <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-gray-50 border-x border-gray-100">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
-      <p class="text-lg font-bold tracking-tight">Skin<span class="text-orange-500">Trip</span></p>
+      <p class="text-lg font-bold tracking-tight">Skin<span class="text-brand-500">Trip</span></p>
     </header>
 
     <main class="px-5 pb-24">
@@ -149,15 +180,15 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-6">
 
-        <!-- 등록 (0): 보유 화장품 촬영 -->
-        <div id="register-step0" class="space-y-8">
+        <!-- 등록 (0): 보유 화장품 촬영 (개인설정 메뉴에서 나중에 등록) -->
+        <div id="register-step0" class="hidden space-y-8">
 
           <div>
             <button id="step0ToLandingBtn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
             <h2 class="text-base font-bold mb-1">보유 화장품을 촬영해주세요</h2>
             <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
 
-            <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-orange-400 hover:text-orange-500 transition">
+            <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-brand-500 hover:text-brand-500 transition">
               <span class="text-3xl">📷</span>
               <span class="text-sm font-semibold">탭해서 촬영하기</span>
               <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
@@ -165,30 +196,30 @@ HTML_PAGE = """<!DOCTYPE html>
             <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
 
             <!-- 인식 중 -->
-            <div id="scanningState" class="hidden border border-gray-100 rounded-2xl p-3 mt-3">
+            <div id="scanningState" class="hidden bg-white border border-gray-100 rounded-2xl p-3 mt-3">
               <div class="flex items-center gap-3">
-                <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
                   <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                    <div id="scanningBar" class="h-full bg-orange-400 rounded-full" style="width: 0%;"></div>
+                    <div id="scanningBar" class="h-full bg-brand-400 rounded-full" style="width: 0%;"></div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- 인식 결과 확인 -->
-            <div id="scanResult" class="hidden border border-orange-200 bg-orange-50 rounded-2xl p-3 mt-3">
+            <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
               <div class="flex items-center gap-3 mb-3">
-                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
                 <div class="flex-1 min-w-0">
-                  <p class="text-[10px] font-semibold text-orange-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
-                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-orange-400" />
+                  <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
+                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
                 </div>
               </div>
               <div class="flex gap-2">
-                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-orange-400"></select>
-                <button id="confirmScanBtn" type="button" class="px-4 rounded-lg bg-orange-500 text-white text-sm font-bold">추가</button>
+                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
+                <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
               </div>
             </div>
           </div>
@@ -203,37 +234,37 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
 
           <div>
-            <p id="step0Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
-            <button id="step0ToStep1Btn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+            <p id="step0Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
+            <button id="step0ToStep1Btn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
               다음
             </button>
           </div>
 
         </div>
 
-        <!-- 등록 (1): 내 정보 등록 -->
-        <div id="register-step1" class="hidden">
+        <!-- 등록 (1): 내 정보 등록 (온보딩에서 유일하게 필수인 단계) -->
+        <div id="register-step1">
 
           <!-- 상단 바: 뒤로가기 · 제목 · 다음 -->
           <div class="flex items-center justify-between mb-4">
             <button id="step1ToStep0Btn" type="button" class="text-lg text-gray-400 w-8">←</button>
             <p class="text-base font-bold">내 정보 등록</p>
-            <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-orange-500 w-8 text-right">다음</button>
+            <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-brand-500 w-8 text-right">완료</button>
           </div>
 
-          <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4"></p>
+          <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-4"></p>
 
           <div class="space-y-6">
 
             <!-- 기본 정보 -->
             <div>
-              <div class="bg-gray-50 rounded-xl px-4 py-2.5 mb-3">
+              <div class="bg-white rounded-xl px-4 py-2.5 mb-3">
                 <p class="text-sm font-bold text-gray-700">기본 정보</p>
               </div>
               <div class="px-1 space-y-4">
                 <div>
                   <p class="text-xs font-semibold text-gray-400 mb-2">나이</p>
-                  <input id="ageInput" type="number" min="1" max="120" placeholder="예: 27" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
+                  <input id="ageInput" type="number" min="1" max="120" placeholder="예: 27" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-gray-400 mb-2">성별</p>
@@ -247,7 +278,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
             <!-- 피부 정보 -->
             <div>
-              <div class="bg-gray-50 rounded-xl px-4 py-2.5 mb-3">
+              <div class="bg-white rounded-xl px-4 py-2.5 mb-3">
                 <p class="text-sm font-bold text-gray-700">피부 정보</p>
                 <p class="text-xs text-gray-400 mt-0.5">맞춤 루틴을 위해 꼭 선택해주세요</p>
               </div>
@@ -287,7 +318,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <p class="text-sm text-gray-400 mb-4">입력한 여행지 기후에 맞춰 루틴을 조정해드려요</p>
 
             <p class="text-xs font-semibold text-gray-400 mb-2">여행지</p>
-            <select id="destinationSelect" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm mb-4 focus:outline-none focus:border-orange-400">
+            <select id="destinationSelect" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:border-brand-500">
               <option value="">여행지를 선택해주세요</option>
               <option value="tokyo">일본</option>
               <option value="bangkok">태국</option>
@@ -298,14 +329,14 @@ HTML_PAGE = """<!DOCTYPE html>
 
             <p class="text-xs font-semibold text-gray-400 mb-2">여행 계획</p>
             <div class="grid grid-cols-2 gap-2">
-              <input id="tripStartDate" type="date" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
-              <input id="tripEndDate" type="date" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
+              <input id="tripStartDate" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+              <input id="tripEndDate" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
             </div>
           </div>
 
           <div>
-            <p id="step2Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
-            <button id="completeOnboardingBtn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
+            <p id="step2Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
+            <button id="completeOnboardingBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
               완료하고 시작하기
             </button>
           </div>
@@ -323,7 +354,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <h2 class="text-base font-bold mb-1">여행 중 알림</h2>
           <p class="text-xs text-gray-400 mb-3">실제 앱에서는 푸시 알림으로 도착해요. 아래는 미리보기예요</p>
           <div class="space-y-3">
-            <div class="border border-gray-100 rounded-2xl p-3 shadow-sm">
+            <div class="bg-white border border-gray-100 rounded-2xl p-3">
               <div class="flex gap-3">
                 <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">🧴</div>
                 <div class="flex-1 min-w-0">
@@ -332,11 +363,11 @@ HTML_PAGE = """<!DOCTYPE html>
                     <p class="text-[10px] text-gray-400">지금</p>
                   </div>
                   <p class="text-sm font-semibold text-gray-900 mt-0.5">습도가 오늘 밤부터 오를 예정이에요</p>
-                  <p class="text-xs text-gray-500 mt-0.5">보유 중인 <span class="text-orange-500 font-semibold">에멀전</span>은 오늘 저녁 루틴에서 빼는 걸 추천해요</p>
+                  <p class="text-xs text-gray-500 mt-0.5">보유 중인 <span class="text-brand-500 font-semibold">에멀전</span>은 오늘 저녁 루틴에서 빼는 걸 추천해요</p>
                 </div>
               </div>
             </div>
-            <div class="border border-gray-100 rounded-2xl p-3 shadow-sm">
+            <div class="bg-white border border-gray-100 rounded-2xl p-3">
               <div class="flex gap-3">
                 <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">☀️</div>
                 <div class="flex-1 min-w-0">
@@ -345,7 +376,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     <p class="text-[10px] text-gray-400">3시간 전</p>
                   </div>
                   <p class="text-sm font-semibold text-gray-900 mt-0.5">오늘 자외선 지수 매우 높음</p>
-                  <p class="text-xs text-gray-500 mt-0.5">2~3시간마다 <span class="text-orange-500 font-semibold">선크림</span> 재도포를 잊지 마세요</p>
+                  <p class="text-xs text-gray-500 mt-0.5">2~3시간마다 <span class="text-brand-500 font-semibold">선크림</span> 재도포를 잊지 마세요</p>
                 </div>
               </div>
             </div>
@@ -355,7 +386,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 일정 기반 기후 안내 -->
         <div>
           <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
-          <div id="climateTable" class="border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
+          <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
         </div>
 
         <!-- 오늘의 루틴 조정 제안 -->
@@ -375,7 +406,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="border border-gray-200 rounded-2xl p-5">
           <div class="flex items-center justify-between mb-1">
             <p class="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">Arrival Skin Declaration</p>
-            <span class="text-[10px] font-bold text-orange-500 border border-orange-200 rounded-full px-2 py-0.5">DAY 5</span>
+            <span class="text-[10px] font-bold text-brand-500 border border-brand-100 rounded-full px-2 py-0.5">DAY 5</span>
           </div>
           <h2 class="text-base font-bold mb-4">여행 후 피부 신고서</h2>
 
@@ -392,25 +423,25 @@ HTML_PAGE = """<!DOCTYPE html>
           <div class="border-t border-dashed border-gray-200 pt-4 mb-4">
             <p class="text-xs font-semibold text-gray-500 mb-2">여행 중 피부는 어땠나요?</p>
             <div class="grid grid-cols-3 gap-2 mb-3">
-              <button type="button" data-feedback="good" class="feedback-btn rounded-lg py-2 text-xs font-semibold">좋음</button>
-              <button type="button" data-feedback="normal" class="feedback-btn rounded-lg py-2 text-xs font-semibold">보통</button>
-              <button type="button" data-feedback="trouble" class="feedback-btn rounded-lg py-2 text-xs font-semibold">트러블 있었음</button>
+              <button type="button" data-feedback="good" class="feedback-btn rounded-xl py-2 text-xs font-semibold">좋음</button>
+              <button type="button" data-feedback="normal" class="feedback-btn rounded-xl py-2 text-xs font-semibold">보통</button>
+              <button type="button" data-feedback="trouble" class="feedback-btn rounded-xl py-2 text-xs font-semibold">트러블 있었음</button>
             </div>
-            <textarea rows="3" placeholder="자유롭게 남겨주세요 (선택)" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"></textarea>
+            <textarea rows="3" placeholder="자유롭게 남겨주세요 (선택)" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500"></textarea>
           </div>
 
           <!-- 추가 케어 제안 -->
           <div class="border-t border-dashed border-gray-200 pt-4">
             <p class="text-xs font-semibold text-gray-500 mb-2">귀국 후 추가 케어 제안</p>
             <ul class="space-y-2 text-sm text-gray-700">
-              <li class="flex gap-2"><span class="text-orange-500">•</span>장시간 비행 후 진정 마스크팩으로 수분 보충</li>
-              <li class="flex gap-2"><span class="text-orange-500">•</span>건조해진 각질 정리를 위한 약산성 필링</li>
-              <li class="flex gap-2"><span class="text-orange-500">•</span>2~3일간 저자극 로션으로 피부 장벽 회복</li>
+              <li class="flex gap-2"><span class="text-brand-500">•</span>장시간 비행 후 진정 마스크팩으로 수분 보충</li>
+              <li class="flex gap-2"><span class="text-brand-500">•</span>건조해진 각질 정리를 위한 약산성 필링</li>
+              <li class="flex gap-2"><span class="text-brand-500">•</span>2~3일간 저자극 로션으로 피부 장벽 회복</li>
             </ul>
           </div>
         </div>
 
-        <button type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">신고서 제출</button>
+        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">제출하기</button>
 
       </section>
 
@@ -429,24 +460,24 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
 
         <div class="space-y-2">
-          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">올리브영 강남역점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 3분</p>
             </div>
             <p class="text-xs text-gray-500 shrink-0">250m</p>
           </div>
-          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">시코르 강남점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 5분</p>
             </div>
             <p class="text-xs text-gray-500 shrink-0">410m</p>
           </div>
-          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">랄라블라 신논현점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 8분</p>
@@ -463,50 +494,50 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
         </div>
 
-        <div class="border border-gray-100 rounded-xl p-4">
+        <div class="bg-white border border-gray-100 rounded-xl p-4">
           <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">J</div>
+            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">J</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">jiyeon_life</p>
               <span class="text-[10px] text-gray-400">일본 여행</span>
             </div>
-            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★★</span></p>
+            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★★</span></p>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed">날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.</p>
         </div>
 
-        <div class="border border-gray-100 rounded-xl p-4">
+        <div class="bg-white border border-gray-100 rounded-xl p-4">
           <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">B</div>
+            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">B</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">backpacklife_daily</p>
               <span class="text-[10px] text-gray-400">싱가포르 여행</span>
             </div>
-            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★</span><span class="text-gray-300">★</span></p>
+            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★</span><span class="text-gray-300">★</span></p>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed">실내는 에어컨 때문에 건조하고 밖은 습해서 피부가 오락가락했어요.</p>
         </div>
 
-        <div class="border border-gray-100 rounded-xl p-4">
+        <div class="bg-white border border-gray-100 rounded-xl p-4">
           <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">H</div>
+            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">H</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">hana99</p>
               <span class="text-[10px] text-gray-400">아랍에미리트 여행</span>
             </div>
-            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★</span><span class="text-gray-300">★</span></p>
+            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★</span><span class="text-gray-300">★</span></p>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed">낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.</p>
         </div>
 
-        <div class="border border-gray-100 rounded-xl p-4">
+        <div class="bg-white border border-gray-100 rounded-xl p-4">
           <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">D</div>
+            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">D</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">dewyskin_k</p>
               <span class="text-[10px] text-gray-400">프랑스 여행</span>
             </div>
-            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★★</span></p>
+            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★★</span></p>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed">일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.</p>
         </div>
@@ -519,13 +550,13 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">내 프로필과 여행 정보를 확인하고 수정할 수 있어요</p>
         </div>
 
-        <div id="profileSummaryCard" class="border border-gray-100 rounded-2xl p-4 space-y-2"></div>
+        <div id="profileSummaryCard" class="bg-white border border-gray-100 rounded-2xl p-4 space-y-2"></div>
 
         <div class="space-y-2">
-          <button id="settingsEditBtn" type="button" class="w-full py-3 rounded-lg border border-gray-200 text-gray-700 text-sm font-semibold">
+          <button id="settingsEditBtn" type="button" class="w-full py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold">
             정보 수정하기
           </button>
-          <button id="goToAfterUseBtn" type="button" class="w-full py-3 rounded-lg bg-orange-500 text-white text-sm font-bold">
+          <button id="goToAfterUseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">
             여행 후 피부 신고서 작성하기
           </button>
         </div>
@@ -587,14 +618,27 @@ HTML_PAGE = """<!DOCTYPE html>
     setTimeout(scheduleResize, 300); // Tailwind CDN(JIT) 스타일 주입 이후 재계산
     scheduleResize();
 
+    // 화면이 바뀔 때마다 살짝 페이드인되도록 애니메이션 클래스를 다시 걸어줌
+    function playScreenTransition(el) {
+      el.classList.remove('screen-transition');
+      void el.offsetWidth; // 리플로우를 강제로 일으켜 애니메이션을 재시작
+      el.classList.add('screen-transition');
+    }
+
     // 랜딩 페이지 ↔ 앱 화면 전환
+    // 온보딩은 피부 정보(1단계)만 필수이고, 화장품·여행지 등록은 이후 개인설정 메뉴에서 진행
     function enterApp() {
       document.getElementById('screen-landing').classList.add('hidden');
-      document.getElementById('appContainer').classList.remove('hidden');
+      const app = document.getElementById('appContainer');
+      app.classList.remove('hidden');
+      showRegisterStep('step1');
+      playScreenTransition(app);
     }
     function exitToLanding() {
       document.getElementById('appContainer').classList.add('hidden');
-      document.getElementById('screen-landing').classList.remove('hidden');
+      const landing = document.getElementById('screen-landing');
+      landing.classList.remove('hidden');
+      playScreenTransition(landing);
     }
     document.getElementById('startBtn').addEventListener('click', enterApp);
     document.getElementById('skipStartBtn').addEventListener('click', enterApp);
@@ -655,6 +699,7 @@ HTML_PAGE = """<!DOCTYPE html>
     function switchTab(tabName) {
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
       Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
+      playScreenTransition(screens[tabName]);
       if (tabName === 'inuse') {
         refreshAdjustedRoutine();
       } else if (tabName === 'settings') {
@@ -699,6 +744,7 @@ HTML_PAGE = """<!DOCTYPE html>
       ['step0', 'step1', 'step2'].forEach((key) => {
         document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
       });
+      playScreenTransition(document.getElementById(`register-${stepName}`));
     }
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 기후 mock 데이터 키에 반영
@@ -725,7 +771,7 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 등록 1단계 → 2단계 이동 조건: 나이 입력 + 성별 선택
+    // 온보딩 완료 조건 (피부 정보만 필수): 나이 입력 + 성별 선택 + 피부 고민 1개 이상
     function validateStep1() {
       const missing = [];
       if (!document.getElementById('ageInput').value.trim()) {
@@ -734,9 +780,14 @@ HTML_PAGE = """<!DOCTYPE html>
       if (!document.querySelector('.gender-btn.active')) {
         missing.push('성별');
       }
+      if (document.querySelectorAll('.concern-chip.active').length === 0) {
+        missing.push('피부 고민');
+      }
       return { valid: missing.length === 0, missing };
     }
 
+    // 피부 정보 입력을 마치면 화장품·여행지 등록 없이 바로 메인 페이지로 이동
+    // (화장품·여행지 등록은 이후 개인설정 메뉴에서 별도로 진행)
     document.getElementById('step1ToStep2Btn').addEventListener('click', () => {
       const result = validateStep1();
       if (!result.valid) {
@@ -744,16 +795,16 @@ HTML_PAGE = """<!DOCTYPE html>
         return;
       }
       hideWarning('step1Warning');
-      showRegisterStep('step2');
+      onboardingComplete = true;
+      updateTabLockUI();
+      switchTab('inuse');
     });
 
     document.getElementById('step2ToStep1Btn').addEventListener('click', () => {
       showRegisterStep('step1');
     });
 
-    document.getElementById('step1ToStep0Btn').addEventListener('click', () => {
-      showRegisterStep('step0');
-    });
+    document.getElementById('step1ToStep0Btn').addEventListener('click', exitToLanding);
 
     // 피부 고민 칩 토글 (중복 선택 가능)
     document.querySelectorAll('.concern-chip').forEach((chip) => {
@@ -779,8 +830,8 @@ HTML_PAGE = """<!DOCTYPE html>
         .map((c) => `<option value="${c.value}" ${c.value === category ? 'selected' : ''}>${c.label}</option>`)
         .join('');
       row.innerHTML = `
-        <input type="text" value="${productName}" placeholder="제품명" class="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
-        <select class="border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-600 focus:outline-none focus:border-orange-400">${options}</select>
+        <input type="text" value="${productName}" placeholder="제품명" class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+        <select class="border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 focus:outline-none focus:border-brand-500">${options}</select>
         <button type="button" class="remove-cosmetic-btn text-gray-300 hover:text-gray-500 text-sm px-1">✕</button>
       `;
       row.querySelector('.remove-cosmetic-btn').addEventListener('click', () => row.remove());
@@ -1025,12 +1076,12 @@ HTML_PAGE = """<!DOCTYPE html>
       return { adjustments, warnings };
     }
 
-    // 조정 제안 카드 렌더링 (remove: 빨강 취소선 / modify: 주황 / add: 파랑)
+    // 조정 제안 카드 렌더링 (remove: 빨강 취소선 / modify·add: 포인트 컬러)
     function renderAdjustedRoutine(result) {
       const actionStyle = {
-        remove: { label: '빼기', badge: 'bg-red-50 text-red-600', bar: 'border-red-400', text: 'text-red-600 line-through' },
-        modify: { label: '조정', badge: 'bg-orange-50 text-orange-600', bar: 'border-orange-400', text: 'text-orange-600' },
-        add: { label: '추가', badge: 'bg-blue-50 text-blue-600', bar: 'border-blue-400', text: 'text-blue-600' },
+        remove: { label: '빼기', badge: 'bg-red-50 text-red-500', bar: 'border-red-300', text: 'text-red-500 line-through' },
+        modify: { label: '조정', badge: 'bg-brand-50 text-brand-600', bar: 'border-brand-500', text: 'text-brand-600' },
+        add: { label: '추가', badge: 'bg-brand-50 text-brand-600', bar: 'border-brand-500', text: 'text-brand-600' },
       };
 
       const adjustmentList = document.getElementById('adjustmentList');
@@ -1038,7 +1089,7 @@ HTML_PAGE = """<!DOCTYPE html>
       result.adjustments.forEach((item) => {
         const style = actionStyle[item.action];
         const card = document.createElement('div');
-        card.className = `border-l-4 ${style.bar} bg-gray-50 rounded-r-xl p-3 flex items-start gap-3`;
+        card.className = `border-l-4 ${style.bar} bg-white rounded-r-xl p-3 flex items-start gap-3`;
         card.innerHTML = `
           <span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${style.badge}">${style.label}</span>
           <div class="min-w-0">
@@ -1087,13 +1138,13 @@ HTML_PAGE = """<!DOCTYPE html>
       climateTable.innerHTML = '';
       days.forEach((day) => {
         const row = document.createElement('div');
-        row.className = `flex items-center justify-between px-4 py-3${day.highlight ? ' bg-orange-50' : ''}`;
+        row.className = `flex items-center justify-between px-4 py-3${day.highlight ? ' bg-brand-50' : ''}`;
         row.innerHTML = `
           <div>
             <p class="text-sm font-semibold">${day.dayLabel} · ${label}${day.suffix}</p>
-            <p class="text-xs ${day.highlight ? 'text-orange-500 font-semibold' : 'text-gray-400'}">${day.condition}</p>
+            <p class="text-xs ${day.highlight ? 'text-brand-500 font-semibold' : 'text-gray-400'}">${day.condition}</p>
           </div>
-          <p class="text-sm text-gray-600">${day.temp}°C · 습도 ${day.humidity}%</p>
+          <p class="text-base font-bold text-gray-800">${day.temp}°C <span class="text-xs font-normal text-gray-400">· 습도 ${day.humidity}%</span></p>
         `;
         climateTable.appendChild(row);
       });
