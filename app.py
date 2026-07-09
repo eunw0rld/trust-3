@@ -228,17 +228,6 @@ HTML_PAGE = """<!DOCTYPE html>
     color: #f97316;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
-  .trip-segment-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: #f3f4f6;
-    color: #374151;
-    border-radius: 9999px;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 600;
-  }
   .skin-btn {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -634,20 +623,22 @@ HTML_PAGE = """<!DOCTYPE html>
           <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
         </div>
 
-        <!-- 오늘의 날씨 + 뷰티 인사이트 통합 카드 (여행지 등록 후에만 표시, 화면 최상단에 우선 노출) -->
-        <div id="todayInsightCard" class="hidden rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);">
-          <div class="flex items-center justify-between mb-3">
-            <p id="todayInsightLocation" class="text-sm font-bold">📍 여행지</p>
-            <p id="todayInsightDate" class="text-xs font-medium text-white/80"></p>
-          </div>
-          <div id="todayInsightMetrics" class="flex items-center gap-3 text-sm font-semibold mb-4"></div>
-          <div class="flex items-start gap-2 bg-black/15 rounded-xl p-3">
-            <span class="text-base shrink-0">🔔</span>
-            <p id="todayInsightText" class="text-sm font-medium leading-relaxed"></p>
-          </div>
+        <!-- 인사말 + 여행지 등록/수정 진입점 (화면 최상단, 여행 계획 폼은 이 링크로만 펼쳐짐) -->
+        <div>
+          <p id="mainGreeting" class="text-sm text-gray-400 mb-1">안녕하세요!</p>
+          <h2 class="text-2xl font-bold leading-snug mb-2">어디로<br />여행가시나요?</h2>
+          <button id="mainRegisterTripBtn" type="button" class="text-sm font-semibold text-brand-500">여행지 등록하기 →</button>
         </div>
 
-        <!-- 내 파우치 (기존 파우치 화면의 촬영 UI를 메인 화면으로 이동) -->
+        <!-- 여행 계획 입력 폼 (평소엔 숨김, 위 링크를 눌렀을 때만 펼쳐짐) -->
+        <div id="tripSegmentsSection" class="hidden bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+          <div id="tripSegmentRows" class="space-y-3"></div>
+          <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
+          <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
+          <button id="tripSegmentsSaveBtn" type="button" class="w-full py-2.5 rounded-xl bg-brand-500 text-white text-sm font-bold">저장</button>
+        </div>
+
+        <!-- 내 파우치 (촬영/직접입력 UI가 클릭 없이 항상 바로 노출) -->
         <div id="pouchSection" class="bg-white border border-gray-100 rounded-2xl p-4">
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-base font-bold">내 파우치</h2>
@@ -706,20 +697,16 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 여행 계획 (다중 구간) -->
-        <div id="tripSegmentsSection" class="bg-white border border-gray-100 rounded-2xl p-4">
-          <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-bold">여행 계획</h2>
-            <button id="tripSegmentsEditToggleBtn" type="button" class="hidden text-xs font-semibold text-brand-500">수정</button>
+        <!-- 오늘의 날씨 + 뷰티 인사이트 통합 카드 (여행지 등록 후에만 표시) -->
+        <div id="todayInsightCard" class="hidden rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);">
+          <div class="flex items-center justify-between mb-3">
+            <p id="todayInsightLocation" class="text-sm font-bold">📍 여행지</p>
+            <p id="todayInsightDate" class="text-xs font-medium text-white/80"></p>
           </div>
-          <p id="tripSegmentsHint" class="text-sm text-gray-400 mb-3">여행 계획을 등록해주세요</p>
-
-          <div id="tripSegmentsSummary" class="hidden flex flex-wrap gap-2 mb-1"></div>
-
-          <div id="tripSegmentsForm" class="space-y-3">
-            <div id="tripSegmentRows" class="space-y-3"></div>
-            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
-            <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
+          <div id="todayInsightMetrics" class="flex items-center gap-3 text-sm font-semibold mb-4"></div>
+          <div class="flex items-start gap-2 bg-black/15 rounded-xl p-3">
+            <span class="text-base shrink-0">🔔</span>
+            <p id="todayInsightText" class="text-sm font-medium leading-relaxed"></p>
           </div>
         </div>
 
@@ -778,31 +765,8 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <p id="mainGreeting" class="text-sm text-gray-400 mb-1">안녕하세요!</p>
-
-        <!-- 여행지 미등록 상태 -->
-        <div id="mainEmptyState">
-          <h2 class="text-2xl font-bold leading-snug mb-2">어디로<br />여행가시나요?</h2>
-          <button id="mainRegisterTripBtn" type="button" class="text-sm font-semibold text-brand-500">여행지 등록하기 →</button>
-
-          <button id="mainPouchCardEmpty" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 mt-10 text-left">
-            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">내 파우치</p>
-              <p id="mainPouchEmptyText" class="text-xs text-gray-400">아직 등록된 화장품이 없어요</p>
-            </div>
-            <span class="text-gray-300">→</span>
-          </button>
-        </div>
-
-        <!-- 여행지 등록 상태: 대시보드 -->
+        <!-- 여행지 등록 상태에서만 노출되는 세부 정보 -->
         <div id="mainDashboard" class="hidden space-y-6">
-
-          <!-- 여행 일정 -->
-          <div id="tripSummaryBanner" class="bg-white border border-gray-100 rounded-2xl p-4"></div>
-
-          <!-- 파우치가 비어있을 때는 이 자리로 파우치 카드가 올라옴 -->
-          <div id="pouchCardTopSlot"></div>
 
           <!-- 내 화장품 루틴 (카드 형식) -->
           <div>
@@ -843,26 +807,6 @@ HTML_PAGE = """<!DOCTYPE html>
               </div>
             </div>
           </div>
-
-          <!-- 내 파우치 요약 -->
-          <button id="mainPouchCardFilled" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
-            <div id="mainPouchIcon" class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">내 파우치</p>
-              <p id="mainPouchFilledText" class="text-xs text-gray-400">화장품 0개 등록됨</p>
-            </div>
-            <span class="text-gray-300">→</span>
-          </button>
-
-          <!-- 주변 매장 미리보기 -->
-          <button id="mainMapCard" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
-            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">내 주위 화장품 매장</p>
-              <p class="text-xs text-gray-400">올리브영 강남역점 · 250m</p>
-            </div>
-            <span class="text-gray-300">→</span>
-          </button>
 
         </div>
 
@@ -1537,10 +1481,9 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('mainRegisterTripBtn').addEventListener('click', () => {
       expandTripSegmentsForm();
     });
-    document.getElementById('mainPouchCardEmpty').addEventListener('click', expandPouchSection);
-    document.getElementById('mainPouchCardFilled').addEventListener('click', expandPouchSection);
-    document.getElementById('mainMapCard').addEventListener('click', () => {
-      document.getElementById('mapStoreSection').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('tripSegmentsSaveBtn').addEventListener('click', () => {
+      tripSegmentsExpanded = false;
+      updateTripSegmentsUI();
     });
 
     bottomNavButtons.forEach((btn) => {
@@ -1910,7 +1853,7 @@ HTML_PAGE = """<!DOCTYPE html>
     ];
 
     let tripSegments = [];
-    let tripSegmentsExpanded = true;
+    let tripSegmentsExpanded = false;
     let prevValidSegmentCount = 0;
 
     // container: 이 행이 들어갈 컨테이너 (구간 번호를 그 안의 기존 행 수로 계산)
@@ -1984,25 +1927,22 @@ HTML_PAGE = """<!DOCTYPE html>
       return `${shorten(seg.start)}~${shorten(seg.end)}`;
     }
 
+    // 화면 최상단 "어디로 여행가시나요?" 아래 링크: 미등록 시 "여행지 등록하기 →",
+    // 등록 후엔 "이탈리아 8/15~19 · 수정하기" 같은 요약으로 바뀌고 같은 폼을 다시 열어줌
     function updateTripSegmentsUI() {
       const hasSegments = tripSegments.length > 0;
-      const collapsed = hasSegments && !tripSegmentsExpanded;
-      document.getElementById('tripSegmentsSummary').innerHTML = tripSegments
-        .map((seg) => `<span class="trip-segment-chip">📍 ${seg.country} ${formatSegmentRange(seg)}</span>`)
-        .join('');
-      document.getElementById('tripSegmentsSummary').classList.toggle('hidden', !hasSegments);
-      document.getElementById('tripSegmentsEditToggleBtn').classList.toggle('hidden', !hasSegments);
-      document.getElementById('tripSegmentsEditToggleBtn').textContent = tripSegmentsExpanded ? '접기' : '수정';
-      document.getElementById('tripSegmentsHint').classList.toggle('hidden', collapsed);
-      document.getElementById('tripSegmentsForm').classList.toggle('hidden', collapsed);
+      document.getElementById('tripSegmentsSection').classList.toggle('hidden', !tripSegmentsExpanded);
+      const registerBtn = document.getElementById('mainRegisterTripBtn');
+      if (hasSegments) {
+        const seg = getActiveSegment() || tripSegments[0];
+        const moreNote = tripSegments.length > 1 ? ` 외 ${tripSegments.length - 1}건` : '';
+        registerBtn.textContent = `${seg.country} ${formatSegmentRange(seg)}${moreNote} · 수정하기`;
+      } else {
+        registerBtn.textContent = '여행지 등록하기 →';
+      }
     }
 
-    document.getElementById('tripSegmentsEditToggleBtn').addEventListener('click', () => {
-      tripSegmentsExpanded = !tripSegmentsExpanded;
-      updateTripSegmentsUI();
-    });
-
-    // 여행지 수정하기(대시보드 배너) 클릭 시 이 섹션으로 스크롤 + 펼치기
+    // 여행지 수정하기 클릭 시 이 섹션으로 스크롤 + 펼치기
     function expandTripSegmentsForm() {
       tripSegmentsExpanded = true;
       updateTripSegmentsUI();
@@ -2018,10 +1958,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
     function syncTripSegmentsFromDOM() {
       tripSegments = readTripSegmentsFromDOM();
-      // 첫 구간이 완성되는 순간 자동으로 요약 형태로 접어줌
-      if (tripSegments.length > 0 && prevValidSegmentCount === 0) {
-        tripSegmentsExpanded = false;
-      }
       updateTripSegmentsUI();
       if (tripSegments.length > 0 && prevValidSegmentCount === 0 && getMyProducts().length === 0) {
         document.getElementById('pouchPromptModal').classList.remove('hidden');
@@ -2770,13 +2706,14 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // 날씨 요약 + 오늘의 뷰티 인사이트 통합 카드 렌더링
-    function renderTodayInsightCard(label, weather) {
+    function renderTodayInsightCard(label, weather, start, end) {
       const insight = getTodayInsight(weather);
       const highlightClass = 'text-yellow-200 underline underline-offset-2 decoration-2';
       const metricClass = (key) => (insight.highlight === key ? highlightClass : '');
 
       document.getElementById('todayInsightLocation').textContent = `📍 ${label}`;
-      document.getElementById('todayInsightDate').textContent = formatTodayDate();
+      document.getElementById('todayInsightDate').textContent =
+        start && end ? `${formatTodayDate()} · ${getTripScheduleLabel(start, end)}` : formatTodayDate();
       document.getElementById('todayInsightMetrics').innerHTML = `
         <span class="${metricClass('temp')}">🌡️ ${weather.temp}°C</span>
         <span class="${metricClass('humidity')}">💧 습도 ${weather.humidity}%</span>
@@ -2789,59 +2726,20 @@ HTML_PAGE = """<!DOCTYPE html>
     function renderTripOverview() {
       const activeSegment = getActiveSegment();
       const destinationKey = activeSegment ? activeSegment.country : null;
-      const productCount = getMyProducts().length;
 
       if (!destinationKey) {
-        document.getElementById('mainEmptyState').classList.remove('hidden');
         document.getElementById('mainDashboard').classList.add('hidden');
         document.getElementById('todayInsightCard').classList.add('hidden');
-        document.getElementById('mainPouchEmptyText').textContent =
-          productCount > 0 ? `화장품 ${productCount}개 등록됨` : '아직 등록된 화장품이 없어요';
         return;
       }
 
-      document.getElementById('mainEmptyState').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
       document.getElementById('todayInsightCard').classList.remove('hidden');
       renderMyRoutineGrid();
 
-      // 여행지는 등록했지만 파우치가 비어있으면 살짝 눈에 띄는 알림 스타일로 표시
-      const pouchCard = document.getElementById('mainPouchCardFilled');
-      const pouchIcon = document.getElementById('mainPouchIcon');
-      const pouchText = document.getElementById('mainPouchFilledText');
-      const pouchEmpty = productCount === 0;
-      pouchCard.className = `w-full flex items-center gap-3 border rounded-2xl p-4 text-left ${pouchEmpty ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`;
-      pouchIcon.className = `w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${pouchEmpty ? 'bg-red-100 text-red-500' : 'bg-brand-50 text-brand-500'}`;
-      pouchText.className = pouchEmpty ? 'text-xs font-medium text-red-500' : 'text-xs text-gray-400';
-      pouchText.textContent = pouchEmpty ? '파우치가 비어있어요! 화장품을 등록해주세요' : `화장품 ${productCount}개 등록됨`;
-
-      // 파우치가 비어있으면 눈에 잘 띄도록 카드를 상단(여행 요약 배너 바로 아래)으로 옮김
-      if (pouchEmpty) {
-        document.getElementById('pouchCardTopSlot').appendChild(pouchCard);
-      } else {
-        document.getElementById('mainMapCard').insertAdjacentElement('beforebegin', pouchCard);
-      }
-
       const label = destinationKey;
       const start = activeSegment.start;
       const end = activeSegment.end;
-      const otherSegmentsNote =
-        tripSegments.length > 1 ? `<p class="text-xs text-gray-400 mt-1">총 ${tripSegments.length}개 구간 등록됨</p>` : '';
-      document.getElementById('tripSummaryBanner').innerHTML = `
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs text-gray-400 mb-0.5">이번 여행</p>
-            <p class="text-base font-bold">📍 ${label}</p>
-            <p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p>
-            <p class="text-xs font-semibold text-brand-500 mt-1">${getTripScheduleLabel(start, end)}</p>
-            ${otherSegmentsNote}
-          </div>
-          <button id="tripSummaryEditBtn" type="button" class="text-xs font-semibold text-brand-500 shrink-0">여행지 수정 →</button>
-        </div>
-      `;
-      document.getElementById('tripSummaryEditBtn').addEventListener('click', () => {
-        expandTripSegmentsForm();
-      });
 
       const weather = weatherData[destinationKey];
       let todayCondition = '쾌적한 날씨';
@@ -2860,7 +2758,7 @@ HTML_PAGE = """<!DOCTYPE html>
         flyToCity(destinationKey, weather);
       }
 
-      renderTodayInsightCard(label, weather);
+      renderTodayInsightCard(label, weather, start, end);
 
       const days = [
         { dayLabel: '어제', temp: weather.temp - 1, humidity: weather.humidity - 13, uvi: Math.max(weather.uvi - 2, 1), condition: '맑음', highlight: false },
