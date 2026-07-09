@@ -118,16 +118,6 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #eff6ff;
     color: #1b64da;
   }
-  .feedback-btn {
-    border: 1px solid #e5e7eb;
-    color: #6b7280;
-    background: #ffffff;
-  }
-  .feedback-btn.active {
-    border-color: #3182f6;
-    background: #eff6ff;
-    color: #1b64da;
-  }
   .concern-chip {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -839,43 +829,76 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <div class="border border-gray-200 rounded-2xl p-5">
           <div class="flex items-center justify-between mb-1">
-            <p class="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">Arrival Skin Declaration</p>
-            <span class="text-[10px] font-bold text-brand-500 border border-brand-100 rounded-full px-2 py-0.5">DAY 5</span>
+            <p id="skinReportDayLabel" class="text-xs text-gray-400"></p>
+            <span id="skinReportDestinationChip" class="text-[10px] font-bold text-brand-500 border border-brand-100 rounded-full px-2 py-0.5"></span>
           </div>
-          <h2 class="text-base font-bold mb-4">여행 후 피부 신고서</h2>
+          <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 피부 사진 업로드 -->
-          <div class="border-t border-dashed border-gray-200 pt-4 mb-4">
-            <p class="text-xs font-semibold text-gray-500 mb-2">마지막 날 피부 사진</p>
-            <div class="border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1">
-              <span class="text-xl">📷</span>
-              <span class="text-xs">사진 업로드 (mock)</span>
+          <!-- 1일차 vs 마지막날 사진 비교 -->
+          <div class="grid grid-cols-2 gap-3 mb-2">
+            <div>
+              <div class="border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1">
+                <span class="text-xl">📷</span>
+                <span class="text-xs">1일차 사진</span>
+              </div>
+              <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
+            </div>
+            <div>
+              <div class="border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1">
+                <span class="text-xl">📷</span>
+                <span class="text-xs">마지막날 사진</span>
+              </div>
+              <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
+          <p class="text-xs text-gray-400 mt-1">→ 사진을 등록하면 AI가 두 사진을 비교해 분석해드려요</p>
+        </div>
 
-          <!-- 피드백 입력 -->
-          <div class="border-t border-dashed border-gray-200 pt-4 mb-4">
-            <p class="text-xs font-semibold text-gray-500 mb-2">여행 중 피부는 어땠나요?</p>
-            <div class="grid grid-cols-3 gap-2 mb-3">
-              <button type="button" data-feedback="good" class="feedback-btn rounded-xl py-2 text-xs font-semibold">좋음</button>
-              <button type="button" data-feedback="normal" class="feedback-btn rounded-xl py-2 text-xs font-semibold">보통</button>
-              <button type="button" data-feedback="trouble" class="feedback-btn rounded-xl py-2 text-xs font-semibold">트러블 있었음</button>
+        <!-- 항목별 변화 -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">항목별 변화</h3>
+          <div class="space-y-3">
+            <div class="bg-white border border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold">💧 수분</p>
+                <span class="text-xs font-bold text-green-600 bg-green-50 rounded-full px-2 py-0.5">개선됨</span>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">54</span> → 마지막날 <span class="font-bold text-gray-900">72</span>/100 <span class="text-green-600 font-semibold ml-1">+18%</span></p>
+              <p class="text-xs text-gray-400 leading-relaxed">여행지 습도가 높고 물을 자주 마신 덕에 여행 중 수분감이 뚜렷하게 올라갔어요.</p>
             </div>
-            <textarea rows="3" placeholder="자유롭게 남겨주세요 (선택)" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500"></textarea>
-          </div>
-
-          <!-- 추가 케어 제안 -->
-          <div class="border-t border-dashed border-gray-200 pt-4">
-            <p class="text-xs font-semibold text-gray-500 mb-2">귀국 후 추가 케어 제안</p>
-            <ul class="space-y-2 text-sm text-gray-700">
-              <li class="flex gap-2"><span class="text-brand-500">•</span>장시간 비행 후 진정 마스크팩으로 수분 보충</li>
-              <li class="flex gap-2"><span class="text-brand-500">•</span>건조해진 각질 정리를 위한 약산성 필링</li>
-              <li class="flex gap-2"><span class="text-brand-500">•</span>2~3일간 저자극 로션으로 피부 장벽 회복</li>
-            </ul>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold">☀️ 톤·홍조</p>
+                <span class="text-xs font-bold text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">주의 필요</span>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">21</span> → 마지막날 <span class="font-bold text-gray-900">30</span>/100 <span class="text-amber-600 font-semibold ml-1">+9%</span></p>
+              <p class="text-xs text-gray-400 leading-relaxed">양볼 쪽에 붉은 기가 늘어난 편이에요. 강한 햇빛에 노출된 오후 시간대와 겹쳐요.</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold">💧 유분</p>
+                <span class="text-xs font-bold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">변화 없음</span>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">46</span> → 마지막날 <span class="font-bold text-gray-900">48</span>/100 T존 <span class="text-gray-500 font-semibold ml-1">±2%</span></p>
+              <p class="text-xs text-gray-400 leading-relaxed">T존 유분은 여행 전과 큰 차이가 없어요. 기존 루틴이 잘 유지된 편이에요.</p>
+            </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold">🦠 트러블</p>
+                <span class="text-xs font-bold text-red-600 bg-red-50 rounded-full px-2 py-0.5">2건 증가</span>
+              </div>
+              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">0건</span> → 마지막날 <span class="font-bold text-gray-900">2건</span> <span class="text-red-600 font-semibold ml-1">+2건</span></p>
+              <p class="text-xs text-gray-400 leading-relaxed">턱선에 좁쌀 트러블 2개가 새로 보여요. 자기 전 세안이 부실했던 날과 맞물려요.</p>
+            </div>
           </div>
         </div>
 
-        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">제출하기</button>
+        <!-- 종합 요약 -->
+        <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4">
+          <p class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
+        </div>
+
+        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">여행 리포트 공유하기</button>
 
       </section>
 
@@ -1009,7 +1032,7 @@ HTML_PAGE = """<!DOCTYPE html>
             정보 수정하기
           </button>
           <button id="goToAfterUseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">
-            여행 후 피부 신고서 작성하기
+            피부 변화 리포트 보기
           </button>
         </div>
       </section>
@@ -1473,6 +1496,8 @@ HTML_PAGE = """<!DOCTYPE html>
         playScreenTransition(screens[tabName]);
         if (tabName === 'inuse') {
           refreshAdjustedRoutine();
+        } else if (tabName === 'afteruse') {
+          renderSkinReport();
         } else if (tabName === 'settings') {
           renderProfileSummary();
         } else if (tabName === 'community') {
@@ -1547,6 +1572,26 @@ HTML_PAGE = """<!DOCTYPE html>
         document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
       });
       playScreenTransition(document.getElementById(`register-${stepName}`));
+    }
+
+    // 여행지 국기 이모지 (커뮤니티에 큐레이션된 주요 여행지 위주, 나머지는 📍로 대체)
+    const destinationFlags = {
+      이탈리아: '🇮🇹', 일본: '🇯🇵', 태국: '🇹🇭', 아랍에미리트: '🇦🇪', 프랑스: '🇫🇷', 싱가포르: '🇸🇬',
+      대한민국: '🇰🇷', 미국: '🇺🇸', 영국: '🇬🇧', 스페인: '🇪🇸', 독일: '🇩🇪', 베트남: '🇻🇳', 중국: '🇨🇳',
+    };
+
+    // "피부 변화 리포트" 화면: 등록된 여행지·일정을 바탕으로 헤더와 사진 비교 날짜를 채움 (수치는 mock 고정값)
+    function renderSkinReport() {
+      const start = document.getElementById('tripStartDate').value;
+      const end = document.getElementById('tripEndDate').value;
+      const totalDays = start && end
+        ? Math.round((new Date(`${end}T00:00:00`) - new Date(`${start}T00:00:00`)) / (24 * 60 * 60 * 1000)) + 1
+        : 1;
+      const flag = destinationFlags[currentTripDestination] || '📍';
+      document.getElementById('skinReportDayLabel').textContent = `여행 ${totalDays}일차 · 마지막날`;
+      document.getElementById('skinReportDestinationChip').textContent = `${flag} ${currentTripDestination || '여행지'}`;
+      document.getElementById('skinReportStartDate').textContent = start || '-';
+      document.getElementById('skinReportEndDate').textContent = end || '-';
     }
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 기후 mock 데이터 키에 반영
@@ -2655,14 +2700,6 @@ HTML_PAGE = """<!DOCTYPE html>
       renderAdjustedRoutine(result);
     }
     refreshAdjustedRoutine();
-
-    // 피드백 버튼 토글 (사용후 페이지)
-    document.querySelectorAll('.feedback-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.feedback-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
   </script>
 
 </body>
