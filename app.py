@@ -190,6 +190,20 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- 여행지 등록 완료 후, 파우치가 비어있으면 화장품 등록을 권하는 팝업 -->
+  <div id="pouchPromptModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
+    <div class="flex items-center justify-center h-full">
+      <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
+        <p class="text-base font-bold mb-1">화장품도 등록해볼까요?</p>
+        <p class="text-sm text-gray-500 mb-5">파우치에 화장품을 등록하면 여행지 날씨에 맞는 루틴을 추천해드려요.</p>
+        <div class="space-y-2">
+          <button id="pouchPromptYesBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">지금 등록할게요</button>
+          <button id="pouchPromptLaterBtn" type="button" class="w-full py-2 text-xs text-gray-400 underline">나중에 할게요</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ 앱 화면 ============ -->
   <div id="appContainer" class="hidden max-w-md mx-auto bg-gray-50 border-x border-gray-100">
 
@@ -523,6 +537,8 @@ HTML_PAGE = """<!DOCTYPE html>
           <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
         </div>
 
+        <p id="mainGreeting" class="text-sm text-gray-400 mb-1">안녕하세요!</p>
+
         <!-- 여행지 미등록 상태 -->
         <div id="mainEmptyState">
           <h2 class="text-2xl font-bold leading-snug mb-2">어디로<br />여행가시나요?</h2>
@@ -543,6 +559,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
           <!-- 여행 요약 배너 -->
           <div id="tripSummaryBanner" class="bg-white border border-gray-100 rounded-2xl p-4"></div>
+
+          <!-- 파우치가 비어있을 때는 이 자리로 파우치 카드가 올라옴 -->
+          <div id="pouchCardTopSlot"></div>
 
           <!-- 알림 목업 -->
           <div>
@@ -752,8 +771,19 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 6. 개인설정 페이지 ============ -->
       <section id="screen-settings" class="hidden py-6 space-y-6">
         <div>
-          <h2 class="text-base font-bold mb-1">개인설정</h2>
+          <h2 id="settingsGreeting" class="text-base font-bold mb-1">개인설정</h2>
           <p class="text-sm text-gray-400 mb-4">내 프로필과 여행 정보를 확인하고 수정할 수 있어요</p>
+        </div>
+
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+          <div>
+            <p class="text-xs font-semibold text-gray-400 mb-2">이름</p>
+            <input id="nameInput" type="text" placeholder="이름을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 mb-2">닉네임 <span class="text-gray-300 font-normal">(선택, 설정하면 닉네임으로 불러드려요)</span></p>
+            <input id="nicknameInput" type="text" placeholder="닉네임을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
         </div>
 
         <div id="profileSummaryCard" class="bg-white border border-gray-100 rounded-2xl p-4 space-y-2"></div>
@@ -817,6 +847,13 @@ HTML_PAGE = """<!DOCTYPE html>
           <div id="cosmeticRows" class="space-y-2 mb-3"></div>
           <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
             직접 입력하기
+          </button>
+        </div>
+
+        <div>
+          <p id="pouchWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
+          <button id="pouchDoneBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
+            등록하기
           </button>
         </div>
 
@@ -1212,6 +1249,15 @@ HTML_PAGE = """<!DOCTYPE html>
       cosmeticPhotoInput.value = '';
     });
 
+    document.getElementById('pouchDoneBtn').addEventListener('click', () => {
+      if (getMyProducts().length === 0) {
+        showWarning('pouchWarning', '화장품을 1개 이상 등록해주세요');
+        return;
+      }
+      hideWarning('pouchWarning');
+      switchTab('inuse');
+    });
+
     // 등록 페이지에 입력된 보유 화장품을 { name, category } 배열로 읽어옴
     function getMyProducts() {
       return Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
@@ -1240,6 +1286,21 @@ HTML_PAGE = """<!DOCTYPE html>
       onboardingComplete = true;
       updateTabLockUI();
       hideWarning('step2Warning');
+      // 화장품을 아직 하나도 등록하지 않았다면 파우치 등록을 권하는 팝업을 먼저 보여줌
+      if (getMyProducts().length === 0) {
+        document.getElementById('pouchPromptModal').classList.remove('hidden');
+      } else {
+        switchTab('inuse');
+      }
+    });
+
+    document.getElementById('pouchPromptYesBtn').addEventListener('click', () => {
+      document.getElementById('pouchPromptModal').classList.add('hidden');
+      switchTab('pouch');
+    });
+
+    document.getElementById('pouchPromptLaterBtn').addEventListener('click', () => {
+      document.getElementById('pouchPromptModal').classList.add('hidden');
       switchTab('inuse');
     });
 
@@ -1580,7 +1641,27 @@ HTML_PAGE = """<!DOCTYPE html>
     renderCommunityFeed();
 
     // 개인설정 탭에 등록된 내 정보를 요약해서 보여줌
+    // 닉네임이 있으면 닉네임으로, 없으면 이름으로 사용자를 부름
+    function getDisplayName() {
+      const nickname = document.getElementById('nicknameInput').value.trim();
+      if (nickname) return nickname;
+      const name = document.getElementById('nameInput').value.trim();
+      if (name) return name;
+      return '여행자';
+    }
+
+    function refreshGreetings() {
+      const displayName = getDisplayName();
+      document.getElementById('mainGreeting').textContent = `${displayName}님, 안녕하세요!`;
+      document.getElementById('settingsGreeting').textContent = `${displayName}님의 정보`;
+    }
+
+    document.getElementById('nameInput').addEventListener('input', refreshGreetings);
+    document.getElementById('nicknameInput').addEventListener('input', refreshGreetings);
+    refreshGreetings();
+
     function renderProfileSummary() {
+      refreshGreetings();
       const age = document.getElementById('ageInput').value.trim() || '-';
       const genderBtn = document.querySelector('.gender-btn.active');
       const gender = genderBtn ? genderBtn.dataset.gender : '-';
@@ -1747,6 +1828,13 @@ HTML_PAGE = """<!DOCTYPE html>
       pouchIcon.className = `w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${pouchEmpty ? 'bg-red-100 text-red-500' : 'bg-brand-50 text-brand-500'}`;
       pouchText.className = pouchEmpty ? 'text-xs font-medium text-red-500' : 'text-xs text-gray-400';
       pouchText.textContent = pouchEmpty ? '파우치가 비어있어요! 화장품을 등록해주세요' : `화장품 ${productCount}개 등록됨`;
+
+      // 파우치가 비어있으면 눈에 잘 띄도록 카드를 상단(여행 요약 배너 바로 아래)으로 옮김
+      if (pouchEmpty) {
+        document.getElementById('pouchCardTopSlot').appendChild(pouchCard);
+      } else {
+        document.getElementById('mainMapCard').insertAdjacentElement('beforebegin', pouchCard);
+      }
 
       const label = currentTripDestination || '여행지';
       const start = document.getElementById('tripStartDate').value;
