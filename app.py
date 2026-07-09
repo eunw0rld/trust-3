@@ -479,6 +479,15 @@ HTML_PAGE = """<!DOCTYPE html>
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
   }
+  .trip-destination-chip {
+    padding: 6px 12px;
+    border-radius: 9999px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #fed7aa;
+  }
   /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
   .map-store-list-item.active-store-item {
     background-color: #fff7ed;
@@ -730,9 +739,18 @@ HTML_PAGE = """<!DOCTYPE html>
               <button id="mapSearchToggleBtn" type="button" aria-label="여행지 검색" class="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </button>
-              <div id="mapSearchBar" class="hidden flex-1 min-w-0">
-                <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2 px-4 rounded-full bg-white shadow-md border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
-                <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full shadow-sm">찾을 수 없어요</p>
+              <div id="mapSearchBar" class="hidden flex-1 min-w-0 bg-white rounded-2xl shadow-md p-3">
+                <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2 px-3 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+                <p id="globeSearchNotFound" class="hidden mt-1.5 ml-1 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
+                <p class="text-[11px] font-semibold text-gray-400 mt-2.5 mb-1.5">인기 여행지</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+                  <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
+                  <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
+                  <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
+                  <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
+                  <button type="button" class="trip-destination-chip" data-city="방콕">방콕</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1331,6 +1349,16 @@ HTML_PAGE = """<!DOCTYPE html>
       } else {
         document.getElementById('globeSearchNotFound').classList.add('hidden');
       }
+    });
+
+    // 검색바 안의 인기 여행지 칩: 눌러도 바로 그 도시로 flyTo
+    document.querySelectorAll('.trip-destination-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const match = findCityMatch(chip.dataset.city);
+        if (!match) return;
+        flyToCity(match.key, match.weather);
+        document.getElementById('mapSearchBar').classList.add('hidden');
+      });
     });
 
     // 도시 좌표로 부드럽게 확대(zoom 11 이상 → globe 투영이 자연스럽게 평면 지도처럼 전환됨)
