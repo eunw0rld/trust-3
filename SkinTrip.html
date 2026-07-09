@@ -805,7 +805,8 @@
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: label로 감싸 탭하면 숨겨진 file input이 열림 -->
+          <!-- 1일차 vs 마지막날 사진 비교: label로 감싸 탭하면 숨겨진 file input이 열림.
+               capture="user" 속성으로 갤러리 대신 전면(셀피) 카메라가 바로 실행됨 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
               <label for="skinPhotoStartInput" id="skinPhotoStartBox" class="relative overflow-hidden block border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
@@ -815,7 +816,7 @@
                   <span class="text-xs">1일차 사진</span>
                 </div>
               </label>
-              <input id="skinPhotoStartInput" type="file" accept="image/*" class="hidden" />
+              <input id="skinPhotoStartInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
@@ -826,11 +827,11 @@
                   <span class="text-xs">마지막날 사진</span>
                 </div>
               </label>
-              <input id="skinPhotoEndInput" type="file" accept="image/*" class="hidden" />
+              <input id="skinPhotoEndInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
-          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 사진을 등록하면 AI가 두 사진을 비교해 분석해드려요</p>
+          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요</p>
         </div>
 
         <!-- 항목별 변화 -->
@@ -1771,7 +1772,7 @@
       const hintEl = document.getElementById('skinPhotoHint');
       hintEl.textContent = (skinPhotoImages.start && skinPhotoImages.end)
         ? '✓ 두 사진을 비교해 아래 리포트를 갱신했어요'
-        : '→ 사진을 등록하면 AI가 두 사진을 비교해 분석해드려요';
+        : '→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요';
     }
 
     document.getElementById('skinPhotoStartInput').addEventListener('change', (e) => {
