@@ -158,6 +158,35 @@ HTML_PAGE = """<!DOCTYPE html>
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
   }
+  /* 매장 찾기 지도: 기본 파란 핀 대신 주황색 원형 커스텀 마커 */
+  .store-marker {
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    background: #f97316;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .store-marker:hover,
+  .store-marker:active {
+    transform: scale(1.2);
+  }
+  /* 마커 팝업을 앱의 화이트·라운드 톤과 통일 */
+  .store-popup .maplibregl-popup-content {
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+  .store-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: #ffffff;
+  }
+  /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
+  .map-store-list-item.active-store-item {
+    background-color: #fff7ed;
+    border-color: #fdba74;
+  }
 </style>
 </head>
 <body class="font-sans text-gray-900">
@@ -762,14 +791,14 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="relative w-full">
           <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
           <div class="absolute top-3 left-3 right-3 z-10">
-            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white/95 shadow-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
-            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 text-xs font-medium text-red-400">찾을 수 없어요</p>
+            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white shadow-sm border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
           </div>
         </div>
 
         <div id="mapStoreList" class="space-y-2">
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">올리브영 강남역점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 3분</p>
@@ -777,7 +806,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <p class="text-xs text-gray-500 shrink-0">250m</p>
           </div>
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">시코르 강남점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 5분</p>
@@ -785,7 +814,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <p class="text-xs text-gray-500 shrink-0">410m</p>
           </div>
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">랄라블라 신논현점</p>
               <p class="text-xs text-gray-400">헬스&뷰티 · 도보 8분</p>
@@ -1104,9 +1133,10 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // 도시 좌표로 부드럽게 확대(zoom 11 이상 → globe 투영이 자연스럽게 평면 지도처럼 전환됨)
+    // 1.5~2초 사이의 자연스러운 속도가 되도록 거리와 무관하게 duration을 고정
     function flyToCity(cityKey, weather) {
       if (!mapInstance) return;
-      mapInstance.flyTo({ center: [weather.lng, weather.lat], zoom: 11, speed: 0.6, curve: 1.4, essential: true });
+      mapInstance.flyTo({ center: [weather.lng, weather.lat], zoom: 11, duration: 1800, essential: true });
       mapInstance.once('moveend', () => {
         renderCityStoreMarkers(cityKey, weather);
       });
@@ -1117,7 +1147,18 @@ HTML_PAGE = """<!DOCTYPE html>
       cityMarkers = [];
     }
 
-    // 도시 확대가 끝나면 storeData의 매장들을 도시 중심 근처 mock 좌표에 주황색 마커로 표시
+    // 매장 카테고리별로 채도가 낮은 파스텔 배경/텍스트 색 (아이콘 배경 구분용)
+    function getCategoryStyle(category) {
+      const styles = {
+        드럭스토어: 'bg-blue-50 text-blue-400',
+        '뷰티 편집샵': 'bg-purple-50 text-purple-400',
+        라이프스타일샵: 'bg-green-50 text-green-400',
+        '헬스&뷰티': 'bg-pink-50 text-pink-400',
+      };
+      return styles[category] || 'bg-gray-100 text-gray-400';
+    }
+
+    // 도시 확대가 끝나면 storeData의 매장들을 도시 중심 근처 mock 좌표에 주황색 원형 마커로 표시
     function renderCityStoreMarkers(cityKey, weather) {
       clearCityMarkers();
       const storeKey = weather.en ? weather.en.toLowerCase() : '';
@@ -1130,12 +1171,18 @@ HTML_PAGE = """<!DOCTYPE html>
         return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
       });
       currentCityStores.forEach((store) => {
-        const popup = new maplibregl.Popup({ offset: 18, closeButton: false }).setHTML(`
-          <p style="font-weight:700;font-size:12px;margin-bottom:2px;">${store.name}</p>
-          <p style="font-size:11px;color:#3182f6;margin-bottom:2px;">${store.category}</p>
-          <p style="font-size:11px;color:#9ca3af;">${store.distance}</p>
+        const popup = new maplibregl.Popup({ offset: 18, closeButton: false, className: 'store-popup' }).setHTML(`
+          <div style="min-width:140px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
+              <p style="font-weight:700;font-size:12px;color:#111827;">${store.name}</p>
+              <span style="font-size:10px;color:#9ca3af;white-space:nowrap;">${store.distance}</span>
+            </div>
+            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:9999px;background:#ffedd5;color:#c2410c;font-weight:600;">${store.category}</span>
+          </div>
         `);
-        const marker = new maplibregl.Marker({ color: '#f97316' })
+        const el = document.createElement('div');
+        el.className = 'store-marker';
+        const marker = new maplibregl.Marker({ element: el })
           .setLngLat([store.lng, store.lat])
           .setPopup(popup)
           .addTo(mapInstance);
@@ -1156,7 +1203,7 @@ HTML_PAGE = """<!DOCTYPE html>
       }
       list.innerHTML = stores.map((store, i) => `
         <button type="button" class="map-store-list-item w-full flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 text-left" data-index="${i}">
-          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="w-10 h-10 rounded-xl ${getCategoryStyle(store.category)} flex items-center justify-center text-lg shrink-0">🏬</div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold truncate">${store.name}</p>
             <p class="text-xs text-gray-400 truncate">${store.category} · ${store.products.join(', ')}</p>
@@ -1168,7 +1215,12 @@ HTML_PAGE = """<!DOCTYPE html>
         btn.addEventListener('click', () => {
           const store = currentCityStores[Number(btn.dataset.index)];
           if (!mapInstance || !store) return;
-          mapInstance.flyTo({ center: [store.lng, store.lat], zoom: 15, speed: 0.8, essential: true });
+          list.querySelectorAll('.map-store-list-item').forEach((b) => b.classList.remove('active-store-item'));
+          btn.classList.add('active-store-item');
+          mapInstance.flyTo({ center: [store.lng, store.lat], zoom: 15, duration: 1200, essential: true });
+          mapInstance.once('moveend', () => {
+            btn.classList.remove('active-store-item');
+          });
           if (store.marker) store.marker.togglePopup();
         });
       });
@@ -1658,6 +1710,8 @@ HTML_PAGE = """<!DOCTYPE html>
       방콕: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수`, en: `Bangkok`, lat: 13.7563, lng: 100.5018 },
       두바이: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수`, en: `Dubai`, lat: 25.2048, lng: 55.2708 },
       파리: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Paris`, lat: 48.8566, lng: 2.3522 },
+      밀라노: { temp: 26, humidity: 55, uvi: 7, climate: `건조기후`, waterQuality: `경수`, en: `Milan`, lat: 45.4642, lng: 9.19 },
+      판교: { temp: 30, humidity: 70, uvi: 8, climate: `열대기후`, waterQuality: `연수`, en: `Pangyo`, lat: 37.3947, lng: 127.1112 },
       아르메니아: { temp: 36, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       아르헨티나: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
       아이슬란드: { temp: 7, humidity: 56, uvi: 2, climate: `한대기후`, waterQuality: `연수` },
@@ -1777,6 +1831,17 @@ HTML_PAGE = """<!DOCTYPE html>
         { name: 'Sephora 샹젤리제', category: '뷰티 편집샵', distance: '0.3km', products: ['수분 크림', '립틴트'] },
         { name: 'Monoprix 오페라', category: '드럭스토어', distance: '0.9km', products: ['올인원 로션'] },
         { name: 'Marionnaud 생라자르', category: '뷰티 편집샵', distance: '1.4km', products: ['선쿠션'] },
+      ],
+      milan: [
+        { name: 'Sephora Duomo', category: '뷰티 편집샵', distance: '0.2km', products: ['수분 크림', '립틴트'] },
+        { name: 'Douglas 코르소 비토리오 에마누엘레', category: '드럭스토어', distance: '0.5km', products: ['선크림', '핸드크림'] },
+        { name: 'Kiko Milano 본점', category: '뷰티 편집샵', distance: '0.8km', products: ['톤업크림', '아이라이너'] },
+        { name: 'Rinascente 뷰티 코너', category: '라이프스타일샵', distance: '1.1km', products: ['향수', '립밤'] },
+      ],
+      pangyo: [
+        { name: '올리브영 판교역점', category: '헬스&뷰티', distance: '0.3km', products: ['수분 크림', '선크림'] },
+        { name: '시코르 현대백화점 판교점', category: '뷰티 편집샵', distance: '0.6km', products: ['진정 마스크팩', '쿨링 미스트'] },
+        { name: '아리따움 판교점', category: '헬스&뷰티', distance: '0.9km', products: ['수분 세럼'] },
       ],
     };
 
