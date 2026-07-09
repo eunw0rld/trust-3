@@ -583,6 +583,12 @@ HTML_PAGE = """<!DOCTYPE html>
           <!-- 파우치가 비어있을 때는 이 자리로 파우치 카드가 올라옴 -->
           <div id="pouchCardTopSlot"></div>
 
+          <!-- 일정 기반 기후 안내 (메인 상단에 항시 표시) -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
+            <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
+          </div>
+
           <!-- 알림 목업 -->
           <div>
             <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 알림</h3>
@@ -617,18 +623,32 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- 일정 기반 기후 안내 -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
-            <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
-          </div>
-
-          <!-- 오늘의 루틴 조정 제안 -->
+          <!-- 오늘의 루틴 조정 제안 (갖고 있는 화장품 기반) -->
           <div>
             <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 루틴 조정 제안</h3>
             <div id="adjustmentWarnings" class="space-y-2 mb-2"></div>
             <div id="adjustmentTips" class="space-y-2 mb-2"></div>
             <div id="adjustmentList" class="space-y-2"></div>
+          </div>
+
+          <!-- 다른 여행자의 추천 루틴 (리뷰 기반) -->
+          <div id="recommendedRoutineSection" class="hidden">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">다른 여행자의 추천 루틴</h3>
+            <p id="recommendedRoutineNote" class="text-xs text-gray-400 mb-3"></p>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+              <div>
+                <p class="text-xs font-semibold text-brand-600 mb-1">추천 화장품</p>
+                <p id="recommendedCosmetics" class="text-sm text-gray-600 leading-relaxed"></p>
+              </div>
+              <div class="border-t border-gray-100 pt-3">
+                <p class="text-xs font-semibold text-brand-600 mb-1">스킨 루틴</p>
+                <p id="recommendedSkincare" class="text-sm text-gray-600 leading-relaxed"></p>
+              </div>
+              <div class="border-t border-gray-100 pt-3">
+                <p class="text-xs font-semibold text-brand-600 mb-1">메이크업 루틴</p>
+                <p id="recommendedMakeup" class="text-sm text-gray-600 leading-relaxed"></p>
+              </div>
+            </div>
           </div>
 
           <!-- 내 파우치 요약 -->
@@ -1808,9 +1828,9 @@ HTML_PAGE = """<!DOCTYPE html>
       // 현지 수질에 따른 팁 ('리뷰, 국가 DB'의 수질(경수/연수) 데이터 반영)
       const tips = [];
       if (weather.waterQuality === '경수') {
-        tips.push('이 지역은 경수(센물) 지역이에요. 두피·모발에 미네랄이 쌓이기 쉬우니 클래리파잉 샴푸나 헤어팩을 챙겨보세요');
+        tips.push('이 지역은 석회수(경수)라 머리가 뻑뻑해질 수 있어요. 헤어팩이나 클래리파잉 샴푸로 마무리해보세요');
       } else {
-        tips.push('이 지역은 연수(단물) 지역이에요. 세안 후 당김이 적은 편이라 순한 클렌저로도 충분해요');
+        tips.push('이 지역은 연수 지역이에요. 그래도 마지막 세안 단계는 생수로 헹궈내면 트러블을 예방할 수 있어요');
       }
 
       return { adjustments, warnings, tips };
@@ -1863,6 +1883,36 @@ HTML_PAGE = """<!DOCTYPE html>
         `;
         adjustmentTips.appendChild(card);
       });
+    }
+
+    // 다른 여행자 리뷰(communityReviews)에서 내 여행지·피부타입에 맞는 추천 루틴을 찾아 보여줌
+    function renderRecommendedRoutine() {
+      const section = document.getElementById('recommendedRoutineSection');
+      const activeSkinBtn = document.querySelector('.skin-btn.active');
+      const skinTypeMap = { dry: '건성', normal: '중성', oily: '지성', combination: '복합성', dehydrated: '수부지' };
+      const skinType = skinTypeMap[activeSkinBtn ? activeSkinBtn.dataset.skin : 'dry'];
+
+      const byCountry = communityReviews.filter((r) => r.country === currentTripDestination);
+      if (byCountry.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      let matched = byCountry.filter((r) => r.skinType === skinType);
+      let usedFallback = false;
+      if (matched.length === 0) {
+        matched = byCountry;
+        usedFallback = true;
+      }
+      const pick = matched[Math.floor(Math.random() * matched.length)];
+
+      document.getElementById('recommendedRoutineNote').textContent = usedFallback
+        ? `${currentTripDestination}을 다녀온 여행자 ${pick.id}님의 추천이에요`
+        : `나와 같은 ${skinType} 피부의 ${pick.id}님이 ${currentTripDestination}에서 추천한 루틴이에요`;
+      document.getElementById('recommendedCosmetics').textContent = pick.cosmetics;
+      document.getElementById('recommendedSkincare').textContent = pick.skincare;
+      document.getElementById('recommendedMakeup').textContent = pick.makeup;
+      section.classList.remove('hidden');
     }
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 알림/기후 안내에도 동일하게 반영
@@ -1927,9 +1977,9 @@ HTML_PAGE = """<!DOCTYPE html>
       }
 
       const days = [
-        { dayLabel: 'Day 1', suffix: '', temp: weather.temp - 1, humidity: weather.humidity - 13, condition: '맑음', highlight: false },
-        { dayLabel: 'Day 2', suffix: ' (오늘)', temp: weather.temp, humidity: weather.humidity, condition: todayCondition, highlight: true },
-        { dayLabel: 'Day 3', suffix: '', temp: weather.temp - 2, humidity: weather.humidity - 8, condition: '흐림', highlight: false },
+        { dayLabel: '어제', temp: weather.temp - 1, humidity: weather.humidity - 13, uvi: Math.max(weather.uvi - 2, 1), condition: '맑음', highlight: false },
+        { dayLabel: '오늘', temp: weather.temp, humidity: weather.humidity, uvi: weather.uvi, condition: todayCondition, highlight: true },
+        { dayLabel: '내일', temp: weather.temp - 2, humidity: weather.humidity - 8, uvi: Math.max(weather.uvi - 1, 1), condition: '흐림', highlight: false },
       ];
 
       const climateTable = document.getElementById('climateTable');
@@ -1939,13 +1989,39 @@ HTML_PAGE = """<!DOCTYPE html>
         row.className = `flex items-center justify-between px-4 py-3${day.highlight ? ' bg-brand-50' : ''}`;
         row.innerHTML = `
           <div>
-            <p class="text-sm font-semibold">${day.dayLabel} · ${label}${day.suffix}</p>
+            <p class="text-sm font-semibold">${day.dayLabel} · ${label}</p>
             <p class="text-xs ${day.highlight ? 'text-brand-500 font-semibold' : 'text-gray-400'}">${day.condition}</p>
           </div>
-          <p class="text-base font-bold text-gray-800">${day.temp}°C <span class="text-xs font-normal text-gray-400">· 습도 ${day.humidity}%</span></p>
+          <div class="text-right">
+            <p class="text-base font-bold text-gray-800">${day.temp}°C <span class="text-xs font-normal text-gray-400">· 습도 ${day.humidity}%</span></p>
+            <p class="text-[10px] text-gray-400 mt-0.5">자외선 ${getUviLabel(day.uvi)} · 미세먼지 ${getDustLabel(weather.climate)}</p>
+          </div>
         `;
         climateTable.appendChild(row);
       });
+
+      renderRecommendedRoutine();
+    }
+
+    // 자외선 지수를 사람이 읽기 쉬운 단계로 변환
+    function getUviLabel(uvi) {
+      if (uvi >= 11) return '위험';
+      if (uvi >= 8) return '매우 높음';
+      if (uvi >= 6) return '높음';
+      if (uvi >= 3) return '보통';
+      return '낮음';
+    }
+
+    // 미세먼지는 실측 데이터가 없어 기후유형 기반으로 추정 (건조기후일수록 먼지가 많은 경향을 반영한 mock)
+    function getDustLabel(climate) {
+      const dustByClimate = {
+        건조기후: '높음',
+        열대기후: '보통',
+        온대기후: '보통',
+        냉대기후: '낮음',
+        한대기후: '낮음',
+      };
+      return dustByClimate[climate] || '보통';
     }
 
     // 사용중 탭의 여행지 기준으로 조정 제안 계산 (등록 2단계에서 선택한 여행지로 갱신됨)
