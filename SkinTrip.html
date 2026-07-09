@@ -805,28 +805,28 @@
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: label로 감싸 탭하면 숨겨진 file input이 열림.
-               capture="user" 속성으로 갤러리 대신 전면(셀피) 카메라가 바로 실행됨 -->
+          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 실제 카메라 촬영 화면(getUserMedia)이 열림.
+               카메라 권한이 없거나 지원하지 않는 환경에서는 숨겨진 file input(capture="user")으로 자동 대체됨 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <label for="skinPhotoStartInput" id="skinPhotoStartBox" class="relative overflow-hidden block border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
+              <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
                 <img id="skinPhotoStartPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
                 <div id="skinPhotoStartPlaceholder" class="flex flex-col items-center gap-1">
                   <span class="text-xl">📷</span>
                   <span class="text-xs">1일차 사진</span>
                 </div>
-              </label>
+              </button>
               <input id="skinPhotoStartInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
-              <label for="skinPhotoEndInput" id="skinPhotoEndBox" class="relative overflow-hidden block border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
+              <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
                 <img id="skinPhotoEndPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
                 <div id="skinPhotoEndPlaceholder" class="flex flex-col items-center gap-1">
                   <span class="text-xl">📷</span>
                   <span class="text-xs">마지막날 사진</span>
                 </div>
-              </label>
+              </button>
               <input id="skinPhotoEndInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
@@ -1105,6 +1105,16 @@
           <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
           <span class="text-gray-300">›</span>
         </button>
+      </div>
+    </div>
+
+    <!-- 피부 변화 리포트: 실제 카메라 촬영 화면 (getUserMedia 라이브 프리뷰 + 셔터) -->
+    <div id="skinCameraModal" class="hidden absolute inset-0 z-50 bg-black flex flex-col">
+      <video id="skinCameraVideo" autoplay playsinline muted class="flex-1 w-full object-cover"></video>
+      <div class="p-5 flex items-center justify-between bg-black">
+        <button id="skinCameraCancelBtn" type="button" class="text-white text-sm font-semibold px-2">취소</button>
+        <button id="skinCameraShutterBtn" type="button" class="w-14 h-14 rounded-full bg-white border-4 border-gray-400" aria-label="촬영"></button>
+        <span class="w-10"></span>
       </div>
     </div>
 
@@ -1745,26 +1755,29 @@
       return { hydration, redness, oiliness, blemish };
     }
 
-    // 파일 선택 → 미리보기 표시 → 양쪽 사진이 모두 채워지면 자동으로 분석 실행
+    // dataURL(카메라 캡처 또는 파일 선택 결과)을 미리보기에 채우고, 양쪽 사진이 모두 채워지면 자동 분석 실행
+    function applySkinPhoto(kind, dataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        skinPhotoImages[kind] = img;
+        const previewEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPreview' : 'skinPhotoEndPreview');
+        const placeholderEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPlaceholder' : 'skinPhotoEndPlaceholder');
+        previewEl.src = dataUrl;
+        previewEl.classList.remove('hidden');
+        placeholderEl.classList.add('hidden');
+        updateSkinPhotoHint();
+        if (skinPhotoImages.start && skinPhotoImages.end) {
+          runSkinPhotoAnalysis();
+        }
+      };
+      img.src = dataUrl;
+    }
+
+    // (폴백 경로) 파일 선택창에서 고른 파일을 읽어 applySkinPhoto로 전달
     function loadSkinPhoto(kind, file) {
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          skinPhotoImages[kind] = img;
-          const previewEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPreview' : 'skinPhotoEndPreview');
-          const placeholderEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPlaceholder' : 'skinPhotoEndPlaceholder');
-          previewEl.src = reader.result;
-          previewEl.classList.remove('hidden');
-          placeholderEl.classList.add('hidden');
-          updateSkinPhotoHint();
-          if (skinPhotoImages.start && skinPhotoImages.end) {
-            runSkinPhotoAnalysis();
-          }
-        };
-        img.src = reader.result;
-      };
+      reader.onload = () => applySkinPhoto(kind, reader.result);
       reader.readAsDataURL(file);
     }
 
@@ -1781,6 +1794,53 @@
     document.getElementById('skinPhotoEndInput').addEventListener('change', (e) => {
       loadSkinPhoto('end', e.target.files[0]);
     });
+
+    // ===== 실제 카메라 촬영 (getUserMedia 라이브 프리뷰 + 셔터) =====
+    // 카메라 아이콘 박스를 탭하면 이 모달이 열려 실시간 카메라 화면을 보여줌.
+    // getUserMedia를 지원하지 않거나(구형 브라우저) 권한이 거부된 경우에는
+    // 숨겨진 file input(capture="user")을 대신 열어 OS 카메라/갤러리로 자연스럽게 대체됨
+    let skinCameraStream = null;
+    let skinCameraTargetKind = null; // 현재 촬영 대상: 'start' | 'end'
+
+    async function openSkinCamera(kind) {
+      skinCameraTargetKind = kind;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
+        return;
+      }
+      try {
+        skinCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        document.getElementById('skinCameraVideo').srcObject = skinCameraStream;
+        document.getElementById('skinCameraModal').classList.remove('hidden');
+      } catch (err) {
+        console.error('카메라 접근 실패, 파일 선택으로 대체합니다:', err);
+        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
+      }
+    }
+
+    function closeSkinCamera() {
+      if (skinCameraStream) {
+        skinCameraStream.getTracks().forEach((track) => track.stop());
+        skinCameraStream = null;
+      }
+      document.getElementById('skinCameraModal').classList.add('hidden');
+    }
+
+    // 셔터 탭: 현재 비디오 프레임을 캔버스에 그려 이미지로 캡처 → 기존 미리보기/분석 파이프라인으로 전달
+    function captureSkinPhoto() {
+      const video = document.getElementById('skinCameraVideo');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || SKIN_ANALYSIS_SIZE;
+      canvas.height = video.videoHeight || SKIN_ANALYSIS_SIZE;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      applySkinPhoto(skinCameraTargetKind, canvas.toDataURL('image/png'));
+      closeSkinCamera();
+    }
+
+    document.getElementById('skinPhotoStartBox').addEventListener('click', () => openSkinCamera('start'));
+    document.getElementById('skinPhotoEndBox').addEventListener('click', () => openSkinCamera('end'));
+    document.getElementById('skinCameraShutterBtn').addEventListener('click', captureSkinPhoto);
+    document.getElementById('skinCameraCancelBtn').addEventListener('click', closeSkinCamera);
 
     // 배지(개선됨/주의 필요/변화 없음) 색상 ↔ Tailwind 클래스 매핑
     const skinBadgeColorClasses = {
