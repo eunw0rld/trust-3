@@ -1396,7 +1396,7 @@ HTML_PAGE = """<!DOCTYPE html>
     // 지도 아래 매장 리스트 카드: 클릭 시 지도가 해당 매장 마커로 다시 flyTo
     function renderMapStoreList(cityKey, stores) {
       document.getElementById('mapStoreListTitle').textContent = `${cityKey} 근처 화장품 매장`;
-      document.getElementById('mapStoreListSubtitle').textContent = '지도에 표시된 마커를 눌러도 위치를 확인할 수 있어요 (mock)';
+      document.getElementById('mapStoreListSubtitle').textContent = '지도에 표시된 마커를 눌러도 위치를 확인할 수 있어요';
       const list = document.getElementById('mapStoreList');
       if (stores.length === 0) {
         list.innerHTML = '<p class="text-xs text-gray-400 py-2">아직 등록된 매장 정보가 없어요</p>';
