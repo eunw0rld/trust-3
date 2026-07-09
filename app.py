@@ -190,6 +190,26 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- 여행지 등록 완료 시, 해당 국가에서 반입 금지된 성분이 있으면 경고하는 팝업 (전략미션A) -->
+  <div id="importBanModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
+    <div class="flex items-center justify-center h-full">
+      <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
+        <p class="text-[10px] font-bold text-red-500 mb-1">⚠️ 반입 금지 성분 주의</p>
+        <p id="importBanTitle" class="text-base font-bold mb-3">이 제품은 반입 금지 물품이에요</p>
+        <div class="bg-red-50 border border-red-100 rounded-xl p-3 mb-3">
+          <p id="importBanMessage" class="text-xs text-red-600 leading-relaxed"></p>
+        </div>
+        <div class="space-y-1.5 mb-4 text-xs text-gray-500">
+          <p><span class="font-semibold text-gray-700">규제 기관</span> · <span id="importBanAuthority"></span></p>
+          <p><span class="font-semibold text-gray-700">규제 성분</span> · <span id="importBanIngredient"></span></p>
+          <p><span class="font-semibold text-gray-700">대체 제품 제안</span> · <span id="importBanAlternative"></span></p>
+          <p id="importBanSource" class="text-gray-400"></p>
+        </div>
+        <button id="importBanCloseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">확인했어요</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 여행지 등록 완료 후, 파우치가 비어있으면 화장품 등록을 권하는 팝업 -->
   <div id="pouchPromptModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
     <div class="flex items-center justify-center h-full">
@@ -1277,6 +1297,50 @@ HTML_PAGE = """<!DOCTYPE html>
       return { valid: missing.length === 0, missing };
     }
 
+    // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
+    const importBanData = {
+      이탈리아: {
+        displayCountry: '이탈리아(EU)',
+        authority: 'EU 화장품 규정 (EC No 1223/2009)',
+        ingredient: '하이드로퀴논 (Hydroquinone)',
+        productHint: '미백·잡티 개선 크림, 톤업크림',
+        alternative: '나이아신아마이드, 알부틴 등 EU에서 허용된 미백 성분 제품으로 교체를 추천해요',
+        source: 'EU Cosmetics Regulation (EC) No 1223/2009, Annex II',
+        lastUpdated: '2024.03 개정',
+      },
+    };
+
+    // 반입 금지 성분에 해당하면 경고 팝업을 띄우고 true를 반환
+    function checkImportBan() {
+      const destinationKey = document.getElementById('destinationSelect').value;
+      const info = importBanData[destinationKey];
+      if (!info) return false;
+
+      document.getElementById('importBanTitle').textContent = `이 제품은 ${info.displayCountry}에서 반입 금지 물품이에요`;
+      document.getElementById('importBanMessage').textContent =
+        `보유 중인 ${info.productHint} 제품에 포함된 ${info.ingredient} 성분이 ${info.displayCountry} 반입 금지 물질로 분류되어 있어요.`;
+      document.getElementById('importBanAuthority').textContent = info.authority;
+      document.getElementById('importBanIngredient').textContent = info.ingredient;
+      document.getElementById('importBanAlternative').textContent = info.alternative;
+      document.getElementById('importBanSource').textContent = `출처 · ${info.source} · ${info.lastUpdated}`;
+      document.getElementById('importBanModal').classList.remove('hidden');
+      return true;
+    }
+
+    // 반입 금지 경고(있다면) 이후 이어지는 흐름: 파우치가 비어있으면 등록을 권하고, 아니면 메인으로
+    function continueAfterDestinationRegistration() {
+      if (getMyProducts().length === 0) {
+        document.getElementById('pouchPromptModal').classList.remove('hidden');
+      } else {
+        switchTab('inuse');
+      }
+    }
+
+    document.getElementById('importBanCloseBtn').addEventListener('click', () => {
+      document.getElementById('importBanModal').classList.add('hidden');
+      continueAfterDestinationRegistration();
+    });
+
     document.getElementById('completeOnboardingBtn').addEventListener('click', () => {
       const result = validateOnboarding();
       if (!result.valid) {
@@ -1286,12 +1350,10 @@ HTML_PAGE = """<!DOCTYPE html>
       onboardingComplete = true;
       updateTabLockUI();
       hideWarning('step2Warning');
-      // 화장품을 아직 하나도 등록하지 않았다면 파우치 등록을 권하는 팝업을 먼저 보여줌
-      if (getMyProducts().length === 0) {
-        document.getElementById('pouchPromptModal').classList.remove('hidden');
-      } else {
-        switchTab('inuse');
+      if (checkImportBan()) {
+        return; // 확인했어요 버튼을 누르면 continueAfterDestinationRegistration()으로 이어짐
       }
+      continueAfterDestinationRegistration();
     });
 
     document.getElementById('pouchPromptYesBtn').addEventListener('click', () => {
