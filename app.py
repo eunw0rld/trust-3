@@ -360,6 +360,14 @@ HTML_PAGE = """<!DOCTYPE html>
     margin: 0;
     filter: drop-shadow(0 2px 10px rgba(255, 255, 255, 0.3));
   }
+  .app-header-logo {
+    height: 22px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    /* 로고 파일이 흰색이라, 밝은 배경인 앱 상단 헤더에서는 검게 반전해서 사용 */
+    filter: brightness(0);
+  }
   /* 웰컴 화면 "시작하기": 리퀴드 글래스 스타일 */
   .welcome-cta-btn {
     position: relative;
@@ -475,22 +483,12 @@ HTML_PAGE = """<!DOCTYPE html>
   @keyframes myLocationSpin {
     to { transform: rotate(360deg); }
   }
-  /* "어디로 여행 가실 예정이신가요?" bottom sheet */
   .trip-destination-sheet {
     animation: tripSheetSlideUp 0.3s ease-out;
   }
   @keyframes tripSheetSlideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
-  }
-  .trip-destination-chip {
-    padding: 6px 14px;
-    border-radius: 9999px;
-    background: #fff7ed;
-    color: #c2410c;
-    font-size: 12px;
-    font-weight: 600;
-    border: 1px solid #fed7aa;
   }
   /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
   .map-store-list-item.active-store-item {
@@ -501,14 +499,8 @@ HTML_PAGE = """<!DOCTYPE html>
 </head>
 <body class="font-sans text-gray-900">
 
-  <!-- ============ 랜딩 페이지 ============ -->
-  <!-- ============ 스플래시 화면 ============ -->
-  <div id="screen-splash" class="mx-auto bg-white flex items-center justify-center" style="width: var(--app-width); height: var(--app-height);">
-    <p class="text-3xl font-bold tracking-tight">Skin<span class="text-brand-500">Trip</span></p>
-  </div>
-
-  <!-- ============ 웰컴 화면 ============ -->
-  <div id="screen-welcome" class="hidden relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
+  <!-- ============ 랜딩 페이지 (웰컴 화면) ============ -->
+  <div id="screen-welcome" class="relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
     <div class="welcome-vignette"></div>
 
     <div class="relative z-10 pt-8 px-6 text-left">
@@ -567,7 +559,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- 상단 로고 (온보딩 위저드 중에는 화면 정중앙 배치를 위해 숨김) -->
     <header id="appHeader" class="hidden px-5 pt-6 pb-4">
-      <p class="text-lg font-bold tracking-tight">Skin<span class="text-brand-500">Trip</span></p>
+      <img src="__LOGO_URI__" alt="SkinTrip" class="app-header-logo" />
     </header>
 
     <main class="px-5 pb-6">
@@ -738,27 +730,22 @@ HTML_PAGE = """<!DOCTYPE html>
             <p id="mapStoreListSubtitle" class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
           </div>
 
-          <!-- 어디로 여행 가실 예정이신가요? - 스크롤로 자연스럽게 이어지는 항상 보이는 섹션 -->
-          <div class="bg-white border border-gray-100 rounded-2xl p-4">
-            <p class="text-sm font-bold mb-3">어디로 여행 가실 예정이신가요?</p>
-            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
-            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
-            <p class="text-xs font-semibold text-gray-400 mb-2 mt-3">인기 여행지</p>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
-              <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
-              <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
-              <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
-              <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
-            </div>
-          </div>
-
+          <!-- 지도 위 작은 검색 아이콘 버튼: 필요할 때만 펼쳐지는 검색바 (기본 접힘) -->
           <div class="relative w-full">
             <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
             <div id="myLocationLoading" class="hidden absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-white/85">
               <div class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md">
                 <span class="my-location-spinner"></span>
                 <span class="text-xs font-semibold text-gray-600">현재 위치를 확인하고 있어요...</span>
+              </div>
+            </div>
+            <div class="absolute top-3 left-3 z-30 flex items-start gap-2" style="max-width: calc(100% - 24px);">
+              <button id="mapSearchToggleBtn" type="button" aria-label="여행지 검색" class="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </button>
+              <div id="mapSearchBar" class="hidden flex-1 min-w-0">
+                <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2 px-4 rounded-full bg-white shadow-md border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+                <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full shadow-sm">찾을 수 없어요</p>
               </div>
             </div>
           </div>
@@ -1100,16 +1087,6 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
       </section>
 
-      <!-- ============ 9. 내 피부 비교하기 (placeholder) ============ -->
-      <section id="screen-skin-compare" class="hidden py-6 space-y-6">
-        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
-        <div class="flex flex-col items-center justify-center text-center py-20 gap-3">
-          <span class="text-4xl">🧑‍🤝‍🧑</span>
-          <h2 class="text-base font-bold">내 피부 비교하기</h2>
-          <p class="text-sm text-gray-400">비슷한 피부 타입의 여행자들과 비교하는 기능을 준비하고 있어요</p>
-        </div>
-      </section>
-
     </main>
 
     <!-- 부가서비스 메뉴 패널 (하단 네비 위로 올라오는 오버레이) -->
@@ -1128,11 +1105,6 @@ HTML_PAGE = """<!DOCTYPE html>
         <button type="button" class="more-menu-item" data-target="countryPopular">
           <span class="text-lg">🌍</span>
           <span class="flex-1 text-left text-sm font-semibold">나라별 인기템</span>
-          <span class="text-gray-300">›</span>
-        </button>
-        <button type="button" class="more-menu-item" data-target="skinCompare">
-          <span class="text-lg">🧑‍🤝‍🧑</span>
-          <span class="flex-1 text-left text-sm font-semibold">내 피부 비교하기</span>
           <span class="text-gray-300">›</span>
         </button>
         <button type="button" class="more-menu-item" data-target="skinReport">
@@ -1224,12 +1196,6 @@ HTML_PAGE = """<!DOCTYPE html>
       el.classList.add('screen-transition');
     }
 
-    // 스플래시(0.8초 자동 전환) -> 웰컴 화면
-    setTimeout(() => {
-      document.getElementById('screen-splash').classList.add('hidden');
-      document.getElementById('screen-welcome').classList.remove('hidden');
-    }, 800);
-
     // 웰컴 화면 "시작하기" -> 앱 진입 (온보딩 위저드 1단계부터 시작)
     function enterApp() {
       document.getElementById('screen-welcome').classList.add('hidden');
@@ -1267,7 +1233,6 @@ HTML_PAGE = """<!DOCTYPE html>
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
       countryPopular: document.getElementById('screen-country-popular'),
-      skinCompare: document.getElementById('screen-skin-compare'),
     };
     let onboardingComplete = false;
     let lastActiveNavTab = 'inuse';
@@ -1406,19 +1371,22 @@ HTML_PAGE = """<!DOCTYPE html>
       if (match) {
         notFound.classList.add('hidden');
         flyToCity(match.key, match.weather);
+        document.getElementById('mapSearchBar').classList.add('hidden');
       } else {
         notFound.classList.remove('hidden');
       }
     }
 
-
-    // "어디로 여행 가실 예정이신가요?" - 항상 보이는 인기 여행지 칩 (모달이 아닌 일반 섹션)
-    document.querySelectorAll('.trip-destination-chip').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const match = findCityMatch(chip.dataset.city);
-        if (!match) return;
-        flyToCity(match.key, match.weather);
-      });
+    // 지도 위 검색 아이콘: 평소엔 접혀 있다가 눌렀을 때만 검색바가 펼쳐짐
+    document.getElementById('mapSearchToggleBtn').addEventListener('click', () => {
+      const bar = document.getElementById('mapSearchBar');
+      const willShow = bar.classList.contains('hidden');
+      bar.classList.toggle('hidden');
+      if (willShow) {
+        document.getElementById('globeSearchInput').focus();
+      } else {
+        document.getElementById('globeSearchNotFound').classList.add('hidden');
+      }
     });
 
     // 도시 좌표로 부드럽게 확대(zoom 11 이상 → globe 투영이 자연스럽게 평면 지도처럼 전환됨)
