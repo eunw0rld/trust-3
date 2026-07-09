@@ -217,6 +217,69 @@ HTML_PAGE = """<!DOCTYPE html>
   .store-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
     border-top-color: #ffffff;
   }
+  /* 매장/도시 마커(주황)와 구분되는 "내 위치" 전용 파란 마커 + pulse + 라벨 */
+  .my-location-marker {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+  .my-location-dot {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #2563eb;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+  }
+  .my-location-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    border-radius: 9999px;
+    background: rgba(37, 99, 235, 0.35);
+    animation: myLocationPulse 2s ease-out infinite;
+    z-index: 1;
+  }
+  @keyframes myLocationPulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(3.2); opacity: 0; }
+  }
+  .my-location-label {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    background: rgba(37, 99, 235, 0.95);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+  }
+  /* 위치 확인 중 로딩 스피너 */
+  .my-location-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #f97316;
+    border-radius: 9999px;
+    animation: myLocationSpin 0.7s linear infinite;
+  }
+  @keyframes myLocationSpin {
+    to { transform: rotate(360deg); }
+  }
   /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
   .map-store-list-item.active-store-item {
     background-color: #fff7ed;
@@ -787,6 +850,12 @@ HTML_PAGE = """<!DOCTYPE html>
             <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white shadow-sm border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
             <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
           </div>
+          <div id="myLocationLoading" class="hidden absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-white/85">
+            <div class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md">
+              <span class="my-location-spinner"></span>
+              <span class="text-xs font-semibold text-gray-600">현재 위치를 확인하고 있어요...</span>
+            </div>
+          </div>
         </div>
 
         <div id="mapStoreList" class="space-y-2">
@@ -1102,6 +1171,31 @@ HTML_PAGE = """<!DOCTYPE html>
         if (e.key !== 'Enter') return;
         searchCityOnMap();
       });
+
+      showMyLocationMock();
+    }
+
+    // "내 위치" mock: 실제 Geolocation API는 쓰지 않고, 잠깐 로딩 후 판교 위치로 이동 + 전용 마커 표시
+    function showMyLocationMock() {
+      const loadingEl = document.getElementById('myLocationLoading');
+      loadingEl.classList.remove('hidden');
+      setTimeout(() => {
+        loadingEl.classList.add('hidden');
+        const myLat = 37.3947;
+        const myLng = 127.1112;
+        mapInstance.flyTo({ center: [myLng, myLat], zoom: 13, duration: 1800, essential: true });
+
+        const el = document.createElement('div');
+        el.className = 'my-location-marker';
+        el.innerHTML = `
+          <div class="my-location-pulse"></div>
+          <div class="my-location-dot"></div>
+          <div class="my-location-label">📍 현재 위치: 판교</div>
+        `;
+        new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([myLng, myLat])
+          .addTo(mapInstance);
+      }, 1000);
     }
 
     function searchCityOnMap() {
