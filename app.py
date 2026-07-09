@@ -70,6 +70,16 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #eff6ff;
     color: #1b64da;
   }
+  .tone-btn {
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    background: #ffffff;
+  }
+  .tone-btn.active {
+    border-color: #3182f6;
+    background: #eff6ff;
+    color: #1b64da;
+  }
   .feedback-btn {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -224,20 +234,38 @@ HTML_PAGE = """<!DOCTYPE html>
                 <div>
                   <p class="text-xs font-semibold text-gray-400 mb-2">피부 타입 <span class="text-gray-300 font-normal">(1개)</span></p>
                   <div class="flex flex-wrap gap-2">
-                    <button type="button" data-skin="oily" class="skin-btn active rounded-full px-4 py-2 text-sm font-semibold">지성</button>
-                    <button type="button" data-skin="dry" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">건성</button>
+                    <button type="button" data-skin="dry" class="skin-btn active rounded-full px-4 py-2 text-sm font-semibold">건성</button>
+                    <button type="button" data-skin="normal" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">중성</button>
+                    <button type="button" data-skin="oily" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">지성</button>
                     <button type="button" data-skin="combination" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">복합성</button>
-                    <button type="button" data-skin="sensitive" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">민감성</button>
+                    <button type="button" data-skin="dehydrated" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">수부지</button>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 mb-2">퍼스널컬러 <span class="text-gray-300 font-normal">(1개, 메이크업 추천에 활용돼요)</span></p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" data-tone="spring" class="tone-btn rounded-full px-4 py-2 text-sm font-semibold">봄웜톤</button>
+                    <button type="button" data-tone="summer" class="tone-btn rounded-full px-4 py-2 text-sm font-semibold">여름쿨톤</button>
+                    <button type="button" data-tone="autumn" class="tone-btn rounded-full px-4 py-2 text-sm font-semibold">가을웜톤</button>
+                    <button type="button" data-tone="winter" class="tone-btn rounded-full px-4 py-2 text-sm font-semibold">겨울쿨톤</button>
+                    <button type="button" data-tone="unknown" class="tone-btn active rounded-full px-4 py-2 text-sm font-semibold">잘 모르겠어요</button>
                   </div>
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-gray-400 mb-2">피부 고민 <span class="text-gray-300 font-normal">(중복 선택 가능)</span></p>
                   <div class="flex flex-wrap gap-2">
-                    <button type="button" data-concern="trouble" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">트러블</button>
-                    <button type="button" data-concern="dryness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">건조함</button>
-                    <button type="button" data-concern="oiliness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">유분과다</button>
+                    <button type="button" data-concern="atopy" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">아토피</button>
+                    <button type="button" data-concern="acne" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">여드름</button>
                     <button type="button" data-concern="sensitivity" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">민감성</button>
-                    <button type="button" data-concern="pigmentation" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">색소침착</button>
+                    <button type="button" data-concern="pigmentation" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">미백/잡티</button>
+                    <button type="button" data-concern="blackhead" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">피지/블랙헤드</button>
+                    <button type="button" data-concern="darkcircle" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">다크서클</button>
+                    <button type="button" data-concern="dryness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">속건조</button>
+                    <button type="button" data-concern="elasticity" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">주름/탄력</button>
+                    <button type="button" data-concern="pore" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">모공</button>
+                    <button type="button" data-concern="redness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">홍조</button>
+                    <button type="button" data-concern="flaking" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">각질</button>
+                    <button type="button" data-concern="none" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">해당없음</button>
                   </div>
                 </div>
               </div>
@@ -356,12 +384,13 @@ HTML_PAGE = """<!DOCTYPE html>
           <div>
             <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 루틴 조정 제안</h3>
             <div id="adjustmentWarnings" class="space-y-2 mb-2"></div>
+            <div id="adjustmentTips" class="space-y-2 mb-2"></div>
             <div id="adjustmentList" class="space-y-2"></div>
           </div>
 
           <!-- 내 파우치 요약 -->
           <button id="mainPouchCardFilled" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
-            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
+            <div id="mainPouchIcon" class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold">내 파우치</p>
               <p id="mainPouchFilledText" class="text-xs text-gray-400">화장품 0개 등록됨</p>
@@ -479,53 +508,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
         </div>
 
-        <div class="bg-white border border-gray-100 rounded-xl p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">J</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">jiyeon_life</p>
-              <span class="text-[10px] text-gray-400">일본 여행</span>
-            </div>
-            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★★</span></p>
-          </div>
-          <p class="text-sm text-gray-600 leading-relaxed">날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.</p>
-        </div>
-
-        <div class="bg-white border border-gray-100 rounded-xl p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">B</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">backpacklife_daily</p>
-              <span class="text-[10px] text-gray-400">싱가포르 여행</span>
-            </div>
-            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★</span><span class="text-gray-300">★</span></p>
-          </div>
-          <p class="text-sm text-gray-600 leading-relaxed">실내는 에어컨 때문에 건조하고 밖은 습해서 피부가 오락가락했어요.</p>
-        </div>
-
-        <div class="bg-white border border-gray-100 rounded-xl p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">H</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">hana99</p>
-              <span class="text-[10px] text-gray-400">아랍에미리트 여행</span>
-            </div>
-            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★</span><span class="text-gray-300">★</span></p>
-          </div>
-          <p class="text-sm text-gray-600 leading-relaxed">낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.</p>
-        </div>
-
-        <div class="bg-white border border-gray-100 rounded-xl p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">D</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">dewyskin_k</p>
-              <span class="text-[10px] text-gray-400">프랑스 여행</span>
-            </div>
-            <p class="text-xs shrink-0"><span class="text-brand-500">★★★★★</span></p>
-          </div>
-          <p class="text-sm text-gray-600 leading-relaxed">일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.</p>
-        </div>
+        <div id="communityFeed" class="space-y-3"></div>
       </section>
 
       <!-- ============ 6. 개인설정 페이지 ============ -->
@@ -828,6 +811,14 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
+    // 퍼스널컬러 버튼 토글 (등록 1단계)
+    document.querySelectorAll('.tone-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tone-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
     // 온보딩 완료 조건 (피부 정보만 필수): 나이 입력 + 성별 선택 + 피부 고민 1개 이상
     function validateStep1() {
       const missing = [];
@@ -1008,13 +999,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
     updateTabLockUI();
 
-    // 도시별 mock 기후 데이터 (등록 2단계 여행지 선택값과 동일한 key 사용)
+    // 국가별 기후 데이터 ('리뷰, 국가 DB' 원본의 체감온도·습도·기후·수질 평균값을 반영)
     const weatherData = {
-      singapore: { temp: 32, humidity: 85, uvi: 9 },
-      tokyo: { temp: 29, humidity: 78, uvi: 8 },
-      bangkok: { temp: 34, humidity: 78, uvi: 10 },
-      dubai: { temp: 40, humidity: 25, uvi: 11 },
-      paris: { temp: 22, humidity: 55, uvi: 4 },
+      singapore: { temp: 34, humidity: 83, uvi: 9, climate: '열대기후', waterQuality: '연수' },
+      tokyo: { temp: 20, humidity: 54, uvi: 6, climate: '온대기후', waterQuality: '연수' },
+      bangkok: { temp: 33, humidity: 82, uvi: 10, climate: '열대기후', waterQuality: '연수' },
+      dubai: { temp: 36, humidity: 24, uvi: 11, climate: '건조기후', waterQuality: '경수' },
+      paris: { temp: 22, humidity: 56, uvi: 5, climate: '온대기후', waterQuality: '경수' },
     };
     const destinationLabels = {
       singapore: '싱가포르',
@@ -1024,6 +1015,60 @@ HTML_PAGE = """<!DOCTYPE html>
       paris: '프랑스',
     };
 
+    // 커뮤니티 피드 ('리뷰, 국가 DB' 원본에서 5개 지원 국가별 2건씩 발췌)
+    const communityReviews = [
+      { id: `glowup_diary`, gender: `여성`, age: 26, rating: 3, skinType: `건성`, country: `일본`, cosmetics: `고보습 크림, 립밤, 수분 앰플`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩 연출.`, skincare: `건조한 날씨라 고보습 크림과 앰플로 수분 층 강화.`, review: `가을 날씨라 입술이 자주 텄어요. 립밤 없이는 하루도 못 버텼습니다.` },
+      { id: `coolbreeze07`, gender: `남성`, age: 29, rating: 3, skinType: `복합성`, country: `일본`, cosmetics: `올인원 로션, 선크림, 미스트`, makeup: `가벼운 톤업로션 정도로 자연스럽게.`, skincare: `환절기 피부라 올인원 로션으로 간편하게 보습 유지.`, review: `일교차가 커서 아침저녁으로 피부 컨디션이 달랐어요.` },
+      { id: `sunnytraveler23`, gender: `여성`, age: 54, rating: 3, skinType: `복합성`, country: `태국`, cosmetics: `가벼운 수분 선크림, 쿠션, 미스트`, makeup: `워터프루프 아이라이너와 마스카라로 땀과 습기에 대비하는 것이 좋습니다.`, skincare: `저녁에 이중세안을 꼭 하고 산뜻한 젤 타입 제품으로 유수분 밸런스를 유지하세요.`, review: `생각보다 더 더워서 땀 때문에 끈적임이 심했는데 가벼운 수분 선크림이 정말 큰 도움이 됐습니다.` },
+      { id: `dahye_life`, gender: `남성`, age: 21, rating: 5, skinType: `복합성`, country: `태국`, cosmetics: `워터프루프 아이라이너, 피지 흡수 패드, 쿨링 젤`, makeup: `얇은 베이스에 워터프루프 제품 위주로 메이크업하고 픽싱 스프레이로 마무리하는 것을 추천합니다.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 관리하고 쿨링 토너로 진정시켜 주세요.`, review: `야외 일정이 많았는데 자외선이 강해서 워터프루프 아이라이너을 자주 덧발라야 했어요.` },
+      { id: `desertrose99`, gender: `여성`, age: 22, rating: 1, skinType: `건성`, country: `아랍에미리트`, cosmetics: `저자극 선크림, 진정 젤, 수분 세럼`, makeup: `가벼운 수분 쿠션으로 건조함을 커버하며 자연스러운 룩을 연출하세요.`, skincare: `낮은 습도로 인한 수분 손실을 막기 위해 고보습 크림을 겹겹이 발라주세요.`, review: `사막성 기후라 그런지 평소보다 피부가 훨씬 건조해지는 걸 느꼈어요.` },
+      { id: `hana99`, gender: `남성`, age: 29, rating: 4, skinType: `건성`, country: `아랍에미리트`, cosmetics: `수분 로션, 선크림, 핸드크림`, makeup: `고보습 베이스 제품으로 들뜸 없이 매끈한 피부 표현이 가능합니다.`, skincare: `입술과 손이 트기 쉬우므로 립밤과 핸드크림을 항상 휴대하는 것이 좋습니다.`, review: `낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.` },
+      { id: `wanderlust_log`, gender: `여성`, age: 34, rating: 3, skinType: `복합성`, country: `프랑스`, cosmetics: `산뜻한 로션, 선크림, 블로팅 페이퍼`, makeup: `촉촉한 선쿠션과 립틴트로 화사한 인상을 연출할 수 있습니다.`, skincare: `일교차가 크므로 수분 크림으로 아침저녁 보습을 꼼꼼히 챙겨주세요.`, review: `날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.` },
+      { id: `tropicalgirl_official`, gender: `남성`, age: 41, rating: 5, skinType: `복합성`, country: `프랑스`, cosmetics: `수분 크림, 립틴트, 선쿠션`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩을 연출하는 것을 추천합니다.`, skincare: `환절기 피부 컨디션 변화에 대비해 올인원 로션으로 간편하게 보습을 유지하세요.`, review: `사계절이 뚜렷한 곳이라 그런지 여행 기간 내내 온도 변화에 신경 써야 했어요.` },
+      { id: `yeji_life`, gender: `여성`, age: 27, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `피지 컨트롤 파우더, 워터프루프 선크림, 미스트`, makeup: `베이스는 얇게, 픽싱 스프레이로 마무리해 번들거림 방지. 아이라이너는 워터프루프 필수.`, skincare: `저녁에 이중세안 필수, 가벼운 젤 타입 로션 위주로 유수분 밸런스 유지.`, review: `습도가 높아서 파운데이션이 계속 뜨더라고요. 워터프루프 제품 없이는 3시간도 못 버텼어요.` },
+      { id: `funtraveler_world`, gender: `남성`, age: 34, rating: 3, skinType: `복합성`, country: `싱가포르`, cosmetics: `선크림 SPF50+, 블로팅 페이퍼, 쿨링 토너`, makeup: `남성용 톤업크림 정도만 가볍게, 유분 많은 제품은 피하기.`, skincare: `외출 전후 블로팅 페이퍼로 피지 제거, 쿨링 토너로 진정.`, review: `야외 일정이 많았는데 선크림 안 바르면 바로 붉어졌어요. 자주 덧발라야 합니다.` },
+    ];
+
+    function renderStars(rating) {
+      const filled = '★'.repeat(rating);
+      const empty = '★'.repeat(5 - rating);
+      return `<span class="text-brand-500">${filled}</span><span class="text-gray-300">${empty}</span>`;
+    }
+
+    function renderCommunityFeed() {
+      const communityFeed = document.getElementById('communityFeed');
+      communityFeed.innerHTML = '';
+      communityReviews.forEach((post) => {
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-gray-100 rounded-xl p-4';
+        card.innerHTML = `
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">${post.id.charAt(0).toUpperCase()}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate">${post.id}</p>
+              <span class="text-[10px] text-gray-400">${post.country} 여행 · ${post.gender} · ${post.age}세</span>
+            </div>
+            <p class="text-xs shrink-0">${renderStars(post.rating)}</p>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed mb-2">${post.review}</p>
+          <button type="button" class="more-btn text-xs font-semibold text-brand-500">더보기</button>
+          <div class="more-detail hidden mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+            <p class="text-xs text-gray-500"><span class="font-semibold text-gray-700">추천 화장품</span> · ${post.cosmetics}</p>
+            <p class="text-xs text-gray-500"><span class="font-semibold text-gray-700">추천 메이크업</span> · ${post.makeup}</p>
+            <p class="text-xs text-gray-500"><span class="font-semibold text-gray-700">추천 스킨케어</span> · ${post.skincare}</p>
+          </div>
+        `;
+        const moreBtn = card.querySelector('.more-btn');
+        const detail = card.querySelector('.more-detail');
+        moreBtn.addEventListener('click', () => {
+          const isHidden = detail.classList.toggle('hidden');
+          moreBtn.textContent = isHidden ? '더보기' : '접기';
+        });
+        communityFeed.appendChild(card);
+      });
+    }
+    renderCommunityFeed();
+
     // 개인설정 탭에 등록된 내 정보를 요약해서 보여줌
     function renderProfileSummary() {
       const age = document.getElementById('ageInput').value.trim() || '-';
@@ -1031,6 +1076,8 @@ HTML_PAGE = """<!DOCTYPE html>
       const gender = genderBtn ? genderBtn.dataset.gender : '-';
       const skinBtn = document.querySelector('.skin-btn.active');
       const skinLabel = skinBtn ? skinBtn.textContent : '-';
+      const toneBtn = document.querySelector('.tone-btn.active');
+      const toneLabel = toneBtn ? toneBtn.textContent : '-';
       const concernCount = document.querySelectorAll('.concern-chip.active').length;
       const productCount = getMyProducts().length;
       const destinationKey = document.getElementById('destinationSelect').value;
@@ -1042,6 +1089,7 @@ HTML_PAGE = """<!DOCTYPE html>
         ['나이', `${age}세`],
         ['성별', gender],
         ['피부 타입', skinLabel],
+        ['퍼스널컬러', toneLabel],
         ['피부 고민', `${concernCount}개 선택`],
         ['보유 화장품', `${productCount}개`],
         ['여행지', destinationLabel],
@@ -1104,7 +1152,15 @@ HTML_PAGE = """<!DOCTYPE html>
         }
       }
 
-      return { adjustments, warnings };
+      // 현지 수질에 따른 팁 ('리뷰, 국가 DB'의 수질(경수/연수) 데이터 반영)
+      const tips = [];
+      if (weather.waterQuality === '경수') {
+        tips.push('이 지역은 경수(센물) 지역이에요. 두피·모발에 미네랄이 쌓이기 쉬우니 클래리파잉 샴푸나 헤어팩을 챙겨보세요');
+      } else {
+        tips.push('이 지역은 연수(단물) 지역이에요. 세안 후 당김이 적은 편이라 순한 클렌저로도 충분해요');
+      }
+
+      return { adjustments, warnings, tips };
     }
 
     // 조정 제안 카드 렌더링 (remove: 빨강 취소선 / modify·add: 포인트 컬러)
@@ -1142,6 +1198,18 @@ HTML_PAGE = """<!DOCTYPE html>
         `;
         adjustmentWarnings.appendChild(card);
       });
+
+      const adjustmentTips = document.getElementById('adjustmentTips');
+      adjustmentTips.innerHTML = '';
+      (result.tips || []).forEach((message) => {
+        const card = document.createElement('div');
+        card.className = 'border border-brand-100 bg-brand-50 rounded-xl p-3 flex items-start gap-2';
+        card.innerHTML = `
+          <span class="text-sm">💧</span>
+          <p class="text-xs font-medium text-brand-600">${message}</p>
+        `;
+        adjustmentTips.appendChild(card);
+      });
     }
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 알림/기후 안내에도 동일하게 반영
@@ -1159,7 +1227,16 @@ HTML_PAGE = """<!DOCTYPE html>
 
       document.getElementById('mainEmptyState').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
-      document.getElementById('mainPouchFilledText').textContent = `화장품 ${productCount}개 등록됨`;
+
+      // 여행지는 등록했지만 파우치가 비어있으면 살짝 눈에 띄는 알림 스타일로 표시
+      const pouchCard = document.getElementById('mainPouchCardFilled');
+      const pouchIcon = document.getElementById('mainPouchIcon');
+      const pouchText = document.getElementById('mainPouchFilledText');
+      const pouchEmpty = productCount === 0;
+      pouchCard.className = `w-full flex items-center gap-3 border rounded-2xl p-4 text-left ${pouchEmpty ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`;
+      pouchIcon.className = `w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${pouchEmpty ? 'bg-red-100 text-red-500' : 'bg-brand-50 text-brand-500'}`;
+      pouchText.className = pouchEmpty ? 'text-xs font-medium text-red-500' : 'text-xs text-gray-400';
+      pouchText.textContent = pouchEmpty ? '파우치가 비어있어요! 화장품을 등록해주세요' : `화장품 ${productCount}개 등록됨`;
 
       const label = destinationLabels[currentTripDestination] || '여행지';
       const start = document.getElementById('tripStartDate').value;
