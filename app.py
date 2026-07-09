@@ -364,6 +364,11 @@ HTML_PAGE = """<!DOCTYPE html>
     display: block;
     filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.35));
   }
+  .welcome-logo-hero {
+    height: 64px;
+    margin: 0;
+    filter: drop-shadow(0 2px 10px rgba(255, 255, 255, 0.3));
+  }
   /* 웰컴 화면 "시작하기": 리퀴드 글래스 스타일 */
   .welcome-cta-btn {
     position: relative;
@@ -515,17 +520,17 @@ HTML_PAGE = """<!DOCTYPE html>
   <div id="screen-welcome" class="hidden relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
     <div class="welcome-vignette"></div>
 
-    <div class="relative z-10 pt-10 px-6 text-center">
-      <img src="__LOGO_URI__" alt="SkinTrip" class="welcome-logo" />
-      <p class="mt-3 text-sm text-white/90 leading-relaxed font-normal">
+    <div class="relative z-10 pt-8 px-6 text-left">
+      <img src="__LOGO_URI__" alt="SkinTrip" class="welcome-logo welcome-logo-hero" />
+      <p class="mt-2 text-sm text-white/90 leading-relaxed font-normal">
         <span class="font-bold">스킨트립</span>과 함께,<br />피부 걱정 없이 어디든
       </p>
     </div>
 
-    <div class="landing-bubble" style="top: 14%; left: 18%; z-index: 2;"><img src="__AVATAR_URI_1__" alt="" /></div>
-    <div class="landing-bubble" style="top: 20%; left: 68%; z-index: 2;"><img src="__AVATAR_URI_2__" alt="" /></div>
-    <div class="landing-bubble" style="top: 26%; left: 30%; z-index: 2;"><img src="__AVATAR_URI_3__" alt="" /></div>
-    <div class="landing-bubble" style="top: 24%; left: 78%; z-index: 2;"><img src="__AVATAR_URI_4__" alt="" /></div>
+    <div class="landing-bubble" style="top: 28%; left: 22%; z-index: 2;"><img src="__AVATAR_URI_1__" alt="" /></div>
+    <div class="landing-bubble" style="top: 38%; left: 10%; z-index: 2;"><img src="__AVATAR_URI_2__" alt="" /></div>
+    <div class="landing-bubble" style="top: 50%; left: 62%; z-index: 2;"><img src="__AVATAR_URI_3__" alt="" /></div>
+    <div class="landing-bubble" style="top: 56%; left: 76%; z-index: 2;"><img src="__AVATAR_URI_4__" alt="" /></div>
 
     <div class="absolute inset-x-0 bottom-0 z-10 px-6 pb-9">
       <button id="welcomeStartBtn" type="button" class="welcome-cta-btn w-full">시작하기</button>
