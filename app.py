@@ -896,12 +896,21 @@ HTML_PAGE = """<!DOCTYPE html>
     // 현재 보이는 화면의 실제 높이에 맞춰 Streamlit iframe 높이를 동적으로 조정
     // (고정 높이를 쓰면 화면마다 내용 길이가 달라 불필요한 스크롤이 생김)
     function resizeFrame() {
+      const height = document.documentElement.scrollHeight;
       try {
         if (window.frameElement) {
-          window.frameElement.style.height = `${document.documentElement.scrollHeight}px`;
+          window.frameElement.style.height = `${height}px`;
         }
       } catch (e) {
         // 프레임에 접근할 수 없는 환경이면 무시
+      }
+      try {
+        // Streamlit Cloud 등 iframe이 sandbox 처리되어 frameElement에 직접 접근할 수 없는
+        // 환경에서도 높이가 반영되도록, Streamlit이 공식적으로 지원하는
+        // postMessage 기반 iframe 높이 조정 프로토콜을 함께 사용
+        window.parent.postMessage({ type: 'streamlit:setFrameHeight', height }, '*');
+      } catch (e) {
+        // 무시
       }
     }
     let resizeScheduled = false;
@@ -2044,4 +2053,4 @@ HTML_PAGE = """<!DOCTYPE html>
 """
 
 
-components.html(HTML_PAGE, height=700, scrolling=False)
+components.html(HTML_PAGE, height=700, scrolling=True)
