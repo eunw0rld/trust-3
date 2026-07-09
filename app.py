@@ -577,13 +577,34 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 여행지 등록 상태: 대시보드 -->
         <div id="mainDashboard" class="hidden space-y-6">
 
-          <!-- 여행 요약 배너 -->
+          <!-- 오늘의 날씨 히어로 카드: 메인 문구를 크게 강조 (메인 상단에 항시 표시) -->
+          <div id="weatherHeroCard" class="rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);">
+            <div class="flex items-start justify-between mb-6">
+              <p id="weatherHeroHeadline" class="text-2xl font-bold leading-snug whitespace-pre-line"></p>
+              <span id="weatherHeroLocation" class="text-xs font-semibold bg-white/20 rounded-full px-3 py-1.5 shrink-0">📍 여행지</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="weatherHeroIcon" class="text-4xl"></span>
+              <p>
+                <span id="weatherHeroTemp" class="text-3xl font-bold"></span>
+                <span id="weatherHeroCondition" class="text-base font-medium opacity-90 ml-1"></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- 여행 일정 -->
           <div id="tripSummaryBanner" class="bg-white border border-gray-100 rounded-2xl p-4"></div>
 
           <!-- 파우치가 비어있을 때는 이 자리로 파우치 카드가 올라옴 -->
           <div id="pouchCardTopSlot"></div>
 
-          <!-- 일정 기반 기후 안내 (메인 상단에 항시 표시) -->
+          <!-- 내 화장품 루틴 (카드 형식) -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">내 화장품 루틴</h3>
+            <div id="myRoutineGrid" class="grid grid-cols-2 gap-2"></div>
+          </div>
+
+          <!-- 일정 기반 기후 안내 -->
           <div>
             <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
             <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
@@ -1186,13 +1207,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 보유 화장품 - 제품명 + 카테고리 행 추가
     const cosmeticCategories = [
-      { value: 'cleanser', label: '클렌저' },
-      { value: 'toner', label: '토너' },
-      { value: 'essence', label: '에센스' },
-      { value: 'lotion', label: '로션' },
-      { value: 'cream', label: '크림' },
-      { value: 'emulsion', label: '에멀전' },
-      { value: 'sunscreen', label: '선크림' },
+      { value: 'cleanser', label: '클렌저', icon: '🧼' },
+      { value: 'toner', label: '토너', icon: '💧' },
+      { value: 'essence', label: '에센스', icon: '✨' },
+      { value: 'lotion', label: '로션', icon: '🧴' },
+      { value: 'cream', label: '크림', icon: '🫙' },
+      { value: 'emulsion', label: '에멀전', icon: '🧴' },
+      { value: 'sunscreen', label: '선크림', icon: '☀️' },
     ];
     function buildCosmeticRow(productName, category) {
       const row = document.createElement('div');
@@ -1885,6 +1906,40 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     }
 
+    // 내가 파우치에 등록한 화장품을 카드 형식으로 보여줌
+    function renderMyRoutineGrid() {
+      const grid = document.getElementById('myRoutineGrid');
+      const products = getMyProducts();
+      grid.innerHTML = '';
+
+      if (products.length === 0) {
+        grid.innerHTML = `
+          <button id="myRoutineEmptyCard" type="button" class="col-span-2 flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
+            <span class="text-2xl">👝</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">아직 등록된 화장품이 없어요</p>
+              <p class="text-xs text-gray-400">파우치에서 화장품을 등록해보세요</p>
+            </div>
+            <span class="text-gray-300">→</span>
+          </button>
+        `;
+        document.getElementById('myRoutineEmptyCard').addEventListener('click', () => switchTab('pouch'));
+        return;
+      }
+
+      products.forEach((product) => {
+        const category = cosmeticCategories.find((c) => c.value === product.category);
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-gray-100 rounded-2xl p-3';
+        card.innerHTML = `
+          <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2">${category ? category.icon : '🧴'}</div>
+          <p class="text-sm font-semibold truncate">${product.name}</p>
+          <p class="text-xs text-gray-400">${category ? category.label : ''}</p>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
     // 다른 여행자 리뷰(communityReviews)에서 내 여행지·피부타입에 맞는 추천 루틴을 찾아 보여줌
     function renderRecommendedRoutine() {
       const section = document.getElementById('recommendedRoutineSection');
@@ -1930,6 +1985,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
       document.getElementById('mainEmptyState').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
+      renderMyRoutineGrid();
 
       // 여행지는 등록했지만 파우치가 비어있으면 살짝 눈에 띄는 알림 스타일로 표시
       const pouchCard = document.getElementById('mainPouchCardFilled');
@@ -1975,6 +2031,20 @@ HTML_PAGE = """<!DOCTYPE html>
       } else if (weather.uvi >= 8) {
         todayCondition = '자외선 주의';
       }
+
+      // 오늘의 날씨 히어로 카드: 상황별 아이콘·문구를 매핑
+      const weatherMoodByCondition = {
+        '쾌적한 날씨': { icon: '☀️', label: '맑음', headline: '선크림 바르기\n좋은 날' },
+        '습도 상승 주의': { icon: '💧', label: '습함', headline: '가벼운 스킨케어 하기\n좋은 날' },
+        '건조 주의': { icon: '🌬️', label: '건조함', headline: '수분크림 챙기기\n좋은 날' },
+        '자외선 주의': { icon: '🔆', label: '맑음', headline: '선크림 덧바르기\n좋은 날' },
+      };
+      const mood = weatherMoodByCondition[todayCondition];
+      document.getElementById('weatherHeroHeadline').textContent = mood.headline;
+      document.getElementById('weatherHeroLocation').textContent = `📍 ${label}`;
+      document.getElementById('weatherHeroIcon').textContent = mood.icon;
+      document.getElementById('weatherHeroTemp').textContent = `${weather.temp}°C`;
+      document.getElementById('weatherHeroCondition').textContent = mood.label;
 
       const days = [
         { dayLabel: '어제', temp: weather.temp - 1, humidity: weather.humidity - 13, uvi: Math.max(weather.uvi - 2, 1), condition: '맑음', highlight: false },
