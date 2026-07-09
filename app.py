@@ -892,10 +892,12 @@ HTML_PAGE = """<!DOCTYPE html>
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
-              <div class="border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1">
-                <span class="text-xl">📷</span>
-                <span class="text-xs">마지막날 사진</span>
-              </div>
+              <label for="skinReportEndPhotoInput" class="relative overflow-hidden border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
+                <img id="skinReportEndPhotoPreview" src="" alt="마지막날 사진" class="hidden absolute inset-0 w-full h-full object-cover" />
+                <span id="skinReportEndPhotoIcon" class="text-xl">📷</span>
+                <span id="skinReportEndPhotoLabel" class="text-xs">마지막날 사진</span>
+              </label>
+              <input id="skinReportEndPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
@@ -1687,6 +1689,22 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('skinReportStartDate').textContent = start || '-';
       document.getElementById('skinReportEndDate').textContent = end || '-';
     }
+
+    // "마지막날 사진" 탭 -> 파우치 촬영과 동일하게 카메라 앱(모바일)/파일 선택(웹)을 바로 띄움
+    document.getElementById('skinReportEndPhotoInput').addEventListener('change', () => {
+      const input = document.getElementById('skinReportEndPhotoInput');
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const preview = document.getElementById('skinReportEndPhotoPreview');
+        preview.src = reader.result;
+        preview.classList.remove('hidden');
+        document.getElementById('skinReportEndPhotoIcon').classList.add('hidden');
+        document.getElementById('skinReportEndPhotoLabel').classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
 
     function updateWizardNextButton(stepId, enabled) {
       const btn = document.querySelector(`#${stepId} .wizard-next-btn`);
