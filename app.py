@@ -83,10 +83,72 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #f3f4f6;
   }
   .bottom-nav-btn {
+    position: relative;
     color: #9ca3af;
+    transition: color 0.2s ease;
   }
   .bottom-nav-btn.active {
-    color: #3182f6;
+    color: #f97316;
+  }
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .nav-icon-shape {
+    fill: currentColor;
+    fill-opacity: 0;
+    transition: fill-opacity 0.2s ease;
+  }
+  .nav-icon-clock-hand {
+    fill: none;
+    transition: stroke 0.2s ease;
+  }
+  .nav-icon-hamburger-line {
+    transition: stroke-width 0.2s ease;
+  }
+  .bottom-nav-btn.active .nav-icon-shape {
+    fill-opacity: 1;
+  }
+  .bottom-nav-btn.active .nav-icon-clock-hand {
+    stroke: #ffffff;
+  }
+  .bottom-nav-btn.active .nav-icon-hamburger-line {
+    stroke-width: 2.6;
+  }
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 8px;
+    border-radius: 12px;
+    color: #374151;
+    transition: background 0.15s ease;
+  }
+  .more-menu-item:active {
+    background: #f9fafb;
+  }
+  .back-to-nav-btn {
+    display: inline-block;
+  }
+  .nav-tail {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: #f97316;
+    transform: translateX(-50%) scale(0);
+    transition: transform 0.2s ease;
+  }
+  .bottom-nav-btn.active .nav-tail {
+    transform: translateX(-50%) scale(1);
   }
   .skin-btn {
     border: 1px solid #e5e7eb;
@@ -398,7 +460,7 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 앱 화면 ============ -->
-  <div id="appContainer" class="hidden mx-auto bg-gray-50 border-x border-gray-100" style="width: var(--app-width);">
+  <div id="appContainer" class="hidden mx-auto bg-gray-50 border-x border-gray-100" style="width: var(--app-width); position: relative;">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
@@ -742,6 +804,66 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- 내 주위 화장품 매장 (기존 지도 탭 내용을 메인 화면 안으로 흡수) -->
+        <div id="mapStoreSection" class="space-y-4">
+          <div>
+            <h2 id="mapStoreListTitle" class="text-base font-bold mb-1">내 주위 화장품 매장</h2>
+            <p id="mapStoreListSubtitle" class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
+          </div>
+
+          <!-- 어디로 여행 가실 예정이신가요? - 스크롤로 자연스럽게 이어지는 항상 보이는 섹션 -->
+          <div class="bg-white border border-gray-100 rounded-2xl p-4">
+            <p class="text-sm font-bold mb-3">어디로 여행 가실 예정이신가요?</p>
+            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
+            <p class="text-xs font-semibold text-gray-400 mb-2 mt-3">인기 여행지</p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+              <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
+              <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
+              <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
+              <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
+            </div>
+          </div>
+
+          <div class="relative w-full">
+            <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+            <div id="myLocationLoading" class="hidden absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-white/85">
+              <div class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md">
+                <span class="my-location-spinner"></span>
+                <span class="text-xs font-semibold text-gray-600">현재 위치를 확인하고 있어요...</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="mapStoreList" class="space-y-2">
+            <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+              <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold">올리브영 강남역점</p>
+                <p class="text-xs text-gray-400">헬스&뷰티 · 도보 3분</p>
+              </div>
+              <p class="text-xs text-gray-500 shrink-0">250m</p>
+            </div>
+            <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+              <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold">시코르 강남점</p>
+                <p class="text-xs text-gray-400">헬스&뷰티 · 도보 5분</p>
+              </div>
+              <p class="text-xs text-gray-500 shrink-0">410m</p>
+            </div>
+            <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
+              <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold">랄라블라 신논현점</p>
+                <p class="text-xs text-gray-400">헬스&뷰티 · 도보 8분</p>
+              </div>
+              <p class="text-xs text-gray-500 shrink-0">600m</p>
+            </div>
+          </div>
+        </div>
+
         <p id="mainGreeting" class="text-sm text-gray-400 mb-1">안녕하세요!</p>
 
         <!-- 여행지 미등록 상태 -->
@@ -879,68 +1001,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
       </section>
 
-      <!-- ============ 4. 지도 페이지 ============ -->
-      <section id="screen-map" class="hidden py-6 space-y-4">
-        <div>
-          <h2 id="mapStoreListTitle" class="text-base font-bold mb-1">내 주위 화장품 매장</h2>
-          <p id="mapStoreListSubtitle" class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
-        </div>
-
-        <!-- 어디로 여행 가실 예정이신가요? - 스크롤로 자연스럽게 이어지는 항상 보이는 섹션 -->
-        <div class="bg-white border border-gray-100 rounded-2xl p-4">
-          <p class="text-sm font-bold mb-3">어디로 여행 가실 예정이신가요?</p>
-          <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
-          <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
-          <p class="text-xs font-semibold text-gray-400 mb-2 mt-3">인기 여행지</p>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
-            <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
-            <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
-            <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
-            <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
-          </div>
-        </div>
-
-        <div class="relative w-full">
-          <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
-          <div id="myLocationLoading" class="hidden absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-white/85">
-            <div class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md">
-              <span class="my-location-spinner"></span>
-              <span class="text-xs font-semibold text-gray-600">현재 위치를 확인하고 있어요...</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="mapStoreList" class="space-y-2">
-          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">올리브영 강남역점</p>
-              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 3분</p>
-            </div>
-            <p class="text-xs text-gray-500 shrink-0">250m</p>
-          </div>
-          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">시코르 강남점</p>
-              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 5분</p>
-            </div>
-            <p class="text-xs text-gray-500 shrink-0">410m</p>
-          </div>
-          <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
-            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-400 flex items-center justify-center text-lg shrink-0">🏬</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold">랄라블라 신논현점</p>
-              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 8분</p>
-            </div>
-            <p class="text-xs text-gray-500 shrink-0">600m</p>
-          </div>
-        </div>
-      </section>
-
       <!-- ============ 5. 커뮤니티 페이지 ============ -->
       <section id="screen-community" class="hidden py-6 space-y-3">
+        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
         <div>
           <h2 class="text-base font-bold mb-1">커뮤니티</h2>
           <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
@@ -986,6 +1049,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
       <!-- ============ 6. 개인설정 페이지 ============ -->
       <section id="screen-settings" class="hidden py-6 space-y-6">
+        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
         <div>
           <h2 id="settingsGreeting" class="text-base font-bold mb-1">개인설정</h2>
           <p class="text-sm text-gray-400 mb-4">내 프로필과 여행 정보를 확인하고 수정할 수 있어요</p>
@@ -1016,6 +1080,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
       <!-- ============ 7. 파우치 페이지 (보유 화장품 촬영·관리) ============ -->
       <section id="screen-pouch" class="hidden py-6 space-y-8">
+        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
 
         <div>
           <h2 class="text-base font-bold mb-1">내 파우치</h2>
@@ -1075,25 +1140,84 @@ HTML_PAGE = """<!DOCTYPE html>
 
       </section>
 
+      <!-- ============ 8. 나라별 인기템 (placeholder) ============ -->
+      <section id="screen-country-popular" class="hidden py-6 space-y-6">
+        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
+        <div class="flex flex-col items-center justify-center text-center py-20 gap-3">
+          <span class="text-4xl">🌍</span>
+          <h2 class="text-base font-bold">나라별 인기템</h2>
+          <p class="text-sm text-gray-400">여행지별 인기 화장품 정보를 준비하고 있어요</p>
+        </div>
+      </section>
+
+      <!-- ============ 9. 내 피부 비교하기 (placeholder) ============ -->
+      <section id="screen-skin-compare" class="hidden py-6 space-y-6">
+        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
+        <div class="flex flex-col items-center justify-center text-center py-20 gap-3">
+          <span class="text-4xl">🧑‍🤝‍🧑</span>
+          <h2 class="text-base font-bold">내 피부 비교하기</h2>
+          <p class="text-sm text-gray-400">비슷한 피부 타입의 여행자들과 비교하는 기능을 준비하고 있어요</p>
+        </div>
+      </section>
+
     </main>
 
+    <!-- 부가서비스 메뉴 패널 (하단 네비 위로 올라오는 오버레이) -->
+    <div id="moreMenuBackdrop" class="hidden absolute inset-0 z-30 bg-black/40"></div>
+    <div id="moreMenuModal" class="trip-destination-sheet hidden absolute left-0 right-0 bottom-0 z-40 bg-white rounded-t-3xl px-5 pt-4 pb-6">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-bold">부가서비스</p>
+        <button id="moreMenuCloseBtn" type="button" class="text-gray-400 text-lg leading-none">✕</button>
+      </div>
+      <div class="space-y-1">
+        <button type="button" class="more-menu-item" data-target="community">
+          <span class="text-lg">💬</span>
+          <span class="flex-1 text-left text-sm font-semibold">커뮤니티</span>
+          <span class="text-gray-300">›</span>
+        </button>
+        <button type="button" class="more-menu-item" data-target="pouch">
+          <span class="text-lg">👝</span>
+          <span class="flex-1 text-left text-sm font-semibold">파우치</span>
+          <span class="text-gray-300">›</span>
+        </button>
+        <button type="button" class="more-menu-item" data-target="countryPopular">
+          <span class="text-lg">🌍</span>
+          <span class="flex-1 text-left text-sm font-semibold">나라별 인기템</span>
+          <span class="text-gray-300">›</span>
+        </button>
+        <button type="button" class="more-menu-item" data-target="skinCompare">
+          <span class="text-lg">🧑‍🤝‍🧑</span>
+          <span class="flex-1 text-left text-sm font-semibold">내 피부 비교하기</span>
+          <span class="text-gray-300">›</span>
+        </button>
+        <button type="button" class="more-menu-item" data-target="settings">
+          <span class="text-lg">⚙️</span>
+          <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
+          <span class="text-gray-300">›</span>
+        </button>
+      </div>
+    </div>
+
     <!-- 하단 메뉴바 (등록 완료 후에만 표시, 화면 길이와 무관하게 항상 하단에 고정) -->
-    <nav id="bottomNav" class="hidden shrink-0 bg-white border-t border-gray-100">
-      <button type="button" data-tab="map" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
-        <span class="text-xl">🗺️</span>
-        <span>지도</span>
+    <nav id="bottomNav" class="hidden shrink-0 bg-white" style="margin: 0 16px 16px 16px; border-radius: 9999px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+      <button type="button" data-tab="inuse" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path class="nav-icon-shape" d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-7H9v7H5a1 1 0 0 1-1-1v-8.5z"/>
+        </svg>
+        <span class="nav-tail"></span>
       </button>
-      <button type="button" data-tab="inuse" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
-        <span class="text-xl">🏠</span>
-        <span>메인</span>
+      <button type="button" data-tab="history" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <circle class="nav-icon-shape" cx="12" cy="12" r="9"/>
+          <path class="nav-icon-clock-hand" d="M12 7.5v4.5l3.2 1.9"/>
+        </svg>
+        <span class="nav-tail"></span>
       </button>
-      <button type="button" data-tab="community" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
-        <span class="text-xl">💬</span>
-        <span>커뮤니티</span>
-      </button>
-      <button type="button" data-tab="pouch" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
-        <span class="text-xl">👝</span>
-        <span>파우치</span>
+      <button type="button" id="moreMenuBtn" data-tab="more" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path class="nav-icon-hamburger-line" d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+        <span class="nav-tail"></span>
       </button>
     </nav>
 
@@ -1160,18 +1284,20 @@ HTML_PAGE = """<!DOCTYPE html>
     }
     document.getElementById('startBtn').addEventListener('click', enterApp);
 
-    // 하단 메뉴바 전환 (지도/메인/커뮤니티/파우치)
+    // 하단 메뉴바 전환 (메인/기록/부가서비스)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
     const screens = {
       register: document.getElementById('screen-register'),
       inuse: document.getElementById('screen-inuse'),
-      afteruse: document.getElementById('screen-afteruse'),
-      map: document.getElementById('screen-map'),
+      history: document.getElementById('screen-afteruse'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
       pouch: document.getElementById('screen-pouch'),
+      countryPopular: document.getElementById('screen-country-popular'),
+      skinCompare: document.getElementById('screen-skin-compare'),
     };
     let onboardingComplete = false;
+    let lastActiveNavTab = 'inuse';
 
     // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
     // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
@@ -1473,6 +1599,7 @@ HTML_PAGE = """<!DOCTYPE html>
         playScreenTransition(screens[tabName]);
         if (tabName === 'inuse') {
           refreshAdjustedRoutine();
+          initMapIfNeeded();
         } else if (tabName === 'settings') {
           renderProfileSummary();
         } else if (tabName === 'community') {
@@ -1481,11 +1608,12 @@ HTML_PAGE = """<!DOCTYPE html>
             communityDefaultApplied = true;
           }
           renderCommunityFeed();
-        } else if (tabName === 'map') {
-          initMapIfNeeded();
         }
       } catch (e) {
         console.error(`switchTab('${tabName}') 렌더링 중 오류:`, e);
+      }
+      if (tabName === 'inuse' || tabName === 'history') {
+        lastActiveNavTab = tabName;
       }
     }
 
@@ -1503,7 +1631,7 @@ HTML_PAGE = """<!DOCTYPE html>
     });
 
     document.getElementById('goToAfterUseBtn').addEventListener('click', () => {
-      switchTab('afteruse');
+      switchTab('history');
     });
 
     document.getElementById('afterUseToSettingsBtn').addEventListener('click', () => {
@@ -1525,11 +1653,57 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('pouch');
     });
     document.getElementById('mainMapCard').addEventListener('click', () => {
-      switchTab('map');
+      document.getElementById('mapStoreSection').scrollIntoView({ behavior: 'smooth' });
     });
 
     bottomNavButtons.forEach((btn) => {
+      if (btn.id === 'moreMenuBtn') return;
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // 부가서비스 메뉴 패널 (슬라이드업 오버레이) - 화면 전환이 아니라 토글이므로 switchTab을 쓰지 않음
+    const moreMenuBtn = document.getElementById('moreMenuBtn');
+    const moreMenuModal = document.getElementById('moreMenuModal');
+    const moreMenuBackdrop = document.getElementById('moreMenuBackdrop');
+    let moreMenuOpen = false;
+
+    function openMoreMenu() {
+      moreMenuOpen = true;
+      moreMenuModal.classList.remove('hidden');
+      moreMenuBackdrop.classList.remove('hidden');
+      playScreenTransition(moreMenuModal);
+      bottomNavButtons.forEach((b) => b.classList.toggle('active', b === moreMenuBtn));
+    }
+
+    function closeMoreMenu() {
+      moreMenuOpen = false;
+      moreMenuModal.classList.add('hidden');
+      moreMenuBackdrop.classList.add('hidden');
+      bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === lastActiveNavTab));
+    }
+
+    moreMenuBtn.addEventListener('click', () => {
+      if (moreMenuOpen) {
+        closeMoreMenu();
+      } else {
+        openMoreMenu();
+      }
+    });
+    document.getElementById('moreMenuCloseBtn').addEventListener('click', closeMoreMenu);
+    moreMenuBackdrop.addEventListener('click', closeMoreMenu);
+
+    document.querySelectorAll('.more-menu-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        closeMoreMenu();
+        switchTab(item.dataset.target);
+      });
+    });
+
+    // 하단 네비에 없는 화면들의 뒤로가기 버튼 - 이전에 있던 메인/기록 탭으로 복귀
+    document.querySelectorAll('.back-to-nav-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        switchTab(lastActiveNavTab);
+      });
     });
 
     function showWarning(id, message) {
