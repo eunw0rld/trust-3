@@ -633,7 +633,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- 온보딩 진행 바 (완료 화면에서는 숨김) -->
         <div id="wizardProgressTrack" class="wizard-progress-track mx-1 mb-1">
-          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 16.6667%;"></div>
+          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 14.2857%;"></div>
         </div>
 
         <!-- 온보딩 1단계: 이름 (텍스트 입력, "다음" 버튼으로 진행) -->
@@ -680,27 +680,41 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 온보딩 4단계: 나이 (연령대 단일 선택, 선택 즉시 자동 진행) -->
+        <!-- 온보딩 4단계: 생년월일 (날짜 입력, "다음" 버튼으로 진행) -->
         <div id="reg-age" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-gender">← 이전</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
-            <h2 class="text-xl font-bold mb-8">나이가<br />어떻게 되나요?</h2>
+            <h2 class="text-xl font-bold mb-8">생년월일이<br />어떻게 되나요?</h2>
+            <input id="regBirthdateInput" type="date" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+          </div>
+          <div class="absolute inset-x-0 bottom-6 px-4">
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-tone" disabled>다음</button>
+          </div>
+        </div>
+
+        <!-- 온보딩 5단계: 퍼스널컬러 (단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-tone" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-age">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">퍼스널컬러가<br />어떻게 되나요?</h2>
             <div class="grid grid-cols-2 gap-3 w-full max-w-xs">
-              <button type="button" data-age="10대" class="onboard-age-btn wizard-choice-btn">10대</button>
-              <button type="button" data-age="20대" class="onboard-age-btn wizard-choice-btn">20대</button>
-              <button type="button" data-age="30대" class="onboard-age-btn wizard-choice-btn">30대</button>
-              <button type="button" data-age="40대" class="onboard-age-btn wizard-choice-btn">40대</button>
-              <button type="button" data-age="50대 이상" class="onboard-age-btn wizard-choice-btn col-span-2">50대 이상</button>
+              <button type="button" data-tone="spring" class="onboard-tone-btn wizard-choice-btn">봄웜톤</button>
+              <button type="button" data-tone="summer" class="onboard-tone-btn wizard-choice-btn">여름쿨톤</button>
+              <button type="button" data-tone="autumn" class="onboard-tone-btn wizard-choice-btn">가을웜톤</button>
+              <button type="button" data-tone="winter" class="onboard-tone-btn wizard-choice-btn">겨울쿨톤</button>
+              <button type="button" data-tone="unknown" class="onboard-tone-btn wizard-choice-btn col-span-2">잘 모르겠어요</button>
             </div>
           </div>
         </div>
 
-        <!-- 온보딩 5단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
+        <!-- 온보딩 6단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
         <div id="reg-skintype" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
-            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-age">← 이전</button>
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-tone">← 이전</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">피부타입이<br />어떻게 되나요?</h2>
@@ -714,7 +728,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 온보딩 6단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
+        <!-- 온보딩 7단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
         <div id="reg-concerns" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-skintype">← 이전</button>
@@ -1768,10 +1782,10 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // ===== 온보딩 위저드: 화면 전환 + 진행 상태 =====
-    const WIZARD_STEP_ORDER = ['reg-name', 'reg-nickname', 'reg-gender', 'reg-age', 'reg-skintype', 'reg-concerns'];
+    const WIZARD_STEP_ORDER = ['reg-name', 'reg-nickname', 'reg-gender', 'reg-age', 'reg-tone', 'reg-skintype', 'reg-concerns'];
 
     // 온보딩에서 수집한 기본 정보 (이후 프로필/커뮤니티 화면에서 활용)
-    let userProfile = { name: '', nickname: '', gender: '', age: '' };
+    let userProfile = { name: '', nickname: '', gender: '', birthDate: '', tone: '' };
 
     function showWizardStep(stepId) {
       document.querySelectorAll('.wizard-step').forEach((el) => el.classList.toggle('hidden', el.id !== stepId));
@@ -2276,17 +2290,43 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 온보딩 4단계: 연령대 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
-    document.querySelectorAll('.onboard-age-btn').forEach((btn) => {
+    // 생년월일로 만 나이 계산 (개인설정 화면의 숫자 나이 입력칸에 그대로 반영하기 위함)
+    function calculateAge(birthDateStr) {
+      const birth = new Date(`${birthDateStr}T00:00:00`);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const hasHadBirthdayThisYear =
+        today.getMonth() > birth.getMonth() ||
+        (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+      if (!hasHadBirthdayThisYear) age -= 1;
+      return age;
+    }
+
+    // 온보딩 4단계: 생년월일 입력 - 값이 있어야 "다음" 버튼 활성화, 계산한 나이를 개인설정에도 반영
+    const regBirthdateInput = document.getElementById('regBirthdateInput');
+    regBirthdateInput.max = new Date().toISOString().slice(0, 10);
+    regBirthdateInput.addEventListener('input', () => {
+      const value = regBirthdateInput.value;
+      updateWizardNextButton('reg-age', value.length > 0);
+      if (value) {
+        userProfile.birthDate = value;
+        document.getElementById('ageInput').value = calculateAge(value);
+      }
+    });
+
+    // 온보딩 5단계: 퍼스널컬러 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    document.querySelectorAll('.onboard-tone-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.onboard-age-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.onboard-tone-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        userProfile.age = btn.dataset.age;
+        userProfile.tone = btn.dataset.tone;
+        // 개인설정 화면의 퍼스널컬러 버튼도 함께 반영
+        document.querySelectorAll('.tone-btn').forEach((b) => b.classList.toggle('active', b.dataset.tone === btn.dataset.tone));
         setTimeout(() => showWizardStep('reg-skintype'), 200);
       });
     });
 
-    // 피부 타입 버튼 토글 (온보딩 5단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    // 피부 타입 버튼 토글 (온보딩 6단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
     document.querySelectorAll('.skin-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.skin-btn').forEach((b) => b.classList.remove('active'));
