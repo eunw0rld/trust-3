@@ -384,27 +384,6 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- 내 위치 확인 직후 1회 표시되는 "어디로 여행 가실 예정이신가요?" bottom sheet -->
-  <div id="tripDestinationModal" class="hidden fixed inset-0 z-50">
-    <div id="tripDestinationBackdrop" class="absolute inset-0 bg-black/40"></div>
-    <div class="trip-destination-sheet absolute inset-x-0 bottom-0 bg-white rounded-t-3xl p-5 pb-7">
-      <div class="flex items-center justify-between mb-4">
-        <p class="text-base font-bold">어디로 여행 가실 예정이신가요?</p>
-        <button id="tripDestinationCloseBtn" type="button" class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 text-sm flex items-center justify-center shrink-0">✕</button>
-      </div>
-      <input id="tripDestinationSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
-      <p id="tripDestinationNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
-      <p class="text-xs font-semibold text-gray-400 mb-2 mt-4">인기 여행지</p>
-      <div class="flex flex-wrap gap-2">
-        <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
-        <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
-        <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
-        <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
-        <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
-      </div>
-    </div>
-  </div>
-
   <!-- 내 위치 확인 직후, 캘린더에 다가오는 여행 일정이 있을 때 뜨는 "다음 여행지" 카드 -->
   <div id="calendarTripModal" class="hidden fixed inset-0 z-50">
     <div id="calendarTripBackdrop" class="absolute inset-0 bg-black/40"></div>
@@ -907,12 +886,23 @@ HTML_PAGE = """<!DOCTYPE html>
           <p id="mapStoreListSubtitle" class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
         </div>
 
+        <!-- 어디로 여행 가실 예정이신가요? - 스크롤로 자연스럽게 이어지는 항상 보이는 섹션 -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-4">
+          <p class="text-sm font-bold mb-3">어디로 여행 가실 예정이신가요?</p>
+          <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+          <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
+          <p class="text-xs font-semibold text-gray-400 mb-2 mt-3">인기 여행지</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+            <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
+            <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
+            <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
+            <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
+          </div>
+        </div>
+
         <div class="relative w-full">
           <div id="mapViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
-          <div class="absolute top-3 left-3 right-3 z-10">
-            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white shadow-sm border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
-            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
-          </div>
           <div id="myLocationLoading" class="hidden absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-white/85">
             <div class="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-md">
               <span class="my-location-spinner"></span>
@@ -1210,6 +1200,25 @@ HTML_PAGE = """<!DOCTYPE html>
     let cityMarkers = [];
     let currentCityStores = [];
 
+    // 초기 지구본 화면의 아주 느린 자동 회전 (거의 느껴지지 않을 정도) - 사용자 조작이나
+    // 내 위치 확인 flyTo가 시작되면 멈춤
+    let globeAutoRotateFrame = null;
+    function startGlobeAutoRotate() {
+      stopGlobeAutoRotate();
+      function step() {
+        if (!mapInstance) return;
+        mapInstance.setBearing(mapInstance.getBearing() + 0.008);
+        globeAutoRotateFrame = requestAnimationFrame(step);
+      }
+      globeAutoRotateFrame = requestAnimationFrame(step);
+    }
+    function stopGlobeAutoRotate() {
+      if (globeAutoRotateFrame) {
+        cancelAnimationFrame(globeAutoRotateFrame);
+        globeAutoRotateFrame = null;
+      }
+    }
+
     function initMapIfNeeded() {
       if (mapInstance) return;
       const el = document.getElementById('mapViz');
@@ -1243,7 +1252,12 @@ HTML_PAGE = """<!DOCTYPE html>
         } catch (e) {
           console.error('setSky 오류:', e);
         }
+        startGlobeAutoRotate();
       });
+
+      // 사용자가 직접 드래그/줌으로 조작하면 자동 회전을 멈춤
+      mapInstance.on('dragstart', stopGlobeAutoRotate);
+      mapInstance.on('zoomstart', stopGlobeAutoRotate);
 
       window.addEventListener('resize', () => {
         if (mapInstance) mapInstance.resize();
@@ -1259,34 +1273,36 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // "내 위치" mock: 실제 Geolocation API는 쓰지 않고, 잠깐 로딩 후 판교 위치로 이동 + 전용 마커 표시
+    const MY_LOCATION_LAT = 37.403549;
+    const MY_LOCATION_LNG = 127.102664;
+    const MY_LOCATION_LABEL = 'Gyeonggi-do Bundang-gu Pangyo-ro 255beon-gil';
+
     function showMyLocationMock() {
       const loadingEl = document.getElementById('myLocationLoading');
       loadingEl.classList.remove('hidden');
       setTimeout(() => {
         loadingEl.classList.add('hidden');
-        const myLat = 37.3947;
-        const myLng = 127.1112;
-        mapInstance.flyTo({ center: [myLng, myLat], zoom: 13, duration: 1800, essential: true });
+        stopGlobeAutoRotate();
+        mapInstance.flyTo({ center: [MY_LOCATION_LNG, MY_LOCATION_LAT], zoom: 13, duration: 1800, essential: true });
 
         const el = document.createElement('div');
         el.className = 'my-location-marker';
         el.innerHTML = `
           <div class="my-location-pulse"></div>
           <div class="my-location-dot"></div>
-          <div class="my-location-label">📍 현재 위치: 판교</div>
+          <div class="my-location-label">📍 ${MY_LOCATION_LABEL}</div>
         `;
         new maplibregl.Marker({ element: el, anchor: 'center' })
-          .setLngLat([myLng, myLat])
+          .setLngLat([MY_LOCATION_LNG, MY_LOCATION_LAT])
           .addTo(mapInstance);
 
-        // 내 위치 확인 애니메이션이 끝난 직후: 캘린더에 다가오는 여행 일정이 있으면
-        // 그 카드를 먼저 보여주고, 없을 때만 "어디로 여행 가실 예정이신가요?" 모달 표시
+        // 내 위치 확인 애니메이션이 끝난 직후: 내 위치(판교) 기준 매장 마커/리스트를 채우고,
+        // 캘린더에 다가오는 여행 일정이 있으면 "다음 여행지" 카드를 보여줌
         mapInstance.once('moveend', () => {
+          renderCityStoreMarkers('판교', weatherData['판교']);
           const nextTrip = getNextUpcomingTrip();
           if (nextTrip) {
             showCalendarTripModal(nextTrip);
-          } else {
-            showTripDestinationModal();
           }
         });
       }, 1000);
@@ -1318,30 +1334,12 @@ HTML_PAGE = """<!DOCTYPE html>
       }
     }
 
-    // 내 위치 확인 직후 뜨는 "어디로 여행 가실 예정이신가요?" bottom sheet
-    let tripDestinationModalShown = false;
-    function showTripDestinationModal() {
-      if (tripDestinationModalShown) return;
-      tripDestinationModalShown = true;
-      document.getElementById('tripDestinationModal').classList.remove('hidden');
-    }
-
-    function closeTripDestinationModal() {
-      document.getElementById('tripDestinationModal').classList.add('hidden');
-      if (mapInstance) {
-        mapInstance.flyTo({ center: [127.1112, 37.3947], zoom: 13, duration: 1200, essential: true });
-      }
-    }
-
-    document.getElementById('tripDestinationCloseBtn').addEventListener('click', closeTripDestinationModal);
-    document.getElementById('tripDestinationBackdrop').addEventListener('click', closeTripDestinationModal);
-
-    // 내 위치 확인 직후, 캘린더에 다가오는 여행 일정이 있을 때 뜨는 "다음 여행지" 카드
-    // (googleTripDestinationModal과 같은 트리거 시점을 공유하므로 tripDestinationModalShown 플래그를 함께 씀)
+    // 내 위치 확인 직후, 캘린더에 다가오는 여행 일정이 있을 때 뜨는 "다음 여행지" 카드 (1회만 표시)
+    let calendarTripModalShown = false;
     let pendingCalendarTrip = null;
     function showCalendarTripModal(event) {
-      if (tripDestinationModalShown) return;
-      tripDestinationModalShown = true;
+      if (calendarTripModalShown) return;
+      calendarTripModalShown = true;
       pendingCalendarTrip = event;
       document.getElementById('calendarTripText').textContent =
         `📅 다음 여행지는 여기예요 — ${event.location} (${formatEventDate(event.startDate)})`;
@@ -1351,7 +1349,7 @@ HTML_PAGE = """<!DOCTYPE html>
     function closeCalendarTripModal() {
       document.getElementById('calendarTripModal').classList.add('hidden');
       if (mapInstance) {
-        mapInstance.flyTo({ center: [127.1112, 37.3947], zoom: 13, duration: 1200, essential: true });
+        mapInstance.flyTo({ center: [MY_LOCATION_LNG, MY_LOCATION_LAT], zoom: 13, duration: 1200, essential: true });
       }
     }
 
@@ -1365,25 +1363,12 @@ HTML_PAGE = """<!DOCTYPE html>
       }
     });
 
-    document.getElementById('tripDestinationSearchInput').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const notFound = document.getElementById('tripDestinationNotFound');
-      const match = findCityMatch(e.target.value);
-      if (match) {
-        notFound.classList.add('hidden');
-        flyToCity(match.key, match.weather);
-        document.getElementById('tripDestinationModal').classList.add('hidden');
-      } else {
-        notFound.classList.remove('hidden');
-      }
-    });
-
+    // "어디로 여행 가실 예정이신가요?" - 항상 보이는 인기 여행지 칩 (모달이 아닌 일반 섹션)
     document.querySelectorAll('.trip-destination-chip').forEach((chip) => {
       chip.addEventListener('click', () => {
         const match = findCityMatch(chip.dataset.city);
         if (!match) return;
         flyToCity(match.key, match.weather);
-        document.getElementById('tripDestinationModal').classList.add('hidden');
       });
     });
 
@@ -1966,7 +1951,7 @@ HTML_PAGE = """<!DOCTYPE html>
       두바이: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수`, en: `Dubai`, lat: 25.2048, lng: 55.2708 },
       파리: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Paris`, lat: 48.8566, lng: 2.3522 },
       밀라노: { temp: 26, humidity: 55, uvi: 7, climate: `건조기후`, waterQuality: `경수`, en: `Milan`, lat: 45.4642, lng: 9.19 },
-      판교: { temp: 30, humidity: 70, uvi: 8, climate: `열대기후`, waterQuality: `연수`, en: `Pangyo`, lat: 37.3947, lng: 127.1112 },
+      판교: { temp: 30, humidity: 70, uvi: 8, climate: `열대기후`, waterQuality: `연수`, en: `Pangyo`, lat: 37.403549, lng: 127.102664 },
       아르메니아: { temp: 36, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       아르헨티나: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
       아이슬란드: { temp: 7, humidity: 56, uvi: 2, climate: `한대기후`, waterQuality: `연수` },
