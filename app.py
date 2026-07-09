@@ -139,57 +139,6 @@ HTML_PAGE = """<!DOCTYPE html>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 ============ -->
-  <div id="screen-landing" class="max-w-md mx-auto min-h-screen bg-gray-50 border-x border-gray-100 flex flex-col px-6 pt-12 pb-8">
-
-    <div>
-      <h1 class="text-2xl font-bold leading-snug mb-3">
-        여행 갈 때마다,<br />피부도 함께 챙겨봐요
-      </h1>
-      <p class="text-sm text-gray-400 leading-relaxed">
-        여행지 기후에 맞춰 스킨케어 루틴을 조정해주는<br />SkinTrip과 함께 떠나볼까요
-      </p>
-    </div>
-
-    <div class="flex-1 flex items-center justify-center gap-8 my-8">
-      <span class="text-7xl">☀️</span>
-      <span class="text-7xl">🧴</span>
-    </div>
-
-    <div>
-      <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-brand-500 text-white text-base font-bold">
-        처음 시작해요
-      </button>
-      <button id="googleLoginBtn" type="button" class="w-full py-3.5 rounded-2xl border border-gray-200 text-gray-700 text-sm font-semibold flex items-center justify-center gap-2 mt-3">
-        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
-          <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
-          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>
-        </svg>
-        구글로 로그인하기
-      </button>
-      <button id="skipStartBtn" type="button" class="w-full text-center text-xs text-gray-400 underline mt-4">
-        둘러보기
-      </button>
-    </div>
-
-  </div>
-
-  <!-- 구글 로그인 후 일정 연동 여부를 묻는 팝업 -->
-  <div id="calendarSyncModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
-    <div class="flex items-center justify-center h-full">
-      <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
-        <p class="text-base font-bold mb-1">여행 일정 연동</p>
-        <p class="text-sm text-gray-500 mb-5">구글 캘린더와 연동하면 여행지와 일정을 자동으로 채워드려요. 지금 연동하시겠어요?</p>
-        <div class="space-y-2">
-          <button id="syncYesBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">네, 연동할게요</button>
-          <button id="syncNoBtn" type="button" class="w-full py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold">아니오</button>
-          <button id="syncLaterBtn" type="button" class="w-full py-2 text-xs text-gray-400 underline">조금 이따가 할게요</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- 여행지 등록 완료 시, 해당 국가에서 반입 금지된 성분이 있으면 경고하는 팝업 (전략미션A) -->
   <div id="importBanModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
     <div class="flex items-center justify-center h-full">
@@ -225,7 +174,7 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 앱 화면 ============ -->
-  <div id="appContainer" class="hidden max-w-md mx-auto bg-gray-50 border-x border-gray-100">
+  <div id="appContainer" class="max-w-md mx-auto bg-gray-50 border-x border-gray-100">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
@@ -240,11 +189,10 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 등록 (1): 내 정보 등록 (온보딩에서 유일하게 필수인 단계) -->
         <div id="register-step1">
 
-          <!-- 상단 바: 뒤로가기 · 제목 · 다음 -->
+          <!-- 상단 바: 제목 · 완료 -->
           <div class="flex items-center justify-between mb-4">
-            <button id="step1ToLandingBtn" type="button" class="text-lg text-gray-400 w-8">←</button>
             <p class="text-base font-bold">내 정보 등록</p>
-            <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-brand-500 w-8 text-right">완료</button>
+            <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-brand-500">완료</button>
           </div>
 
           <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-4"></p>
@@ -983,74 +931,6 @@ HTML_PAGE = """<!DOCTYPE html>
       el.classList.add('screen-transition');
     }
 
-    // 랜딩 페이지 ↔ 앱 화면 전환
-    // 온보딩은 피부 정보(1단계)만 필수이고, 화장품·여행지 등록은 이후 개인설정 메뉴에서 진행
-    // 화면 전환(hidden 토글) 자체는 항상 먼저 실행되도록 하고, 페이드 애니메이션 등 부가 효과는
-    // try/catch로 감싸서 그 부분에서 오류가 나더라도 실제 화면 전환은 막히지 않게 함
-    function enterApp() {
-      document.getElementById('screen-landing').classList.add('hidden');
-      const app = document.getElementById('appContainer');
-      app.classList.remove('hidden');
-      try {
-        showRegisterStep('step1');
-        playScreenTransition(app);
-      } catch (e) {
-        console.error('enterApp 전환 중 오류:', e);
-      }
-    }
-    function exitToLanding() {
-      document.getElementById('appContainer').classList.add('hidden');
-      const landing = document.getElementById('screen-landing');
-      landing.classList.remove('hidden');
-      try {
-        playScreenTransition(landing);
-      } catch (e) {
-        console.error('exitToLanding 전환 중 오류:', e);
-      }
-    }
-    document.getElementById('startBtn').addEventListener('click', enterApp);
-    document.getElementById('skipStartBtn').addEventListener('click', enterApp);
-
-    // 구글 로그인 → 여행 일정 연동 여부를 묻는 팝업
-    function formatDateInput(date) {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
-    document.getElementById('googleLoginBtn').addEventListener('click', () => {
-      document.getElementById('calendarSyncModal').classList.remove('hidden');
-    });
-
-    function closeCalendarSyncModal() {
-      document.getElementById('calendarSyncModal').classList.add('hidden');
-    }
-
-    document.getElementById('syncYesBtn').addEventListener('click', () => {
-      closeCalendarSyncModal();
-      // mock: 구글 캘린더 일정에서 가져온 여행지·기간으로 자동 채움
-      const start = new Date();
-      start.setDate(start.getDate() + 7);
-      const end = new Date();
-      end.setDate(end.getDate() + 11);
-      document.getElementById('destinationSelect').value = '일본';
-      document.getElementById('tripStartDate').value = formatDateInput(start);
-      document.getElementById('tripEndDate').value = formatDateInput(end);
-      currentTripDestination = '일본';
-      enterApp();
-    });
-
-    document.getElementById('syncNoBtn').addEventListener('click', () => {
-      closeCalendarSyncModal();
-      enterApp();
-    });
-
-    document.getElementById('syncLaterBtn').addEventListener('click', () => {
-      closeCalendarSyncModal();
-      enterApp();
-    });
-
     // 하단 메뉴바 전환 (지도/메인/커뮤니티/파우치)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
     const screens = {
@@ -1211,8 +1091,6 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('step2ToMainBtn').addEventListener('click', () => {
       switchTab('inuse');
     });
-
-    document.getElementById('step1ToLandingBtn').addEventListener('click', exitToLanding);
 
     // 피부 고민 칩 토글 (중복 선택 가능)
     document.querySelectorAll('.concern-chip').forEach((chip) => {
