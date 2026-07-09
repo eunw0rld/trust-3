@@ -885,10 +885,12 @@ HTML_PAGE = """<!DOCTYPE html>
           <!-- 1일차 vs 마지막날 사진 비교 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <div class="border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1">
-                <span class="text-xl">📷</span>
-                <span class="text-xs">1일차 사진</span>
-              </div>
+              <label for="skinReportStartPhotoInput" class="relative overflow-hidden border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
+                <img id="skinReportStartPhotoPreview" src="" alt="1일차 사진" class="hidden absolute inset-0 w-full h-full object-cover" />
+                <span id="skinReportStartPhotoIcon" class="text-xl">📷</span>
+                <span id="skinReportStartPhotoLabel" class="text-xs">1일차 사진</span>
+              </label>
+              <input id="skinReportStartPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
@@ -1690,21 +1692,25 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('skinReportEndDate').textContent = end || '-';
     }
 
-    // "마지막날 사진" 탭 -> 파우치 촬영과 동일하게 카메라 앱(모바일)/파일 선택(웹)을 바로 띄움
-    document.getElementById('skinReportEndPhotoInput').addEventListener('change', () => {
-      const input = document.getElementById('skinReportEndPhotoInput');
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const preview = document.getElementById('skinReportEndPhotoPreview');
-        preview.src = reader.result;
-        preview.classList.remove('hidden');
-        document.getElementById('skinReportEndPhotoIcon').classList.add('hidden');
-        document.getElementById('skinReportEndPhotoLabel').classList.add('hidden');
-      };
-      reader.readAsDataURL(file);
-    });
+    // "1일차 사진"/"마지막날 사진" 탭 -> 파우치 촬영과 동일하게 카메라 앱(모바일)/파일 선택(웹)을 바로 띄움
+    function wireSkinReportPhotoInput(prefix) {
+      document.getElementById(`${prefix}PhotoInput`).addEventListener('change', () => {
+        const input = document.getElementById(`${prefix}PhotoInput`);
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const preview = document.getElementById(`${prefix}PhotoPreview`);
+          preview.src = reader.result;
+          preview.classList.remove('hidden');
+          document.getElementById(`${prefix}PhotoIcon`).classList.add('hidden');
+          document.getElementById(`${prefix}PhotoLabel`).classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    wireSkinReportPhotoInput('skinReportStart');
+    wireSkinReportPhotoInput('skinReportEnd');
 
     function updateWizardNextButton(stepId, enabled) {
       const btn = document.querySelector(`#${stepId} .wizard-next-btn`);
