@@ -1335,6 +1335,17 @@ HTML_PAGE = """<!DOCTYPE html>
       if (!document.getElementById('destinationSelect').value) {
         missing.push('여행지');
       }
+      const start = document.getElementById('tripStartDate').value;
+      const end = document.getElementById('tripEndDate').value;
+      if (!start) {
+        missing.push('여행 시작일');
+      }
+      if (!end) {
+        missing.push('여행 종료일');
+      }
+      if (start && end && end < start) {
+        return { valid: false, missing: [], customMessage: '종료일은 시작일보다 늦어야 해요' };
+      }
       return { valid: missing.length === 0, missing };
     }
 
@@ -1385,7 +1396,7 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('completeOnboardingBtn').addEventListener('click', () => {
       const result = validateOnboarding();
       if (!result.valid) {
-        showWarning('step2Warning', `${result.missing.join(', ')}을(를) 먼저 입력해주세요`);
+        showWarning('step2Warning', result.customMessage || `${result.missing.join(', ')}을(를) 먼저 입력해주세요`);
         return;
       }
       onboardingComplete = true;
@@ -1971,6 +1982,26 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 알림/기후 안내에도 동일하게 반영
+    // 등록한 여행 시작일·종료일을 기준으로 D-day 또는 며칠차 여행인지 계산
+    function getTripScheduleLabel(start, end) {
+      const oneDay = 24 * 60 * 60 * 1000;
+      const startDate = new Date(`${start}T00:00:00`);
+      const endDate = new Date(`${end}T00:00:00`);
+      const today = new Date();
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const totalDays = Math.round((endDate - startDate) / oneDay) + 1;
+
+      if (todayDate < startDate) {
+        const dDay = Math.round((startDate - todayDate) / oneDay);
+        return `D-${dDay} · 총 ${totalDays}일 일정`;
+      }
+      if (todayDate > endDate) {
+        return `여행이 종료됐어요 · 총 ${totalDays}일 일정이었어요`;
+      }
+      const dayNumber = Math.round((todayDate - startDate) / oneDay) + 1;
+      return `여행 ${dayNumber}일차 · 총 ${totalDays}일 일정`;
+    }
+
     function renderTripOverview() {
       const destinationKey = document.getElementById('destinationSelect').value;
       const productCount = getMyProducts().length;
@@ -2012,7 +2043,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <div>
             <p class="text-xs text-gray-400 mb-0.5">이번 여행</p>
             <p class="text-base font-bold">📍 ${label}</p>
-            ${start && end ? `<p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p>` : ''}
+            ${start && end ? `<p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p><p class="text-xs font-semibold text-brand-500 mt-1">${getTripScheduleLabel(start, end)}</p>` : ''}
           </div>
           <button id="tripSummaryEditBtn" type="button" class="text-xs font-semibold text-brand-500">여행지 수정 →</button>
         </div>
