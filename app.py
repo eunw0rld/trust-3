@@ -105,43 +105,65 @@ HTML_PAGE = """<!DOCTYPE html>
   body {
     background: #f3f4f6;
   }
+  .bottom-nav-v2 {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    height: 58px;
+    background: #f1f1f1;
+    border-radius: 9999px;
+    display: flex;
+    align-items: stretch;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 50;
+  }
+  .bottom-nav-v2.hidden {
+    display: none;
+  }
+  .bottom-nav-active-pill {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 6px;
+    width: calc((100% - 12px) / 3);
+    background: #f97316;
+    border-radius: 9999px;
+    transform: translateX(0);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+  }
   .bottom-nav-btn {
     position: relative;
+    z-index: 1;
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: none;
+    border: none;
     color: #9ca3af;
     transition: color 0.2s ease;
   }
   .bottom-nav-btn.active {
-    color: #f97316;
+    color: #ffffff;
   }
-  .nav-icon {
-    width: 22px;
-    height: 22px;
+  .nav-icon-v2 {
+    width: 20px;
+    height: 20px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.8;
+    stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
+    flex-shrink: 0;
   }
-  .nav-icon-shape {
-    fill: currentColor;
-    fill-opacity: 0;
-    transition: fill-opacity 0.2s ease;
-  }
-  .nav-icon-clock-hand {
-    fill: none;
-    transition: stroke 0.2s ease;
-  }
-  .nav-icon-hamburger-line {
-    transition: stroke-width 0.2s ease;
-  }
-  .bottom-nav-btn.active .nav-icon-shape {
-    fill-opacity: 1;
-  }
-  .bottom-nav-btn.active .nav-icon-clock-hand {
-    stroke: #ffffff;
-  }
-  .bottom-nav-btn.active .nav-icon-hamburger-line {
-    stroke-width: 2.6;
+  .nav-label-v2 {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
   }
   .more-menu-item {
     display: flex;
@@ -217,20 +239,6 @@ HTML_PAGE = """<!DOCTYPE html>
     font-size: 12px;
     font-weight: 600;
   }
-  .nav-tail {
-    position: absolute;
-    bottom: 4px;
-    left: 50%;
-    width: 5px;
-    height: 5px;
-    border-radius: 9999px;
-    background: #f97316;
-    transform: translateX(-50%) scale(0);
-    transition: transform 0.2s ease;
-  }
-  .bottom-nav-btn.active .nav-tail {
-    transform: translateX(-50%) scale(1);
-  }
   .skin-btn {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -305,6 +313,9 @@ HTML_PAGE = """<!DOCTYPE html>
     flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* 하단 네비게이션이 position:fixed로 떠 있으므로, 콘텐츠 마지막 줄이
+       가려지지 않도록 네비 높이(58px) + 여백만큼 아래쪽을 비워둠 */
+    padding-bottom: 96px;
   }
   /* 랜딩 페이지: 지구 위에 떠 있는 사용자 프로필 사진 말풍선 */
   .landing-bubble {
@@ -1138,25 +1149,28 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
     <!-- 하단 메뉴바 (등록 완료 후에만 표시, 화면 길이와 무관하게 항상 하단에 고정) -->
-    <nav id="bottomNav" class="hidden shrink-0 bg-white" style="margin: 0 16px 16px 16px; border-radius: 9999px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
-      <button type="button" data-tab="inuse" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
-        <svg class="nav-icon" viewBox="0 0 24 24">
-          <path class="nav-icon-shape" d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-7H9v7H5a1 1 0 0 1-1-1v-8.5z"/>
+    <nav id="bottomNav" class="hidden bottom-nav-v2">
+      <div id="bottomNavActivePill" class="bottom-nav-active-pill"></div>
+      <button type="button" data-tab="inuse" class="bottom-nav-btn active">
+        <svg class="nav-icon-v2" viewBox="0 0 24 24">
+          <path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-7H9v7H5a1 1 0 0 1-1-1v-8.5z"/>
         </svg>
-        <span class="nav-tail"></span>
+        <span class="nav-label-v2">홈</span>
       </button>
-      <button type="button" data-tab="history" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
-        <svg class="nav-icon" viewBox="0 0 24 24">
-          <circle class="nav-icon-shape" cx="12" cy="12" r="9"/>
-          <path class="nav-icon-clock-hand" d="M12 7.5v4.5l3.2 1.9"/>
+      <button type="button" data-tab="history" class="bottom-nav-btn">
+        <svg class="nav-icon-v2" viewBox="0 0 24 24">
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
         </svg>
-        <span class="nav-tail"></span>
+        <span class="nav-label-v2">기록</span>
       </button>
-      <button type="button" id="moreMenuBtn" data-tab="more" class="bottom-nav-btn flex-1 flex items-center justify-center py-3.5">
-        <svg class="nav-icon" viewBox="0 0 24 24">
-          <path class="nav-icon-hamburger-line" d="M4 7h16M4 12h16M4 17h16"/>
+      <button type="button" id="moreMenuBtn" data-tab="more" class="bottom-nav-btn">
+        <svg class="nav-icon-v2" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
         </svg>
-        <span class="nav-tail"></span>
+        <span class="nav-label-v2">서비스</span>
       </button>
     </nav>
 
@@ -1231,6 +1245,20 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 하단 메뉴바 전환 (메인/기록/부가서비스)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
+
+    // 활성 탭 배경(pill)을 활성 버튼 위치로 슬라이드 (버튼이 전부 flex:1 동일 너비라 인덱스 * 100%로 정확히 맞춰짐)
+    function updateBottomNavPill() {
+      const buttons = Array.from(bottomNavButtons);
+      const activeIndex = buttons.findIndex((b) => b.classList.contains('active'));
+      const pill = document.getElementById('bottomNavActivePill');
+      if (activeIndex === -1) {
+        pill.style.opacity = '0';
+      } else {
+        pill.style.opacity = '1';
+        pill.style.transform = `translateX(${activeIndex * 100}%)`;
+      }
+    }
+
     const screens = {
       register: document.getElementById('screen-register'),
       inuse: document.getElementById('screen-inuse'),
@@ -1489,6 +1517,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     function switchTab(tabName) {
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
+      updateBottomNavPill();
       Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
       try {
         playScreenTransition(screens[tabName]);
@@ -1518,7 +1547,6 @@ HTML_PAGE = """<!DOCTYPE html>
     function updateTabLockUI() {
       const bottomNav = document.getElementById('bottomNav');
       bottomNav.classList.toggle('hidden', !onboardingComplete);
-      bottomNav.classList.toggle('flex', onboardingComplete);
       // 온보딩 위저드 중에는 로고 헤더를 숨겨 질문 화면이 정중앙에 오도록 함
       document.getElementById('appHeader').classList.toggle('hidden', !onboardingComplete);
       // 하단 메뉴바가 보이는 동안에는 앱 셸을 고정 높이로 만들어 본문만 스크롤되게 함
@@ -1564,6 +1592,7 @@ HTML_PAGE = """<!DOCTYPE html>
       moreMenuBackdrop.classList.remove('hidden');
       playScreenTransition(moreMenuModal);
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b === moreMenuBtn));
+      updateBottomNavPill();
     }
 
     function closeMoreMenu() {
@@ -1571,6 +1600,7 @@ HTML_PAGE = """<!DOCTYPE html>
       moreMenuModal.classList.add('hidden');
       moreMenuBackdrop.classList.add('hidden');
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === lastActiveNavTab));
+      updateBottomNavPill();
     }
 
     moreMenuBtn.addEventListener('click', () => {
