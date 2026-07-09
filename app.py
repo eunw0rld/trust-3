@@ -206,20 +206,6 @@ HTML_PAGE = """<!DOCTYPE html>
     color: #f97316;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
-  .pouch-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #fff7ed;
-    color: #c2410c;
-    border-radius: 9999px;
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  .pouch-chip button {
-    color: #fdba74;
-  }
   .trip-segment-chip {
     display: inline-flex;
     align-items: center;
@@ -230,12 +216,6 @@ HTML_PAGE = """<!DOCTYPE html>
     padding: 6px 10px;
     font-size: 12px;
     font-weight: 600;
-  }
-  .pouch-accordion-collapsed #pouchAccordionBody {
-    display: none;
-  }
-  .pouch-accordion-collapsed #pouchAccordionChevron {
-    transform: rotate(-90deg);
   }
   .nav-tail {
     position: absolute;
@@ -651,42 +631,6 @@ HTML_PAGE = """<!DOCTYPE html>
           <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
         </div>
 
-        <!-- 여행 일정 등록 (다중 구간) -->
-        <div id="tripSegmentsSection" class="bg-white border border-gray-100 rounded-2xl p-4">
-          <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-bold">여행 일정 등록</h2>
-            <button id="tripSegmentsEditToggleBtn" type="button" class="hidden text-xs font-semibold text-brand-500">수정</button>
-          </div>
-          <p id="tripSegmentsHint" class="text-sm text-gray-400 mb-3">여행 구간을 추가하고 국가를 선택해주세요</p>
-
-          <div id="tripSegmentsSummary" class="hidden flex flex-wrap gap-2 mb-1"></div>
-
-          <div id="tripSegmentsForm" class="space-y-3">
-            <div id="tripSegmentRows" class="space-y-3"></div>
-            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
-            <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
-          </div>
-        </div>
-
-        <!-- 내 파우치 (아코디언, 빠른 등록) -->
-        <div id="pouchQuickAddSection" class="bg-white border border-gray-100 rounded-2xl p-4">
-          <button id="pouchAccordionToggleBtn" type="button" class="w-full flex items-center justify-between">
-            <h2 class="text-base font-bold">내 파우치</h2>
-            <span id="pouchAccordionChevron" class="text-gray-400 text-sm">▾</span>
-          </button>
-          <p id="pouchQuickAddHint" class="text-sm text-gray-400 mt-1">보유한 화장품을 추가해주세요</p>
-
-          <div id="pouchAccordionBody" class="mt-3 space-y-3">
-            <div id="pouchChipList" class="pouch-chip-list flex flex-wrap gap-2"></div>
-            <div id="pouchQuickAddForm" class="hidden flex gap-2 items-center">
-              <input id="pouchQuickAddName" type="text" placeholder="제품명" class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
-              <select id="pouchQuickAddCategory" class="border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 focus:outline-none focus:border-brand-500"></select>
-              <button id="pouchQuickAddConfirmBtn" type="button" class="text-brand-500 text-sm font-bold px-2 shrink-0">추가</button>
-            </div>
-            <button id="pouchQuickAddOpenBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 화장품 추가</button>
-          </div>
-        </div>
-
         <!-- 오늘의 날씨 + 뷰티 인사이트 통합 카드 (여행지 등록 후에만 표시, 화면 최상단에 우선 노출) -->
         <div id="todayInsightCard" class="hidden rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);">
           <div class="flex items-center justify-between mb-3">
@@ -697,6 +641,82 @@ HTML_PAGE = """<!DOCTYPE html>
           <div class="flex items-start gap-2 bg-black/15 rounded-xl p-3">
             <span class="text-base shrink-0">🔔</span>
             <p id="todayInsightText" class="text-sm font-medium leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- 내 파우치 (기존 파우치 화면의 촬영 UI를 메인 화면으로 이동) -->
+        <div id="pouchSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-base font-bold">내 파우치</h2>
+            <button id="pouchAddMoreBtn" type="button" class="hidden text-xs font-semibold text-brand-500">+ 추가</button>
+          </div>
+          <p id="pouchSectionSubtitle" class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
+
+          <!-- 등록된 화장품 카드 그리드 (1개 이상 등록되면 노출) -->
+          <div id="pouchProductGrid" class="hidden grid grid-cols-2 gap-2"></div>
+
+          <!-- 촬영/직접입력 UI (비어있을 때 기본 노출, "+ 추가" 클릭 시 다시 노출) -->
+          <div id="pouchCaptureUI">
+            <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-brand-500 hover:text-brand-500 transition">
+              <span class="text-3xl">📷</span>
+              <span class="text-sm font-semibold">탭해서 촬영하기</span>
+              <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
+            </label>
+            <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+
+            <!-- 인식 중 -->
+            <div id="scanningState" class="hidden bg-white border border-gray-100 rounded-2xl p-3 mt-3">
+              <div class="flex items-center gap-3">
+                <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
+                  <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                    <div id="scanningBar" class="h-full bg-brand-400 rounded-full" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 인식 결과 확인 -->
+            <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
+              <div class="flex items-center gap-3 mb-3">
+                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
+                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
+                <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
+              </div>
+            </div>
+
+            <!-- 갖고 있는 화장품 리스트 (직접 입력) -->
+            <div class="mt-3">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
+              <div id="cosmeticRows" class="space-y-2 mb-3"></div>
+              <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
+                직접 입력하기
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 여행 계획 (다중 구간) -->
+        <div id="tripSegmentsSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-base font-bold">여행 계획</h2>
+            <button id="tripSegmentsEditToggleBtn" type="button" class="hidden text-xs font-semibold text-brand-500">수정</button>
+          </div>
+          <p id="tripSegmentsHint" class="text-sm text-gray-400 mb-3">여행 계획을 등록해주세요</p>
+
+          <div id="tripSegmentsSummary" class="hidden flex flex-wrap gap-2 mb-1"></div>
+
+          <div id="tripSegmentsForm" class="space-y-3">
+            <div id="tripSegmentRows" class="space-y-3"></div>
+            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
+            <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
           </div>
         </div>
 
@@ -1059,68 +1079,6 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
       </section>
 
-      <!-- ============ 7. 파우치 페이지 (보유 화장품 촬영·관리) ============ -->
-      <section id="screen-pouch" class="hidden py-6 space-y-8">
-        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
-
-        <div>
-          <h2 class="text-base font-bold mb-1">내 파우치</h2>
-          <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
-
-          <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-brand-500 hover:text-brand-500 transition">
-            <span class="text-3xl">📷</span>
-            <span class="text-sm font-semibold">탭해서 촬영하기</span>
-            <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
-          </label>
-          <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
-
-          <!-- 인식 중 -->
-          <div id="scanningState" class="hidden bg-white border border-gray-100 rounded-2xl p-3 mt-3">
-            <div class="flex items-center gap-3">
-              <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
-                <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                  <div id="scanningBar" class="h-full bg-brand-400 rounded-full" style="width: 0%;"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 인식 결과 확인 -->
-          <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
-            <div class="flex items-center gap-3 mb-3">
-              <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
-                <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
-              </div>
-            </div>
-            <div class="flex gap-2">
-              <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
-              <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 갖고 있는 화장품 리스트 -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
-          <div id="cosmeticRows" class="space-y-2 mb-3"></div>
-          <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
-            직접 입력하기
-          </button>
-        </div>
-
-        <div>
-          <p id="pouchWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
-          <button id="pouchDoneBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
-            등록하기
-          </button>
-        </div>
-
-      </section>
-
       <!-- ============ 8. 나라별 인기템 (placeholder) ============ -->
       <section id="screen-country-popular" class="hidden py-6 space-y-6">
         <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
@@ -1154,11 +1112,6 @@ HTML_PAGE = """<!DOCTYPE html>
         <button type="button" class="more-menu-item" data-target="community">
           <span class="text-lg">💬</span>
           <span class="flex-1 text-left text-sm font-semibold">커뮤니티</span>
-          <span class="text-gray-300">›</span>
-        </button>
-        <button type="button" class="more-menu-item" data-target="pouch">
-          <span class="text-lg">👝</span>
-          <span class="flex-1 text-left text-sm font-semibold">파우치</span>
           <span class="text-gray-300">›</span>
         </button>
         <button type="button" class="more-menu-item" data-target="countryPopular">
@@ -1285,12 +1238,12 @@ HTML_PAGE = """<!DOCTYPE html>
       skinReport: document.getElementById('screen-afteruse'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
-      pouch: document.getElementById('screen-pouch'),
       countryPopular: document.getElementById('screen-country-popular'),
       skinCompare: document.getElementById('screen-skin-compare'),
     };
     let onboardingComplete = false;
     let lastActiveNavTab = 'inuse';
+    let pouchCaptureForceOpen = false;
 
     // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
     // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
@@ -1588,12 +1541,8 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('mainRegisterTripBtn').addEventListener('click', () => {
       expandTripSegmentsForm();
     });
-    document.getElementById('mainPouchCardEmpty').addEventListener('click', () => {
-      switchTab('pouch');
-    });
-    document.getElementById('mainPouchCardFilled').addEventListener('click', () => {
-      switchTab('pouch');
-    });
+    document.getElementById('mainPouchCardEmpty').addEventListener('click', expandPouchSection);
+    document.getElementById('mainPouchCardFilled').addEventListener('click', expandPouchSection);
     document.getElementById('mainMapCard').addEventListener('click', () => {
       document.getElementById('mapStoreSection').scrollIntoView({ behavior: 'smooth' });
     });
@@ -1809,7 +1758,11 @@ HTML_PAGE = """<!DOCTYPE html>
     function updateCosmeticCountBadge() {
       const count = cosmeticRows.querySelectorAll('.cosmetic-row').length;
       cosmeticCountBadge.textContent = count > 0 ? `(${count})` : '';
-      renderPouchChips();
+      // 화장품이 등록되면 촬영/입력 UI를 접고 카드 그리드로 보여줌
+      if (getMyProducts().length > 0) {
+        pouchCaptureForceOpen = false;
+      }
+      updatePouchSectionView();
     }
     new MutationObserver(updateCosmeticCountBadge).observe(cosmeticRows, { childList: true });
     updateCosmeticCountBadge();
@@ -1879,15 +1832,6 @@ HTML_PAGE = """<!DOCTYPE html>
       cosmeticPhotoInput.value = '';
     });
 
-    document.getElementById('pouchDoneBtn').addEventListener('click', () => {
-      if (getMyProducts().length === 0) {
-        showWarning('pouchWarning', '화장품을 1개 이상 등록해주세요');
-        return;
-      }
-      hideWarning('pouchWarning');
-      switchTab('inuse');
-    });
-
     // 등록 페이지에 입력된 보유 화장품을 { name, category } 배열로 읽어옴
     function getMyProducts() {
       return Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
@@ -1933,7 +1877,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     document.getElementById('pouchPromptYesBtn').addEventListener('click', () => {
       document.getElementById('pouchPromptModal').classList.add('hidden');
-      switchTab('pouch');
+      expandPouchSection();
     });
 
     document.getElementById('pouchPromptLaterBtn').addEventListener('click', () => {
@@ -2067,6 +2011,13 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('tripSegmentsSection').scrollIntoView({ behavior: 'smooth' });
     }
 
+    // 파우치 섹션으로 스크롤 + 촬영/입력 UI를 펼침 (메인 화면 상단으로 이동한 파우치 진입점들이 공유)
+    function expandPouchSection() {
+      pouchCaptureForceOpen = true;
+      updatePouchSectionView();
+      document.getElementById('pouchSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
     function syncTripSegmentsFromDOM() {
       tripSegments = readTripSegmentsFromDOM();
       // 첫 구간이 완성되는 순간 자동으로 요약 형태로 접어줌
@@ -2115,71 +2066,41 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('inuse');
     });
 
-    // ===== 내 파우치 (메인 화면 아코디언 빠른 등록) =====
-    document.getElementById('pouchQuickAddCategory').innerHTML = cosmeticCategories
-      .map((c) => `<option value="${c.value}">${c.label}</option>`)
-      .join('');
-
-    // getMyProducts()와 동일한 데이터를 반환하되, 삭제 버튼에서 바로 지울 수 있도록 원본 row도 함께 담음
-    function getMyProductRows() {
-      return Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
-        .map((row) => ({
-          row,
-          name: row.querySelector('input').value.trim(),
-          category: row.querySelector('select').value,
-        }))
-        .filter((p) => p.name);
+    // ===== 내 파우치 (메인 화면 상단, 촬영 UI ↔ 등록된 화장품 카드 그리드 토글) =====
+    // 화장품 카드 1장을 만드는 공통 로직 (대시보드의 내 화장품 루틴 그리드와 공유)
+    function buildProductCard(product) {
+      const category = cosmeticCategories.find((c) => c.value === product.category);
+      const card = document.createElement('div');
+      card.className = 'bg-white border border-gray-100 rounded-2xl p-3';
+      card.innerHTML = `
+        <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2">${category ? category.icon : '🧴'}</div>
+        <p class="text-sm font-semibold truncate">${product.name}</p>
+        <p class="text-xs text-gray-400">${category ? category.label : ''}</p>
+      `;
+      return card;
     }
 
-    // 메인 화면의 파우치 칩 목록(#pouchChipList) 갱신
-    function renderPouchChips() {
-      const rows = getMyProductRows();
-      document.querySelectorAll('.pouch-chip-list').forEach((list) => {
-        list.innerHTML = '';
-        rows.forEach(({ row, name, category }) => {
-          const info = cosmeticCategories.find((c) => c.value === category);
-          const chip = document.createElement('span');
-          chip.className = 'pouch-chip';
-          chip.innerHTML = `<span>${info ? info.icon : '🧴'}</span><span>${name}</span><button type="button">✕</button>`;
-          chip.querySelector('button').addEventListener('click', () => {
-            row.remove();
-            renderPouchChips();
-            refreshAdjustedRoutine();
-          });
-          list.appendChild(chip);
-        });
-      });
-      document.getElementById('pouchQuickAddHint').classList.toggle('hidden', rows.length > 0);
+    // 화장품이 1개 이상이면 카드 그리드를 보여주고 촬영/입력 UI는 접음("+ 추가"로 다시 펼침)
+    function updatePouchSectionView() {
+      const products = getMyProducts();
+      const count = products.length;
+      const grid = document.getElementById('pouchProductGrid');
+      grid.innerHTML = '';
+      products.forEach((product) => grid.appendChild(buildProductCard(product)));
+
+      const showCapture = count === 0 || pouchCaptureForceOpen;
+      grid.classList.toggle('hidden', count === 0 || showCapture);
+      document.getElementById('pouchCaptureUI').classList.toggle('hidden', !showCapture);
+      document.getElementById('pouchAddMoreBtn').classList.toggle('hidden', count === 0);
+      document.getElementById('pouchSectionSubtitle').classList.toggle('hidden', count > 0);
     }
 
-    function setPouchAccordionCollapsed(collapsed) {
-      document.getElementById('pouchQuickAddSection').classList.toggle('pouch-accordion-collapsed', collapsed);
-    }
-
-    document.getElementById('pouchAccordionToggleBtn').addEventListener('click', () => {
-      const section = document.getElementById('pouchQuickAddSection');
-      setPouchAccordionCollapsed(!section.classList.contains('pouch-accordion-collapsed'));
+    document.getElementById('pouchAddMoreBtn').addEventListener('click', () => {
+      pouchCaptureForceOpen = true;
+      updatePouchSectionView();
     });
 
-    document.getElementById('pouchQuickAddOpenBtn').addEventListener('click', () => {
-      document.getElementById('pouchQuickAddForm').classList.remove('hidden');
-      document.getElementById('pouchQuickAddName').focus();
-    });
-
-    document.getElementById('pouchQuickAddConfirmBtn').addEventListener('click', () => {
-      const nameInput = document.getElementById('pouchQuickAddName');
-      const name = nameInput.value.trim();
-      if (!name) return;
-      const category = document.getElementById('pouchQuickAddCategory').value;
-      cosmeticRows.appendChild(buildCosmeticRow(name, category));
-      nameInput.value = '';
-      document.getElementById('pouchQuickAddForm').classList.add('hidden');
-      renderPouchChips();
-      refreshAdjustedRoutine();
-      setPouchAccordionCollapsed(true);
-    });
-
-    renderPouchChips();
+    updatePouchSectionView();
 
     // 국가별 기후 데이터 (전세계 196개국, '리뷰, 국가_수질 추가 DB' 원본의 체감온도·습도·기후·수질 평균값을 반영)
     // 여행 구간(tripSegments)의 country 값이 국가명 그대로이므로 키도 국가명을 그대로 사용
@@ -2772,21 +2693,11 @@ HTML_PAGE = """<!DOCTYPE html>
             <span class="text-gray-300">→</span>
           </button>
         `;
-        document.getElementById('myRoutineEmptyCard').addEventListener('click', () => switchTab('pouch'));
+        document.getElementById('myRoutineEmptyCard').addEventListener('click', expandPouchSection);
         return;
       }
 
-      products.forEach((product) => {
-        const category = cosmeticCategories.find((c) => c.value === product.category);
-        const card = document.createElement('div');
-        card.className = 'bg-white border border-gray-100 rounded-2xl p-3';
-        card.innerHTML = `
-          <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2">${category ? category.icon : '🧴'}</div>
-          <p class="text-sm font-semibold truncate">${product.name}</p>
-          <p class="text-xs text-gray-400">${category ? category.label : ''}</p>
-        `;
-        grid.appendChild(card);
-      });
+      products.forEach((product) => grid.appendChild(buildProductCard(product)));
     }
 
     // 다른 여행자 리뷰(communityReviews)에서 내 여행지·피부타입에 맞는 추천 루틴을 찾아 보여줌
