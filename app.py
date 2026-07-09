@@ -180,74 +180,12 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-6">
 
-        <!-- 등록 (0): 보유 화장품 촬영 (개인설정 메뉴에서 나중에 등록) -->
-        <div id="register-step0" class="hidden space-y-8">
-
-          <div>
-            <button id="step0ToLandingBtn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
-            <h2 class="text-base font-bold mb-1">보유 화장품을 촬영해주세요</h2>
-            <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
-
-            <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-brand-500 hover:text-brand-500 transition">
-              <span class="text-3xl">📷</span>
-              <span class="text-sm font-semibold">탭해서 촬영하기</span>
-              <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
-            </label>
-            <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
-
-            <!-- 인식 중 -->
-            <div id="scanningState" class="hidden bg-white border border-gray-100 rounded-2xl p-3 mt-3">
-              <div class="flex items-center gap-3">
-                <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
-                  <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                    <div id="scanningBar" class="h-full bg-brand-400 rounded-full" style="width: 0%;"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 인식 결과 확인 -->
-            <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
-              <div class="flex items-center gap-3 mb-3">
-                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
-                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
-                <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 갖고 있는 화장품 리스트 -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
-            <div id="cosmeticRows" class="space-y-2 mb-3"></div>
-            <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
-              직접 입력하기
-            </button>
-          </div>
-
-          <div>
-            <p id="step0Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
-            <button id="step0ToStep1Btn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
-              다음
-            </button>
-          </div>
-
-        </div>
-
         <!-- 등록 (1): 내 정보 등록 (온보딩에서 유일하게 필수인 단계) -->
         <div id="register-step1">
 
           <!-- 상단 바: 뒤로가기 · 제목 · 다음 -->
           <div class="flex items-center justify-between mb-4">
-            <button id="step1ToStep0Btn" type="button" class="text-lg text-gray-400 w-8">←</button>
+            <button id="step1ToLandingBtn" type="button" class="text-lg text-gray-400 w-8">←</button>
             <p class="text-base font-bold">내 정보 등록</p>
             <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-brand-500 w-8 text-right">완료</button>
           </div>
@@ -313,7 +251,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div id="register-step2" class="hidden space-y-8">
 
           <div>
-            <button id="step2ToStep1Btn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
+            <button id="step2ToMainBtn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
             <h2 class="text-base font-bold mb-1">여행지와 여행 계획을 알려주세요</h2>
             <p class="text-sm text-gray-400 mb-4">입력한 여행지 기후에 맞춰 루틴을 조정해드려요</p>
 
@@ -337,7 +275,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <div>
             <p id="step2Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
             <button id="completeOnboardingBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
-              완료하고 시작하기
+              여행지 등록 완료
             </button>
           </div>
 
@@ -345,55 +283,102 @@ HTML_PAGE = """<!DOCTYPE html>
 
       </section>
 
-      <!-- ============ 2. 사용중 페이지 ============ -->
-      <section id="screen-inuse" class="hidden py-6 space-y-8">
+      <!-- ============ 2. 메인 페이지 (대시보드) ============ -->
+      <section id="screen-inuse" class="hidden py-6 space-y-6">
 
-        <!-- 알림 목업 -->
-        <div>
-          <p id="tripDayLabel" class="text-xs font-semibold text-gray-400 mb-1">DAY 2 · 도쿄</p>
-          <h2 class="text-base font-bold mb-1">여행 중 알림</h2>
-          <p class="text-xs text-gray-400 mb-3">실제 앱에서는 푸시 알림으로 도착해요. 아래는 미리보기예요</p>
-          <div class="space-y-3">
-            <div class="bg-white border border-gray-100 rounded-2xl p-3">
-              <div class="flex gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">🧴</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-bold text-gray-500">SkinTrip</p>
-                    <p class="text-[10px] text-gray-400">지금</p>
+        <!-- 상단 바: 프로필 설정 바로가기 -->
+        <div class="flex justify-end">
+          <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
+        </div>
+
+        <!-- 여행지 미등록 상태 -->
+        <div id="mainEmptyState">
+          <h2 class="text-2xl font-bold leading-snug mb-2">어디로<br />여행가시나요?</h2>
+          <button id="mainRegisterTripBtn" type="button" class="text-sm font-semibold text-brand-500">여행지 등록하기 →</button>
+
+          <button id="mainPouchCardEmpty" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 mt-10 text-left">
+            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">내 파우치</p>
+              <p id="mainPouchEmptyText" class="text-xs text-gray-400">아직 등록된 화장품이 없어요</p>
+            </div>
+            <span class="text-gray-300">→</span>
+          </button>
+        </div>
+
+        <!-- 여행지 등록 상태: 대시보드 -->
+        <div id="mainDashboard" class="hidden space-y-6">
+
+          <!-- 여행 요약 배너 -->
+          <div id="tripSummaryBanner" class="bg-white border border-gray-100 rounded-2xl p-4"></div>
+
+          <!-- 알림 목업 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 알림</h3>
+            <p class="text-xs text-gray-400 mb-3">실제 앱에서는 푸시 알림으로 도착해요. 아래는 미리보기예요</p>
+            <div class="space-y-3">
+              <div class="bg-white border border-gray-100 rounded-2xl p-3">
+                <div class="flex gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">🧴</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-bold text-gray-500">SkinTrip</p>
+                      <p class="text-[10px] text-gray-400">지금</p>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-900 mt-0.5">습도가 오늘 밤부터 오를 예정이에요</p>
+                    <p class="text-xs text-gray-500 mt-0.5">보유 중인 <span class="text-brand-500 font-semibold">에멀전</span>은 오늘 저녁 루틴에서 빼는 걸 추천해요</p>
                   </div>
-                  <p class="text-sm font-semibold text-gray-900 mt-0.5">습도가 오늘 밤부터 오를 예정이에요</p>
-                  <p class="text-xs text-gray-500 mt-0.5">보유 중인 <span class="text-brand-500 font-semibold">에멀전</span>은 오늘 저녁 루틴에서 빼는 걸 추천해요</p>
                 </div>
               </div>
-            </div>
-            <div class="bg-white border border-gray-100 rounded-2xl p-3">
-              <div class="flex gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">☀️</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs font-bold text-gray-500">SkinTrip</p>
-                    <p class="text-[10px] text-gray-400">3시간 전</p>
+              <div class="bg-white border border-gray-100 rounded-2xl p-3">
+                <div class="flex gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">☀️</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-bold text-gray-500">SkinTrip</p>
+                      <p class="text-[10px] text-gray-400">3시간 전</p>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-900 mt-0.5">오늘 자외선 지수 매우 높음</p>
+                    <p class="text-xs text-gray-500 mt-0.5">2~3시간마다 <span class="text-brand-500 font-semibold">선크림</span> 재도포를 잊지 마세요</p>
                   </div>
-                  <p class="text-sm font-semibold text-gray-900 mt-0.5">오늘 자외선 지수 매우 높음</p>
-                  <p class="text-xs text-gray-500 mt-0.5">2~3시간마다 <span class="text-brand-500 font-semibold">선크림</span> 재도포를 잊지 마세요</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 일정 기반 기후 안내 -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
-          <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
-        </div>
+          <!-- 일정 기반 기후 안내 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
+            <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
+          </div>
 
-        <!-- 오늘의 루틴 조정 제안 -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 루틴 조정 제안</h3>
-          <div id="adjustmentWarnings" class="space-y-2 mb-2"></div>
-          <div id="adjustmentList" class="space-y-2"></div>
+          <!-- 오늘의 루틴 조정 제안 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 루틴 조정 제안</h3>
+            <div id="adjustmentWarnings" class="space-y-2 mb-2"></div>
+            <div id="adjustmentList" class="space-y-2"></div>
+          </div>
+
+          <!-- 내 파우치 요약 -->
+          <button id="mainPouchCardFilled" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
+            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-xl shrink-0">👝</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">내 파우치</p>
+              <p id="mainPouchFilledText" class="text-xs text-gray-400">화장품 0개 등록됨</p>
+            </div>
+            <span class="text-gray-300">→</span>
+          </button>
+
+          <!-- 주변 매장 미리보기 -->
+          <button id="mainMapCard" type="button" class="w-full flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 text-left">
+            <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">내 주위 화장품 매장</p>
+              <p class="text-xs text-gray-400">올리브영 강남역점 · 250m</p>
+            </div>
+            <span class="text-gray-300">→</span>
+          </button>
+
         </div>
 
       </section>
@@ -562,6 +547,60 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
       </section>
 
+      <!-- ============ 7. 파우치 페이지 (보유 화장품 촬영·관리) ============ -->
+      <section id="screen-pouch" class="hidden py-6 space-y-8">
+
+        <div>
+          <h2 class="text-base font-bold mb-1">내 파우치</h2>
+          <p class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
+
+          <label for="cosmeticPhotoInput" class="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-gray-300 rounded-2xl py-10 text-gray-400 cursor-pointer hover:border-brand-500 hover:text-brand-500 transition">
+            <span class="text-3xl">📷</span>
+            <span class="text-sm font-semibold">탭해서 촬영하기</span>
+            <span class="text-xs text-gray-300">또는 앨범에서 사진 선택</span>
+          </label>
+          <input id="cosmeticPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+
+          <!-- 인식 중 -->
+          <div id="scanningState" class="hidden bg-white border border-gray-100 rounded-2xl p-3 mt-3">
+            <div class="flex items-center gap-3">
+              <img id="scanningThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-700">화장품 정보를 인식하고 있어요...</p>
+                <div class="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                  <div id="scanningBar" class="h-full bg-brand-400 rounded-full" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 인식 결과 확인 -->
+          <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
+            <div class="flex items-center gap-3 mb-3">
+              <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
+                <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
+              <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 갖고 있는 화장품 리스트 -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
+          <div id="cosmeticRows" class="space-y-2 mb-3"></div>
+          <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
+            직접 입력하기
+          </button>
+        </div>
+
+      </section>
+
     </main>
 
     <!-- 하단 메뉴바 (등록 완료 후에만 표시) -->
@@ -578,9 +617,9 @@ HTML_PAGE = """<!DOCTYPE html>
         <span class="text-xl">💬</span>
         <span>커뮤니티</span>
       </button>
-      <button type="button" data-tab="settings" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
-        <span class="text-xl">👤</span>
-        <span>개인설정</span>
+      <button type="button" data-tab="pouch" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
+        <span class="text-xl">👝</span>
+        <span>파우치</span>
       </button>
     </nav>
 
@@ -642,7 +681,6 @@ HTML_PAGE = """<!DOCTYPE html>
     }
     document.getElementById('startBtn').addEventListener('click', enterApp);
     document.getElementById('skipStartBtn').addEventListener('click', enterApp);
-    document.getElementById('step0ToLandingBtn').addEventListener('click', exitToLanding);
 
     // 구글 로그인 → 여행 일정 연동 여부를 묻는 팝업
     function formatDateInput(date) {
@@ -684,7 +722,7 @@ HTML_PAGE = """<!DOCTYPE html>
       enterApp();
     });
 
-    // 하단 메뉴바 전환 (지도/메인/커뮤니티/개인설정)
+    // 하단 메뉴바 전환 (지도/메인/커뮤니티/파우치)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
     const screens = {
       register: document.getElementById('screen-register'),
@@ -693,6 +731,7 @@ HTML_PAGE = """<!DOCTYPE html>
       map: document.getElementById('screen-map'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
+      pouch: document.getElementById('screen-pouch'),
     };
     let onboardingComplete = false;
 
@@ -726,6 +765,24 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('settings');
     });
 
+    // 메인 대시보드의 바로가기 카드/버튼
+    document.getElementById('mainProfileBtn').addEventListener('click', () => {
+      switchTab('settings');
+    });
+    document.getElementById('mainRegisterTripBtn').addEventListener('click', () => {
+      switchTab('register');
+      showRegisterStep('step2');
+    });
+    document.getElementById('mainPouchCardEmpty').addEventListener('click', () => {
+      switchTab('pouch');
+    });
+    document.getElementById('mainPouchCardFilled').addEventListener('click', () => {
+      switchTab('pouch');
+    });
+    document.getElementById('mainMapCard').addEventListener('click', () => {
+      switchTab('map');
+    });
+
     bottomNavButtons.forEach((btn) => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
@@ -741,7 +798,7 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     function showRegisterStep(stepName) {
-      ['step0', 'step1', 'step2'].forEach((key) => {
+      ['step1', 'step2'].forEach((key) => {
         document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
       });
       playScreenTransition(document.getElementById(`register-${stepName}`));
@@ -800,11 +857,11 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('inuse');
     });
 
-    document.getElementById('step2ToStep1Btn').addEventListener('click', () => {
-      showRegisterStep('step1');
+    document.getElementById('step2ToMainBtn').addEventListener('click', () => {
+      switchTab('inuse');
     });
 
-    document.getElementById('step1ToStep0Btn').addEventListener('click', exitToLanding);
+    document.getElementById('step1ToLandingBtn').addEventListener('click', exitToLanding);
 
     // 피부 고민 칩 토글 (중복 선택 가능)
     document.querySelectorAll('.concern-chip').forEach((chip) => {
@@ -905,7 +962,6 @@ HTML_PAGE = """<!DOCTYPE html>
           scanResultName.value = picked.name;
           scanResultCategorySelect.value = picked.category;
           scanResult.classList.remove('hidden');
-          hideWarning('step0Warning');
         }, 1400);
       };
       reader.readAsDataURL(file);
@@ -919,25 +975,6 @@ HTML_PAGE = """<!DOCTYPE html>
       cosmeticPhotoInput.value = '';
     });
 
-    // 등록 0단계 → 1단계 이동 조건: 화장품 1개 이상 등록
-    function validateStep0() {
-      const missing = [];
-      if (getMyProducts().length === 0) {
-        missing.push('보유 화장품');
-      }
-      return { valid: missing.length === 0, missing };
-    }
-
-    document.getElementById('step0ToStep1Btn').addEventListener('click', () => {
-      const result = validateStep0();
-      if (!result.valid) {
-        showWarning('step0Warning', `${result.missing.join(', ')}을(를) 먼저 등록해주세요`);
-        return;
-      }
-      hideWarning('step0Warning');
-      showRegisterStep('step1');
-    });
-
     // 등록 페이지에 입력된 보유 화장품을 { name, category } 배열로 읽어옴
     function getMyProducts() {
       return Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
@@ -948,15 +985,9 @@ HTML_PAGE = """<!DOCTYPE html>
         .filter((product) => product.name);
     }
 
-    // 등록(온보딩) 완료 조건: 피부 고민 1개 이상, 보유 화장품 1개 이상, 여행지 선택
+    // 여행지 등록 완료 조건: 여행지 선택
     function validateOnboarding() {
       const missing = [];
-      if (document.querySelectorAll('.concern-chip.active').length === 0) {
-        missing.push('피부 고민');
-      }
-      if (getMyProducts().length === 0) {
-        missing.push('보유 화장품');
-      }
       if (!document.getElementById('destinationSelect').value) {
         missing.push('여행지');
       }
@@ -1115,8 +1146,38 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 알림/기후 안내에도 동일하게 반영
     function renderTripOverview() {
+      const destinationKey = document.getElementById('destinationSelect').value;
+      const productCount = getMyProducts().length;
+
+      if (!destinationKey) {
+        document.getElementById('mainEmptyState').classList.remove('hidden');
+        document.getElementById('mainDashboard').classList.add('hidden');
+        document.getElementById('mainPouchEmptyText').textContent =
+          productCount > 0 ? `화장품 ${productCount}개 등록됨` : '아직 등록된 화장품이 없어요';
+        return;
+      }
+
+      document.getElementById('mainEmptyState').classList.add('hidden');
+      document.getElementById('mainDashboard').classList.remove('hidden');
+      document.getElementById('mainPouchFilledText').textContent = `화장품 ${productCount}개 등록됨`;
+
       const label = destinationLabels[currentTripDestination] || '여행지';
-      document.getElementById('tripDayLabel').textContent = `DAY 2 · ${label}`;
+      const start = document.getElementById('tripStartDate').value;
+      const end = document.getElementById('tripEndDate').value;
+      document.getElementById('tripSummaryBanner').innerHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs text-gray-400 mb-0.5">이번 여행</p>
+            <p class="text-base font-bold">📍 ${label}</p>
+            ${start && end ? `<p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p>` : ''}
+          </div>
+          <button id="tripSummaryEditBtn" type="button" class="text-xs font-semibold text-brand-500">여행지 수정 →</button>
+        </div>
+      `;
+      document.getElementById('tripSummaryEditBtn').addEventListener('click', () => {
+        switchTab('register');
+        showRegisterStep('step2');
+      });
 
       const weather = weatherData[currentTripDestination];
       let todayCondition = '쾌적한 날씨';
