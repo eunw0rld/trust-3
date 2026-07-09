@@ -121,6 +121,19 @@ HTML_PAGE = """<!DOCTYPE html>
   .screen-transition {
     animation: screenFadeIn 0.22s ease;
   }
+  /* 온보딩 완료 후: 앱 셸을 고정 높이로 만들고 본문만 스크롤되게 해서
+     화면 길이가 어떻든 하단 메뉴바가 항상 화면 하단에 붙어있도록 함 */
+  .app-shell-fixed {
+    height: 760px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .app-shell-fixed > main {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 </style>
 </head>
 <body class="font-sans text-gray-900">
@@ -178,14 +191,14 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 앱 화면 ============ -->
-  <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-gray-50 border-x border-gray-100">
+  <div id="appContainer" class="hidden max-w-md mx-auto bg-gray-50 border-x border-gray-100">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
       <p class="text-lg font-bold tracking-tight">Skin<span class="text-brand-500">Trip</span></p>
     </header>
 
-    <main class="px-5 pb-24">
+    <main class="px-5 pb-6">
 
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-6">
@@ -286,11 +299,202 @@ HTML_PAGE = """<!DOCTYPE html>
             <p class="text-xs font-semibold text-gray-400 mb-2">여행지</p>
             <select id="destinationSelect" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:border-brand-500">
               <option value="">여행지를 선택해주세요</option>
-              <option value="tokyo">일본</option>
-              <option value="bangkok">태국</option>
-              <option value="dubai">아랍에미리트</option>
-              <option value="paris">프랑스</option>
-              <option value="singapore">싱가포르</option>
+              <option value="가나">가나</option>
+              <option value="가봉">가봉</option>
+              <option value="가이아나">가이아나</option>
+              <option value="감비아">감비아</option>
+              <option value="과테말라">과테말라</option>
+              <option value="그레나다">그레나다</option>
+              <option value="그리스">그리스</option>
+              <option value="기니">기니</option>
+              <option value="기니비사우">기니비사우</option>
+              <option value="나미비아">나미비아</option>
+              <option value="나우루">나우루</option>
+              <option value="나이지리아">나이지리아</option>
+              <option value="남수단">남수단</option>
+              <option value="남아프리카공화국">남아프리카공화국</option>
+              <option value="네덜란드">네덜란드</option>
+              <option value="네팔">네팔</option>
+              <option value="노르웨이">노르웨이</option>
+              <option value="뉴질랜드">뉴질랜드</option>
+              <option value="니제르">니제르</option>
+              <option value="니카라과">니카라과</option>
+              <option value="대만">대만</option>
+              <option value="대한민국">대한민국</option>
+              <option value="덴마크">덴마크</option>
+              <option value="도미니카">도미니카</option>
+              <option value="도미니카공화국">도미니카공화국</option>
+              <option value="독일">독일</option>
+              <option value="동티모르">동티모르</option>
+              <option value="라오스">라오스</option>
+              <option value="라이베리아">라이베리아</option>
+              <option value="라트비아">라트비아</option>
+              <option value="러시아">러시아</option>
+              <option value="레바논">레바논</option>
+              <option value="레소토">레소토</option>
+              <option value="루마니아">루마니아</option>
+              <option value="룩셈부르크">룩셈부르크</option>
+              <option value="르완다">르완다</option>
+              <option value="리비아">리비아</option>
+              <option value="리투아니아">리투아니아</option>
+              <option value="리히텐슈타인">리히텐슈타인</option>
+              <option value="마다가스카르">마다가스카르</option>
+              <option value="마셜제도">마셜제도</option>
+              <option value="말라위">말라위</option>
+              <option value="말레이시아">말레이시아</option>
+              <option value="말리">말리</option>
+              <option value="멕시코">멕시코</option>
+              <option value="모나코">모나코</option>
+              <option value="모로코">모로코</option>
+              <option value="모리셔스">모리셔스</option>
+              <option value="모리타니">모리타니</option>
+              <option value="모잠비크">모잠비크</option>
+              <option value="몬테네그로">몬테네그로</option>
+              <option value="몰도바">몰도바</option>
+              <option value="몰디브">몰디브</option>
+              <option value="몰타">몰타</option>
+              <option value="몽골">몽골</option>
+              <option value="미국">미국</option>
+              <option value="미얀마">미얀마</option>
+              <option value="미크로네시아">미크로네시아</option>
+              <option value="바누아투">바누아투</option>
+              <option value="바레인">바레인</option>
+              <option value="바베이도스">바베이도스</option>
+              <option value="바티칸">바티칸</option>
+              <option value="바하마">바하마</option>
+              <option value="방글라데시">방글라데시</option>
+              <option value="베냉">베냉</option>
+              <option value="베네수엘라">베네수엘라</option>
+              <option value="베트남">베트남</option>
+              <option value="벨기에">벨기에</option>
+              <option value="벨라루스">벨라루스</option>
+              <option value="벨리즈">벨리즈</option>
+              <option value="보스니아헤르체고비나">보스니아헤르체고비나</option>
+              <option value="보츠와나">보츠와나</option>
+              <option value="볼리비아">볼리비아</option>
+              <option value="부룬디">부룬디</option>
+              <option value="부르키나파소">부르키나파소</option>
+              <option value="부탄">부탄</option>
+              <option value="북마케도니아">북마케도니아</option>
+              <option value="북한">북한</option>
+              <option value="불가리아">불가리아</option>
+              <option value="브라질">브라질</option>
+              <option value="브루나이">브루나이</option>
+              <option value="사모아">사모아</option>
+              <option value="사우디아라비아">사우디아라비아</option>
+              <option value="산마리노">산마리노</option>
+              <option value="상투메프린시페">상투메프린시페</option>
+              <option value="세네갈">세네갈</option>
+              <option value="세르비아">세르비아</option>
+              <option value="세이셸">세이셸</option>
+              <option value="세인트루시아">세인트루시아</option>
+              <option value="세인트빈센트그레나딘">세인트빈센트그레나딘</option>
+              <option value="세인트키츠네비스">세인트키츠네비스</option>
+              <option value="소말리아">소말리아</option>
+              <option value="솔로몬제도">솔로몬제도</option>
+              <option value="수단">수단</option>
+              <option value="수리남">수리남</option>
+              <option value="스리랑카">스리랑카</option>
+              <option value="스웨덴">스웨덴</option>
+              <option value="스위스">스위스</option>
+              <option value="스페인">스페인</option>
+              <option value="슬로바키아">슬로바키아</option>
+              <option value="슬로베니아">슬로베니아</option>
+              <option value="시리아">시리아</option>
+              <option value="시에라리온">시에라리온</option>
+              <option value="싱가포르">싱가포르</option>
+              <option value="아랍에미리트">아랍에미리트</option>
+              <option value="아르메니아">아르메니아</option>
+              <option value="아르헨티나">아르헨티나</option>
+              <option value="아이슬란드">아이슬란드</option>
+              <option value="아이티">아이티</option>
+              <option value="아일랜드">아일랜드</option>
+              <option value="아제르바이잔">아제르바이잔</option>
+              <option value="아프가니스탄">아프가니스탄</option>
+              <option value="안도라">안도라</option>
+              <option value="알바니아">알바니아</option>
+              <option value="알제리">알제리</option>
+              <option value="앙골라">앙골라</option>
+              <option value="앤티가바부다">앤티가바부다</option>
+              <option value="에리트레아">에리트레아</option>
+              <option value="에스와티니">에스와티니</option>
+              <option value="에스토니아">에스토니아</option>
+              <option value="에콰도르">에콰도르</option>
+              <option value="에티오피아">에티오피아</option>
+              <option value="엘살바도르">엘살바도르</option>
+              <option value="영국">영국</option>
+              <option value="예멘">예멘</option>
+              <option value="오만">오만</option>
+              <option value="오스트리아">오스트리아</option>
+              <option value="온두라스">온두라스</option>
+              <option value="요르단">요르단</option>
+              <option value="우간다">우간다</option>
+              <option value="우루과이">우루과이</option>
+              <option value="우즈베키스탄">우즈베키스탄</option>
+              <option value="우크라이나">우크라이나</option>
+              <option value="이라크">이라크</option>
+              <option value="이란">이란</option>
+              <option value="이스라엘">이스라엘</option>
+              <option value="이집트">이집트</option>
+              <option value="이탈리아">이탈리아</option>
+              <option value="인도">인도</option>
+              <option value="인도네시아">인도네시아</option>
+              <option value="일본">일본</option>
+              <option value="자메이카">자메이카</option>
+              <option value="잠비아">잠비아</option>
+              <option value="적도기니">적도기니</option>
+              <option value="조지아">조지아</option>
+              <option value="중국">중국</option>
+              <option value="중앙아프리카공화국">중앙아프리카공화국</option>
+              <option value="지부티">지부티</option>
+              <option value="짐바브웨">짐바브웨</option>
+              <option value="차드">차드</option>
+              <option value="체코">체코</option>
+              <option value="칠레">칠레</option>
+              <option value="카메룬">카메룬</option>
+              <option value="카보베르데">카보베르데</option>
+              <option value="카자흐스탄">카자흐스탄</option>
+              <option value="카타르">카타르</option>
+              <option value="캄보디아">캄보디아</option>
+              <option value="캐나다">캐나다</option>
+              <option value="케냐">케냐</option>
+              <option value="코모로">코모로</option>
+              <option value="코스타리카">코스타리카</option>
+              <option value="코트디부아르">코트디부아르</option>
+              <option value="콜롬비아">콜롬비아</option>
+              <option value="콩고공화국">콩고공화국</option>
+              <option value="콩고민주공화국">콩고민주공화국</option>
+              <option value="쿠바">쿠바</option>
+              <option value="쿠웨이트">쿠웨이트</option>
+              <option value="크로아티아">크로아티아</option>
+              <option value="키르기스스탄">키르기스스탄</option>
+              <option value="키리바시">키리바시</option>
+              <option value="키프로스">키프로스</option>
+              <option value="타지키스탄">타지키스탄</option>
+              <option value="탄자니아">탄자니아</option>
+              <option value="태국">태국</option>
+              <option value="토고">토고</option>
+              <option value="통가">통가</option>
+              <option value="투르크메니스탄">투르크메니스탄</option>
+              <option value="투발루">투발루</option>
+              <option value="튀니지">튀니지</option>
+              <option value="튀르키예">튀르키예</option>
+              <option value="트리니다드토바고">트리니다드토바고</option>
+              <option value="파나마">파나마</option>
+              <option value="파라과이">파라과이</option>
+              <option value="파키스탄">파키스탄</option>
+              <option value="파푸아뉴기니">파푸아뉴기니</option>
+              <option value="팔라우">팔라우</option>
+              <option value="팔레스타인">팔레스타인</option>
+              <option value="페루">페루</option>
+              <option value="포르투갈">포르투갈</option>
+              <option value="폴란드">폴란드</option>
+              <option value="프랑스">프랑스</option>
+              <option value="피지">피지</option>
+              <option value="핀란드">핀란드</option>
+              <option value="필리핀">필리핀</option>
+              <option value="헝가리">헝가리</option>
+              <option value="호주">호주</option>
             </select>
 
             <p class="text-xs font-semibold text-gray-400 mb-2">여행 계획</p>
@@ -508,6 +712,40 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
         </div>
 
+        <!-- 필터 -->
+        <div class="space-y-2 mb-2">
+          <select id="communityCountryFilter" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-brand-500">
+            <option value="">전체 여행지</option>
+            <option value="일본">일본</option>
+            <option value="태국">태국</option>
+            <option value="아랍에미리트">아랍에미리트</option>
+            <option value="프랑스">프랑스</option>
+            <option value="싱가포르">싱가포르</option>
+          </select>
+          <div class="grid grid-cols-3 gap-2">
+            <select id="communityGenderFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+              <option value="">성별 전체</option>
+              <option value="여성">여성</option>
+              <option value="남성">남성</option>
+            </select>
+            <select id="communityAgeFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+              <option value="">나이대 전체</option>
+              <option value="20대">20대</option>
+              <option value="30대">30대</option>
+              <option value="40대">40대</option>
+              <option value="50대 이상">50대 이상</option>
+            </select>
+            <select id="communitySkinFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+              <option value="">피부타입 전체</option>
+              <option value="지성">지성</option>
+              <option value="건성">건성</option>
+              <option value="복합성">복합성</option>
+              <option value="민감성">민감성</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="communityEmptyNote" class="hidden text-sm text-gray-400 text-center py-8">조건에 맞는 리뷰가 없어요</p>
         <div id="communityFeed" class="space-y-3"></div>
       </section>
 
@@ -586,8 +824,8 @@ HTML_PAGE = """<!DOCTYPE html>
 
     </main>
 
-    <!-- 하단 메뉴바 (등록 완료 후에만 표시) -->
-    <nav id="bottomNav" class="hidden fixed bottom-0 inset-x-0 max-w-md mx-auto bg-white border-t border-gray-100 z-40">
+    <!-- 하단 메뉴바 (등록 완료 후에만 표시, 화면 길이와 무관하게 항상 하단에 고정) -->
+    <nav id="bottomNav" class="hidden shrink-0 bg-white border-t border-gray-100">
       <button type="button" data-tab="map" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
         <span class="text-xl">🗺️</span>
         <span>지도</span>
@@ -688,10 +926,10 @@ HTML_PAGE = """<!DOCTYPE html>
       start.setDate(start.getDate() + 7);
       const end = new Date();
       end.setDate(end.getDate() + 11);
-      document.getElementById('destinationSelect').value = 'tokyo';
+      document.getElementById('destinationSelect').value = '일본';
       document.getElementById('tripStartDate').value = formatDateInput(start);
       document.getElementById('tripEndDate').value = formatDateInput(end);
-      currentTripDestination = 'tokyo';
+      currentTripDestination = '일본';
       enterApp();
     });
 
@@ -726,6 +964,12 @@ HTML_PAGE = """<!DOCTYPE html>
         refreshAdjustedRoutine();
       } else if (tabName === 'settings') {
         renderProfileSummary();
+      } else if (tabName === 'community') {
+        if (!communityDefaultApplied) {
+          applyDefaultCommunityFilter();
+          communityDefaultApplied = true;
+        }
+        renderCommunityFeed();
       }
     }
 
@@ -734,6 +978,8 @@ HTML_PAGE = """<!DOCTYPE html>
       const bottomNav = document.getElementById('bottomNav');
       bottomNav.classList.toggle('hidden', !onboardingComplete);
       bottomNav.classList.toggle('flex', onboardingComplete);
+      // 하단 메뉴바가 보이는 동안에는 앱 셸을 고정 높이로 만들어 본문만 스크롤되게 함
+      document.getElementById('appContainer').classList.toggle('app-shell-fixed', onboardingComplete);
     }
 
     document.getElementById('settingsEditBtn').addEventListener('click', () => {
@@ -999,34 +1245,259 @@ HTML_PAGE = """<!DOCTYPE html>
 
     updateTabLockUI();
 
-    // 국가별 기후 데이터 ('리뷰, 국가 DB' 원본의 체감온도·습도·기후·수질 평균값을 반영)
+    // 국가별 기후 데이터 (전세계 196개국, '리뷰, 국가_수질 추가 DB' 원본의 체감온도·습도·기후·수질 평균값을 반영)
+    // 여행지 선택값(destinationSelect)이 국가명 그대로이므로 키도 국가명을 그대로 사용
     const weatherData = {
-      singapore: { temp: 34, humidity: 83, uvi: 9, climate: '열대기후', waterQuality: '연수' },
-      tokyo: { temp: 20, humidity: 54, uvi: 6, climate: '온대기후', waterQuality: '연수' },
-      bangkok: { temp: 33, humidity: 82, uvi: 10, climate: '열대기후', waterQuality: '연수' },
-      dubai: { temp: 36, humidity: 24, uvi: 11, climate: '건조기후', waterQuality: '경수' },
-      paris: { temp: 22, humidity: 56, uvi: 5, climate: '온대기후', waterQuality: '경수' },
-    };
-    const destinationLabels = {
-      singapore: '싱가포르',
-      tokyo: '일본',
-      bangkok: '태국',
-      dubai: '아랍에미리트',
-      paris: '프랑스',
+      가나: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      가봉: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      가이아나: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      감비아: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      과테말라: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      그레나다: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      그리스: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      기니: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      기니비사우: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      나미비아: { temp: 36, humidity: 22, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      나우루: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      나이지리아: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      남수단: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      남아프리카공화국: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      네덜란드: { temp: 22, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      네팔: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      노르웨이: { temp: 5, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      뉴질랜드: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      니제르: { temp: 35, humidity: 22, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      니카라과: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      대만: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      대한민국: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      덴마크: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      도미니카: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      도미니카공화국: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      독일: { temp: 23, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      동티모르: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      라오스: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      라이베리아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      라트비아: { temp: 6, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      러시아: { temp: 5, humidity: 43, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      레바논: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      레소토: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      루마니아: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      룩셈부르크: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      르완다: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      리비아: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      리투아니아: { temp: 6, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      리히텐슈타인: { temp: 23, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      마다가스카르: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      마셜제도: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      말라위: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      말레이시아: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      말리: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      멕시코: { temp: 35, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      모나코: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      모로코: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      모리셔스: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      모리타니: { temp: 33, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      모잠비크: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      몬테네그로: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      몰도바: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      몰디브: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      몰타: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      몽골: { temp: 23, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      미국: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      미얀마: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      미크로네시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      바누아투: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      바레인: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      바베이도스: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      바티칸: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      바하마: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      방글라데시: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      베냉: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      베네수엘라: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      베트남: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      벨기에: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      벨라루스: { temp: 5, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      벨리즈: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      보스니아헤르체고비나: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      보츠와나: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      볼리비아: { temp: 33, humidity: 84, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      부룬디: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      부르키나파소: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      부탄: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      북마케도니아: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      북한: { temp: 23, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      불가리아: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      브라질: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      브루나이: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      사모아: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      사우디아라비아: { temp: 33, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      산마리노: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      상투메프린시페: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      세네갈: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      세르비아: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      세이셸: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      세인트루시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      세인트빈센트그레나딘: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      세인트키츠네비스: { temp: 33, humidity: 84, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      소말리아: { temp: 33, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      솔로몬제도: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      수단: { temp: 36, humidity: 22, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      수리남: { temp: 33, humidity: 84, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      스리랑카: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      스웨덴: { temp: 5, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      스위스: { temp: 20, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      스페인: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      슬로바키아: { temp: 21, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      슬로베니아: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      시리아: { temp: 35, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      시에라리온: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      싱가포르: { temp: 34, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      아랍에미리트: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      아르메니아: { temp: 36, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      아르헨티나: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      아이슬란드: { temp: 7, humidity: 56, uvi: 2, climate: `한대기후`, waterQuality: `연수` },
+      아이티: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      아일랜드: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      아제르바이잔: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      아프가니스탄: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      안도라: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      알바니아: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      알제리: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      앙골라: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      앤티가바부다: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      에리트레아: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      에스와티니: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      에스토니아: { temp: 5, humidity: 44, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      에콰도르: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      에티오피아: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      엘살바도르: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      영국: { temp: 22, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      예멘: { temp: 35, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      오만: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      오스트리아: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      온두라스: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      요르단: { temp: 34, humidity: 22, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      우간다: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      우루과이: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      우즈베키스탄: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      우크라이나: { temp: 22, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      이라크: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      이란: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      이스라엘: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      이집트: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      인도: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      인도네시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      일본: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      자메이카: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      잠비아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      적도기니: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      조지아: { temp: 21, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      중국: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      중앙아프리카공화국: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      지부티: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      짐바브웨: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      차드: { temp: 36, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      체코: { temp: 22, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      칠레: { temp: 23, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      카메룬: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      카보베르데: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      카자흐스탄: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      카타르: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      캄보디아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      캐나다: { temp: 5, humidity: 42, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      케냐: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      코모로: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      코스타리카: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      코트디부아르: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      콜롬비아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      콩고공화국: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      콩고민주공화국: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      쿠바: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      쿠웨이트: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      크로아티아: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      키르기스스탄: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      키리바시: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      키프로스: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      타지키스탄: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      탄자니아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      태국: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      토고: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      통가: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      투르크메니스탄: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      투발루: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      튀니지: { temp: 33, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      튀르키예: { temp: 20, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      트리니다드토바고: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
+      파나마: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      파라과이: { temp: 22, humidity: 52, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
+      파키스탄: { temp: 34, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      파푸아뉴기니: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      팔라우: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      팔레스타인: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+      페루: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      포르투갈: { temp: 21, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      폴란드: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      프랑스: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      피지: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      핀란드: { temp: 6, humidity: 40, uvi: 4, climate: `냉대기후`, waterQuality: `연수` },
+      필리핀: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      헝가리: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      호주: { temp: 33, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
     };
 
-    // 커뮤니티 피드 ('리뷰, 국가 DB' 원본에서 5개 지원 국가별 2건씩 발췌)
+    // 커뮤니티 피드 ('리뷰, 국가_수질 추가 DB' 원본에서 5개 지원 국가 리뷰 전체(국가별 10건, 총 50건) 반영
     const communityReviews = [
       { id: `glowup_diary`, gender: `여성`, age: 26, rating: 3, skinType: `건성`, country: `일본`, cosmetics: `고보습 크림, 립밤, 수분 앰플`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩 연출.`, skincare: `건조한 날씨라 고보습 크림과 앰플로 수분 층 강화.`, review: `가을 날씨라 입술이 자주 텄어요. 립밤 없이는 하루도 못 버텼습니다.` },
       { id: `coolbreeze07`, gender: `남성`, age: 29, rating: 3, skinType: `복합성`, country: `일본`, cosmetics: `올인원 로션, 선크림, 미스트`, makeup: `가벼운 톤업로션 정도로 자연스럽게.`, skincare: `환절기 피부라 올인원 로션으로 간편하게 보습 유지.`, review: `일교차가 커서 아침저녁으로 피부 컨디션이 달랐어요.` },
+      { id: `hyejin_92`, gender: `여성`, age: 33, rating: 4, skinType: `민감성`, country: `일본`, cosmetics: `저자극 크림, 진정 토너, 수분 마스크팩`, makeup: `저자극 톤업크림 위주, 색조는 최소화.`, skincare: `일교차로 예민해진 피부에 저자극 진정 라인 사용 권장.`, review: `건조하고 쌀쌀해서 얼굴이 당기고 붉어지는 느낌이 있었어요.` },
+      { id: `areum23`, gender: `남성`, age: 45, rating: 4, skinType: `지성`, country: `일본`, cosmetics: `산뜻한 로션, 선크림, 블로팅 페이퍼`, makeup: `가벼운 산뜻한 로션 타입 선호, 유분 적은 제품 위주.`, skincare: `낮 동안 블로팅 페이퍼로 피지 관리.`, review: `날씨는 선선했는데 실내 난방 때문에 오히려 번들거렸어요.` },
+      { id: `sora_k`, gender: `여성`, age: 24, rating: 5, skinType: `복합성`, country: `일본`, cosmetics: `수분 크림, 립틴트, 선쿠션`, makeup: `촉촉한 선쿠션 + 립틴트로 화사한 인상 연출.`, skincare: `건조함 방지를 위해 수분 크림 두껍게 레이어링.`, review: `실내외 온도차가 커서 수분크림을 자주 덧발라야 했어요.` },
+      { id: `jetsetter_k`, gender: `남성`, age: 25, rating: 5, skinType: `민감성`, country: `일본`, cosmetics: `수분 크림, 립틴트, 선쿠션`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩을 연출하는 것을 추천합니다.`, skincare: `환절기 피부 컨디션 변화에 대비해 올인원 로션으로 간편하게 보습을 유지하세요.`, review: `사계절이 뚜렷한 곳이라 그런지 여행 기간 내내 온도 변화에 신경 써야 했어요.` },
+      { id: `clearskin_92`, gender: `여성`, age: 32, rating: 2, skinType: `민감성`, country: `일본`, cosmetics: `수분 크림, 선크림, 립밤`, makeup: `가벼운 톤업로션 정도로 자연스럽게 표현하는 메이크업이 잘 어울립니다.`, skincare: `일교차로 예민해지기 쉬운 피부에는 저자극 진정 라인 사용을 권장합니다.`, review: `생각보다 자외선이 강해서 선크림을 안 쓰면 금방 붉어졌어요.` },
+      { id: `quinn_vibe`, gender: `남성`, age: 39, rating: 4, skinType: `민감성`, country: `일본`, cosmetics: `올인원 로션, 선크림, 미스트`, makeup: `저자극 톤업크림 위주로 하고 색조는 최소화하는 것을 권장합니다.`, skincare: `실내 난방·냉방으로 건조해지기 쉬우니 블로팅 페이퍼와 미스트를 함께 챙기세요.`, review: `쾌적한 날씨였지만 건조해서 립밤과 수분크림을 자주 발라야 했어요.` },
+      { id: `beautyaddict07`, gender: `여성`, age: 46, rating: 4, skinType: `민감성`, country: `일본`, cosmetics: `저자극 크림, 진정 토너, 수분 마스크팩`, makeup: `가벼운 산뜻한 로션 타입으로 유분이 적은 제품 위주로 사용하세요.`, skincare: `실내외 온도차가 큰 날에는 수분크림을 자주 덧발라 주는 것이 좋습니다.`, review: `일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.` },
+      { id: `jiyeon_life`, gender: `남성`, age: 53, rating: 5, skinType: `민감성`, country: `일본`, cosmetics: `산뜻한 로션, 선크림, 블로팅 페이퍼`, makeup: `촉촉한 선쿠션과 립틴트로 화사한 인상을 연출할 수 있습니다.`, skincare: `일교차가 크므로 수분 크림으로 아침저녁 보습을 꼼꼼히 챙겨주세요.`, review: `날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.` },
       { id: `sunnytraveler23`, gender: `여성`, age: 54, rating: 3, skinType: `복합성`, country: `태국`, cosmetics: `가벼운 수분 선크림, 쿠션, 미스트`, makeup: `워터프루프 아이라이너와 마스카라로 땀과 습기에 대비하는 것이 좋습니다.`, skincare: `저녁에 이중세안을 꼭 하고 산뜻한 젤 타입 제품으로 유수분 밸런스를 유지하세요.`, review: `생각보다 더 더워서 땀 때문에 끈적임이 심했는데 가벼운 수분 선크림이 정말 큰 도움이 됐습니다.` },
       { id: `dahye_life`, gender: `남성`, age: 21, rating: 5, skinType: `복합성`, country: `태국`, cosmetics: `워터프루프 아이라이너, 피지 흡수 패드, 쿨링 젤`, makeup: `얇은 베이스에 워터프루프 제품 위주로 메이크업하고 픽싱 스프레이로 마무리하는 것을 추천합니다.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 관리하고 쿨링 토너로 진정시켜 주세요.`, review: `야외 일정이 많았는데 자외선이 강해서 워터프루프 아이라이너을 자주 덧발라야 했어요.` },
+      { id: `sunnytraveler_log`, gender: `여성`, age: 28, rating: 2, skinType: `복합성`, country: `태국`, cosmetics: `워터프루프 선크림, 피지 컨트롤 파우더, 픽싱 미스트`, makeup: `매트한 베이스로 유분과 땀을 컨트롤하며 색조는 최소화하는 것이 좋습니다.`, skincare: `자외선 노출 후에는 진정 스프레이와 수분 시트마스크로 피부를 달래주는 것이 좋습니다.`, review: `고온다습한 날씨 탓에 피부 트러블이 갑자기 올라와서 당황했어요.` },
+      { id: `desertrose_life`, gender: `남성`, age: 35, rating: 2, skinType: `복합성`, country: `태국`, cosmetics: `매트 선크림, 블로팅 페이퍼, 쿨링 토너`, makeup: `촉촉한 쿠션으로 습기에도 밀리지 않게 가볍게 표현하는 것을 추천합니다.`, skincare: `실내외 온습도 차이가 크므로 미스트로 수시로 수분을 보충해 주세요.`, review: `에어컨 실내와 습한 실외를 오가다 보니 피부 컨디션이 계속 오락가락했어요.` },
+      { id: `glowygirl_life`, gender: `여성`, age: 42, rating: 4, skinType: `복합성`, country: `태국`, cosmetics: `저자극 선크림, 진정 스프레이, 수분 시트마스크`, makeup: `색조보다는 톤업 선크림 위주로 산뜻하게 마무리하는 것을 권장합니다.`, skincare: `피지 분비가 많아지는 시기이므로 클레이 마스크로 주 1~2회 관리해 주는 것을 추천합니다.`, review: `습도가 정말 높아서 화장이 금방 무너졌어요. 저자극 선크림 없이는 하루도 버티기 힘들었어요.` },
+      { id: `nomakeupdays_story`, gender: `남성`, age: 49, rating: 4, skinType: `복합성`, country: `태국`, cosmetics: `가벼운 수분 선크림, 쿠션, 미스트`, makeup: `워터프루프 아이라이너와 마스카라로 땀과 습기에 대비하는 것이 좋습니다.`, skincare: `저녁에 이중세안을 꼭 하고 산뜻한 젤 타입 제품으로 유수분 밸런스를 유지하세요.`, review: `생각보다 더 더워서 땀 때문에 끈적임이 심했는데 가벼운 수분 선크림이 정말 큰 도움이 됐습니다.` },
+      { id: `jiwoo_mode`, gender: `여성`, age: 56, rating: 4, skinType: `복합성`, country: `태국`, cosmetics: `워터프루프 아이라이너, 피지 흡수 패드, 쿨링 젤`, makeup: `얇은 베이스에 워터프루프 제품 위주로 메이크업하고 픽싱 스프레이로 마무리하는 것을 추천합니다.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 관리하고 쿨링 토너로 진정시켜 주세요.`, review: `야외 일정이 많았는데 자외선이 강해서 워터프루프 아이라이너을 자주 덧발라야 했어요.` },
+      { id: `hydrated_log`, gender: `남성`, age: 23, rating: 4, skinType: `복합성`, country: `태국`, cosmetics: `워터프루프 선크림, 피지 컨트롤 파우더, 픽싱 미스트`, makeup: `매트한 베이스로 유분과 땀을 컨트롤하며 색조는 최소화하는 것이 좋습니다.`, skincare: `자외선 노출 후에는 진정 스프레이와 수분 시트마스크로 피부를 달래주는 것이 좋습니다.`, review: `고온다습한 날씨 탓에 피부 트러블이 갑자기 올라와서 당황했어요.` },
+      { id: `serumfan_k`, gender: `여성`, age: 30, rating: 1, skinType: `복합성`, country: `태국`, cosmetics: `매트 선크림, 블로팅 페이퍼, 쿨링 토너`, makeup: `촉촉한 쿠션으로 습기에도 밀리지 않게 가볍게 표현하는 것을 추천합니다.`, skincare: `실내외 온습도 차이가 크므로 미스트로 수시로 수분을 보충해 주세요.`, review: `에어컨 실내와 습한 실외를 오가다 보니 피부 컨디션이 계속 오락가락했어요.` },
+      { id: `sunkissed07`, gender: `남성`, age: 37, rating: 4, skinType: `복합성`, country: `태국`, cosmetics: `저자극 선크림, 진정 스프레이, 수분 시트마스크`, makeup: `색조보다는 톤업 선크림 위주로 산뜻하게 마무리하는 것을 권장합니다.`, skincare: `피지 분비가 많아지는 시기이므로 클레이 마스크로 주 1~2회 관리해 주는 것을 추천합니다.`, review: `습도가 정말 높아서 화장이 금방 무너졌어요. 저자극 선크림 없이는 하루도 버티기 힘들었어요.` },
       { id: `desertrose99`, gender: `여성`, age: 22, rating: 1, skinType: `건성`, country: `아랍에미리트`, cosmetics: `저자극 선크림, 진정 젤, 수분 세럼`, makeup: `가벼운 수분 쿠션으로 건조함을 커버하며 자연스러운 룩을 연출하세요.`, skincare: `낮은 습도로 인한 수분 손실을 막기 위해 고보습 크림을 겹겹이 발라주세요.`, review: `사막성 기후라 그런지 평소보다 피부가 훨씬 건조해지는 걸 느꼈어요.` },
       { id: `hana99`, gender: `남성`, age: 29, rating: 4, skinType: `건성`, country: `아랍에미리트`, cosmetics: `수분 로션, 선크림, 핸드크림`, makeup: `고보습 베이스 제품으로 들뜸 없이 매끈한 피부 표현이 가능합니다.`, skincare: `입술과 손이 트기 쉬우므로 립밤과 핸드크림을 항상 휴대하는 것이 좋습니다.`, review: `낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.` },
+      { id: `clearskin_vibe`, gender: `여성`, age: 36, rating: 2, skinType: `건성`, country: `아랍에미리트`, cosmetics: `고SPF 선크림, 쿨링 미스트, 립밤`, makeup: `립 제품은 보습 밤 타입을 선택해 건조함으로 인한 각질을 예방하세요.`, skincare: `건조한 기후이므로 미스트를 수시로 뿌려 수분을 보충하는 것이 중요합니다.`, review: `일교차가 커서 낮에는 덥고 밤에는 쌀쌀해 피부가 예민해졌어요.` },
+      { id: `jiwoo_log`, gender: `남성`, age: 43, rating: 4, skinType: `건성`, country: `아랍에미리트`, cosmetics: `수분 크림, 선쿠션, 진정 스프레이`, makeup: `촉촉한 베이스에 크림 타입 블러셔로 생기를 더하는 메이크업을 추천합니다.`, skincare: `강한 햇빛 대비 SPF 높은 제품을 사용하고 쿨링 미스트로 열감을 진정시켜 주세요.`, review: `건조한 바람 때문에 입술과 볼이 자주 텄어요. 수분 크림 없이는 힘들었을 것 같아요.` },
+      { id: `islandhopper_log`, gender: `여성`, age: 50, rating: 4, skinType: `건성`, country: `아랍에미리트`, cosmetics: `고보습 선크림, 미스트, 영양 크림`, makeup: `메이크업은 최소화하고 톤업 선크림으로 자연스럽게 마무리하는 것을 권장합니다.`, skincare: `자외선 노출 후 진정 젤로 쿨다운하고 세럼으로 수분을 채워주는 것을 추천합니다.`, review: `햇빛이 강렬해서 선크림을 2~3시간마다 덧발라야 했어요.` },
+      { id: `hydrationqueen_official`, gender: `남성`, age: 57, rating: 5, skinType: `건성`, country: `아랍에미리트`, cosmetics: `저자극 선크림, 진정 젤, 수분 세럼`, makeup: `가벼운 수분 쿠션으로 건조함을 커버하며 자연스러운 룩을 연출하세요.`, skincare: `낮은 습도로 인한 수분 손실을 막기 위해 고보습 크림을 겹겹이 발라주세요.`, review: `사막성 기후라 그런지 평소보다 피부가 훨씬 건조해지는 걸 느꼈어요.` },
+      { id: `seojun_story`, gender: `여성`, age: 24, rating: 2, skinType: `건성`, country: `아랍에미리트`, cosmetics: `수분 로션, 선크림, 핸드크림`, makeup: `고보습 베이스 제품으로 들뜸 없이 매끈한 피부 표현이 가능합니다.`, skincare: `입술과 손이 트기 쉬우므로 립밤과 핸드크림을 항상 휴대하는 것이 좋습니다.`, review: `낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.` },
+      { id: `mattefinish_official`, gender: `남성`, age: 31, rating: 5, skinType: `건성`, country: `아랍에미리트`, cosmetics: `고SPF 선크림, 쿨링 미스트, 립밤`, makeup: `립 제품은 보습 밤 타입을 선택해 건조함으로 인한 각질을 예방하세요.`, skincare: `건조한 기후이므로 미스트를 수시로 뿌려 수분을 보충하는 것이 중요합니다.`, review: `일교차가 커서 낮에는 덥고 밤에는 쌀쌀해 피부가 예민해졌어요.` },
+      { id: `makeupfan_zone`, gender: `여성`, age: 38, rating: 5, skinType: `건성`, country: `아랍에미리트`, cosmetics: `수분 크림, 선쿠션, 진정 스프레이`, makeup: `촉촉한 베이스에 크림 타입 블러셔로 생기를 더하는 메이크업을 추천합니다.`, skincare: `강한 햇빛 대비 SPF 높은 제품을 사용하고 쿨링 미스트로 열감을 진정시켜 주세요.`, review: `건조한 바람 때문에 입술과 볼이 자주 텄어요. 수분 크림 없이는 힘들었을 것 같아요.` },
+      { id: `frostyvibe23`, gender: `남성`, age: 45, rating: 3, skinType: `건성`, country: `아랍에미리트`, cosmetics: `고보습 선크림, 미스트, 영양 크림`, makeup: `메이크업은 최소화하고 톤업 선크림으로 자연스럽게 마무리하는 것을 권장합니다.`, skincare: `자외선 노출 후 진정 젤로 쿨다운하고 세럼으로 수분을 채워주는 것을 추천합니다.`, review: `햇빛이 강렬해서 선크림을 2~3시간마다 덧발라야 했어요.` },
       { id: `wanderlust_log`, gender: `여성`, age: 34, rating: 3, skinType: `복합성`, country: `프랑스`, cosmetics: `산뜻한 로션, 선크림, 블로팅 페이퍼`, makeup: `촉촉한 선쿠션과 립틴트로 화사한 인상을 연출할 수 있습니다.`, skincare: `일교차가 크므로 수분 크림으로 아침저녁 보습을 꼼꼼히 챙겨주세요.`, review: `날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.` },
       { id: `tropicalgirl_official`, gender: `남성`, age: 41, rating: 5, skinType: `복합성`, country: `프랑스`, cosmetics: `수분 크림, 립틴트, 선쿠션`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩을 연출하는 것을 추천합니다.`, skincare: `환절기 피부 컨디션 변화에 대비해 올인원 로션으로 간편하게 보습을 유지하세요.`, review: `사계절이 뚜렷한 곳이라 그런지 여행 기간 내내 온도 변화에 신경 써야 했어요.` },
+      { id: `yuna_diary`, gender: `여성`, age: 48, rating: 3, skinType: `복합성`, country: `프랑스`, cosmetics: `수분 크림, 선크림, 립밤`, makeup: `가벼운 톤업로션 정도로 자연스럽게 표현하는 메이크업이 잘 어울립니다.`, skincare: `일교차로 예민해지기 쉬운 피부에는 저자극 진정 라인 사용을 권장합니다.`, review: `생각보다 자외선이 강해서 선크림을 안 쓰면 금방 붉어졌어요.` },
+      { id: `haru_note`, gender: `남성`, age: 55, rating: 1, skinType: `복합성`, country: `프랑스`, cosmetics: `올인원 로션, 선크림, 미스트`, makeup: `저자극 톤업크림 위주로 하고 색조는 최소화하는 것을 권장합니다.`, skincare: `실내 난방·냉방으로 건조해지기 쉬우니 블로팅 페이퍼와 미스트를 함께 챙기세요.`, review: `쾌적한 날씨였지만 건조해서 립밤과 수분크림을 자주 발라야 했어요.` },
+      { id: `dewyskin_k`, gender: `여성`, age: 22, rating: 5, skinType: `복합성`, country: `프랑스`, cosmetics: `저자극 크림, 진정 토너, 수분 마스크팩`, makeup: `가벼운 산뜻한 로션 타입으로 유분이 적은 제품 위주로 사용하세요.`, skincare: `실내외 온도차가 큰 날에는 수분크림을 자주 덧발라 주는 것이 좋습니다.`, review: `일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.` },
+      { id: `toneuplife_world`, gender: `남성`, age: 29, rating: 4, skinType: `복합성`, country: `프랑스`, cosmetics: `산뜻한 로션, 선크림, 블로팅 페이퍼`, makeup: `촉촉한 선쿠션과 립틴트로 화사한 인상을 연출할 수 있습니다.`, skincare: `일교차가 크므로 수분 크림으로 아침저녁 보습을 꼼꼼히 챙겨주세요.`, review: `날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.` },
+      { id: `somin99`, gender: `여성`, age: 36, rating: 4, skinType: `복합성`, country: `프랑스`, cosmetics: `수분 크림, 립틴트, 선쿠션`, makeup: `촉촉한 쿠션과 크림 블러셔로 생기 있는 룩을 연출하는 것을 추천합니다.`, skincare: `환절기 피부 컨디션 변화에 대비해 올인원 로션으로 간편하게 보습을 유지하세요.`, review: `사계절이 뚜렷한 곳이라 그런지 여행 기간 내내 온도 변화에 신경 써야 했어요.` },
+      { id: `roadtripper88`, gender: `남성`, age: 43, rating: 2, skinType: `복합성`, country: `프랑스`, cosmetics: `수분 크림, 선크림, 립밤`, makeup: `가벼운 톤업로션 정도로 자연스럽게 표현하는 메이크업이 잘 어울립니다.`, skincare: `일교차로 예민해지기 쉬운 피부에는 저자극 진정 라인 사용을 권장합니다.`, review: `생각보다 자외선이 강해서 선크림을 안 쓰면 금방 붉어졌어요.` },
+      { id: `iseul_k`, gender: `여성`, age: 50, rating: 4, skinType: `복합성`, country: `프랑스`, cosmetics: `올인원 로션, 선크림, 미스트`, makeup: `저자극 톤업크림 위주로 하고 색조는 최소화하는 것을 권장합니다.`, skincare: `실내 난방·냉방으로 건조해지기 쉬우니 블로팅 페이퍼와 미스트를 함께 챙기세요.`, review: `쾌적한 날씨였지만 건조해서 립밤과 수분크림을 자주 발라야 했어요.` },
+      { id: `desertrose_diary`, gender: `남성`, age: 57, rating: 5, skinType: `복합성`, country: `프랑스`, cosmetics: `저자극 크림, 진정 토너, 수분 마스크팩`, makeup: `가벼운 산뜻한 로션 타입으로 유분이 적은 제품 위주로 사용하세요.`, skincare: `실내외 온도차가 큰 날에는 수분크림을 자주 덧발라 주는 것이 좋습니다.`, review: `일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.` },
       { id: `yeji_life`, gender: `여성`, age: 27, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `피지 컨트롤 파우더, 워터프루프 선크림, 미스트`, makeup: `베이스는 얇게, 픽싱 스프레이로 마무리해 번들거림 방지. 아이라이너는 워터프루프 필수.`, skincare: `저녁에 이중세안 필수, 가벼운 젤 타입 로션 위주로 유수분 밸런스 유지.`, review: `습도가 높아서 파운데이션이 계속 뜨더라고요. 워터프루프 제품 없이는 3시간도 못 버텼어요.` },
       { id: `funtraveler_world`, gender: `남성`, age: 34, rating: 3, skinType: `복합성`, country: `싱가포르`, cosmetics: `선크림 SPF50+, 블로팅 페이퍼, 쿨링 토너`, makeup: `남성용 톤업크림 정도만 가볍게, 유분 많은 제품은 피하기.`, skincare: `외출 전후 블로팅 페이퍼로 피지 제거, 쿨링 토너로 진정.`, review: `야외 일정이 많았는데 선크림 안 바르면 바로 붉어졌어요. 자주 덧발라야 합니다.` },
+      { id: `backpacklife_daily`, gender: `여성`, age: 22, rating: 4, skinType: `건성`, country: `싱가포르`, cosmetics: `수분 세럼, 저자극 선크림, 쿠션 팩트`, makeup: `쿠션은 촉촉 타입으로, 하이라이터는 최소화.`, skincare: `에어컨 실내가 많아 건조해지기 쉬우니 수분 세럼 필수 휴대.`, review: `실내는 에어컨 때문에 건조하고 밖은 습해서 피부가 오락가락했어요.` },
+      { id: `backpacklife_ing`, gender: `남성`, age: 41, rating: 4, skinType: `민감성`, country: `싱가포르`, cosmetics: `저자극 선크림, 진정 스프레이, 쿨링 시트마스크`, makeup: `메이크업은 생략 권장, 톤업 선크림으로 대체.`, skincare: `자외선 노출 후 진정 스프레이로 즉시 쿨링, 저녁엔 시트마스크로 진정 케어.`, review: `더위에 피부가 예민해져서 평소 안 쓰던 진정 제품을 계속 챙겨 발랐어요.` },
+      { id: `sensitiveskin_love`, gender: `여성`, age: 30, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `매트 선크림, 픽싱 스프레이, 유분 흡수 패드`, makeup: `매트 베이스 + 픽싱 스프레이 조합으로 지속력 강화.`, skincare: `낮 동안 유분 흡수 패드로 T존 관리, 밤엔 클레이 마스크 추천.`, review: `사진 찍을 일이 많았는데 매트 선크림 덕분에 오래 유지됐어요.` },
+      { id: `calmnface_life`, gender: `남성`, age: 23, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `저자극 선크림, 진정 스프레이, 수분 시트마스크`, makeup: `색조보다는 톤업 선크림 위주로 산뜻하게 마무리하는 것을 권장합니다.`, skincare: `피지 분비가 많아지는 시기이므로 클레이 마스크로 주 1~2회 관리해 주는 것을 추천합니다.`, review: `습도가 정말 높아서 화장이 금방 무너졌어요. 저자극 선크림 없이는 하루도 버티기 힘들었어요.` },
+      { id: `chillmode07`, gender: `여성`, age: 30, rating: 1, skinType: `지성`, country: `싱가포르`, cosmetics: `가벼운 수분 선크림, 쿠션, 미스트`, makeup: `워터프루프 아이라이너와 마스카라로 땀과 습기에 대비하는 것이 좋습니다.`, skincare: `저녁에 이중세안을 꼭 하고 산뜻한 젤 타입 제품으로 유수분 밸런스를 유지하세요.`, review: `생각보다 더 더워서 땀 때문에 끈적임이 심했는데 가벼운 수분 선크림이 정말 큰 도움이 됐습니다.` },
+      { id: `frostyvibe_daily`, gender: `남성`, age: 37, rating: 4, skinType: `지성`, country: `싱가포르`, cosmetics: `워터프루프 아이라이너, 피지 흡수 패드, 쿨링 젤`, makeup: `얇은 베이스에 워터프루프 제품 위주로 메이크업하고 픽싱 스프레이로 마무리하는 것을 추천합니다.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 관리하고 쿨링 토너로 진정시켜 주세요.`, review: `야외 일정이 많았는데 자외선이 강해서 워터프루프 아이라이너을 자주 덧발라야 했어요.` },
+      { id: `jaewon_diary`, gender: `여성`, age: 44, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `워터프루프 선크림, 피지 컨트롤 파우더, 픽싱 미스트`, makeup: `매트한 베이스로 유분과 땀을 컨트롤하며 색조는 최소화하는 것이 좋습니다.`, skincare: `자외선 노출 후에는 진정 스프레이와 수분 시트마스크로 피부를 달래주는 것이 좋습니다.`, review: `고온다습한 날씨 탓에 피부 트러블이 갑자기 올라와서 당황했어요.` },
+      { id: `serumfan01`, gender: `남성`, age: 51, rating: 3, skinType: `지성`, country: `싱가포르`, cosmetics: `매트 선크림, 블로팅 페이퍼, 쿨링 토너`, makeup: `촉촉한 쿠션으로 습기에도 밀리지 않게 가볍게 표현하는 것을 추천합니다.`, skincare: `실내외 온습도 차이가 크므로 미스트로 수시로 수분을 보충해 주세요.`, review: `에어컨 실내와 습한 실외를 오가다 보니 피부 컨디션이 계속 오락가락했어요.` },
     ];
 
     function renderStars(rating) {
@@ -1035,10 +1506,33 @@ HTML_PAGE = """<!DOCTYPE html>
       return `<span class="text-brand-500">${filled}</span><span class="text-gray-300">${empty}</span>`;
     }
 
+    function getAgeGroup(age) {
+      if (age < 30) return '20대';
+      if (age < 40) return '30대';
+      if (age < 50) return '40대';
+      return '50대 이상';
+    }
+
     function renderCommunityFeed() {
+      const countryFilter = document.getElementById('communityCountryFilter').value;
+      const genderFilter = document.getElementById('communityGenderFilter').value;
+      const ageFilter = document.getElementById('communityAgeFilter').value;
+      const skinFilter = document.getElementById('communitySkinFilter').value;
+
+      const filtered = communityReviews.filter((post) => {
+        if (countryFilter && post.country !== countryFilter) return false;
+        if (genderFilter && post.gender !== genderFilter) return false;
+        if (ageFilter && getAgeGroup(post.age) !== ageFilter) return false;
+        if (skinFilter && post.skinType !== skinFilter) return false;
+        return true;
+      });
+
       const communityFeed = document.getElementById('communityFeed');
+      const emptyNote = document.getElementById('communityEmptyNote');
       communityFeed.innerHTML = '';
-      communityReviews.forEach((post) => {
+      emptyNote.classList.toggle('hidden', filtered.length > 0);
+
+      filtered.forEach((post) => {
         const card = document.createElement('div');
         card.className = 'bg-white border border-gray-100 rounded-xl p-4';
         card.innerHTML = `
@@ -1046,7 +1540,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">${post.id.charAt(0).toUpperCase()}</div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold truncate">${post.id}</p>
-              <span class="text-[10px] text-gray-400">${post.country} 여행 · ${post.gender} · ${post.age}세</span>
+              <span class="text-[10px] text-gray-400">${post.country} 여행 · ${post.gender} · ${post.age}세 · ${post.skinType} 피부</span>
             </div>
             <p class="text-xs shrink-0">${renderStars(post.rating)}</p>
           </div>
@@ -1067,6 +1561,22 @@ HTML_PAGE = """<!DOCTYPE html>
         communityFeed.appendChild(card);
       });
     }
+
+    // 커뮤니티 탭에 처음 들어올 때만 등록된 여행지를 기본 필터로 설정 (이후엔 사용자가 고른 필터를 유지)
+    // 커뮤니티는 5개국 리뷰만 있으므로, 등록한 여행지가 그중 하나일 때만 기본값으로 반영
+    let communityDefaultApplied = false;
+    function applyDefaultCommunityFilter() {
+      const destinationKey = document.getElementById('destinationSelect').value;
+      const communityFilter = document.getElementById('communityCountryFilter');
+      const isSupported = Array.from(communityFilter.options).some((opt) => opt.value === destinationKey);
+      if (isSupported) {
+        communityFilter.value = destinationKey;
+      }
+    }
+
+    ['communityCountryFilter', 'communityGenderFilter', 'communityAgeFilter', 'communitySkinFilter'].forEach((id) => {
+      document.getElementById(id).addEventListener('change', renderCommunityFeed);
+    });
     renderCommunityFeed();
 
     // 개인설정 탭에 등록된 내 정보를 요약해서 보여줌
@@ -1081,7 +1591,7 @@ HTML_PAGE = """<!DOCTYPE html>
       const concernCount = document.querySelectorAll('.concern-chip.active').length;
       const productCount = getMyProducts().length;
       const destinationKey = document.getElementById('destinationSelect').value;
-      const destinationLabel = destinationLabels[destinationKey] || '미선택';
+      const destinationLabel = destinationKey || '미선택';
       const start = document.getElementById('tripStartDate').value || '-';
       const end = document.getElementById('tripEndDate').value || '-';
 
@@ -1238,7 +1748,7 @@ HTML_PAGE = """<!DOCTYPE html>
       pouchText.className = pouchEmpty ? 'text-xs font-medium text-red-500' : 'text-xs text-gray-400';
       pouchText.textContent = pouchEmpty ? '파우치가 비어있어요! 화장품을 등록해주세요' : `화장품 ${productCount}개 등록됨`;
 
-      const label = destinationLabels[currentTripDestination] || '여행지';
+      const label = currentTripDestination || '여행지';
       const start = document.getElementById('tripStartDate').value;
       const end = document.getElementById('tripEndDate').value;
       document.getElementById('tripSummaryBanner').innerHTML = `
@@ -1289,7 +1799,7 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // 사용중 탭의 여행지 기준으로 조정 제안 계산 (등록 2단계에서 선택한 여행지로 갱신됨)
-    let currentTripDestination = 'tokyo';
+    let currentTripDestination = '일본';
     function refreshAdjustedRoutine() {
       renderTripOverview();
       const activeSkinBtn = document.querySelector('.skin-btn.active');
