@@ -6,7 +6,36 @@ st.set_page_config(page_title="SkinTrip", layout="centered")
 st.markdown(
     """
     <style>
-      .block-container { padding-top: 1.5rem; }
+      /* 하단 메뉴바가 실제 화면(뷰포트) 기준으로 항상 보이도록, Streamlit의
+         기본 헤더/여백을 모두 걷어내고 컴포넌트 iframe을 실제 뷰포트 높이
+         (100dvh)에 정확히 맞춤. 이렇게 해야 iframe 내부의 앱 셸
+         (app-shell-fixed)이 계산하는 "화면 높이"가 진짜 브라우저 뷰포트와
+         일치해서, 페이지 자체를 스크롤해야 메뉴바가 보이는 문제가 생기지 않음 */
+      html, body { margin: 0 !important; padding: 0 !important; height: 100%; }
+      [data-testid="stHeader"] { display: none; }
+      [data-testid="stApp"],
+      [data-testid="stAppViewContainer"],
+      [data-testid="stMain"] {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      [data-testid="stMainBlockContainer"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      [data-testid="stVerticalBlock"] { gap: 0 !important; }
+      [data-testid="stElementContainer"]:has(iframe) {
+        height: 100vh !important;
+        height: 100dvh !important;
+      }
+      [data-testid="stElementContainer"] iframe {
+        display: block !important;
+        width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        border: none !important;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -123,10 +152,13 @@ HTML_PAGE = """<!DOCTYPE html>
   .screen-transition {
     animation: screenFadeIn 0.22s ease;
   }
-  /* 온보딩 완료 후: 앱 셸을 고정 높이로 만들고 본문만 스크롤되게 해서
-     화면 길이가 어떻든 하단 메뉴바가 항상 화면 하단에 붙어있도록 함 */
+  /* 온보딩 완료 후: 앱 셸을 실제 뷰포트 높이(100dvh)로 만들고 본문만
+     스크롤되게 해서 화면 길이가 어떻든 하단 메뉴바가 항상 화면 하단에
+     붙어있도록 함. iframe 자체가 Streamlit 쪽 CSS로 100dvh로 고정되어
+     있으므로, 여기서의 100dvh는 진짜 브라우저 뷰포트 높이와 같음 */
   .app-shell-fixed {
-    height: 874px;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -192,7 +224,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 ============ -->
-  <div id="screen-landing" class="relative h-[874px] max-w-[402px] mx-auto overflow-hidden bg-black text-white">
+  <div id="screen-landing" class="relative max-w-[402px] mx-auto overflow-hidden bg-black text-white" style="height: 100vh; height: 100dvh;">
     <div class="absolute inset-0">
       <img src="https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57723/globe_west_2048.jpg" alt="지구" class="w-full h-full object-cover object-[62%_38%]" />
       <div class="absolute inset-0 bg-gradient-to-b from-black/25 via-black/0 to-black/75"></div>
@@ -1971,7 +2003,7 @@ HTML_PAGE = """<!DOCTYPE html>
         card.innerHTML = `
           <div class="flex items-center gap-3 mb-2">
             <div class="w-11 h-11 rounded-full ${getSkinTypeAvatarBg(post.skinType)} shrink-0 relative overflow-hidden">
-              <img src="https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(post.id)}" alt="${post.id}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none';" />
+              <img src="https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(post.id)}" alt="${post.id}" class="absolute inset-0 z-10 w-full h-full object-cover bg-white" onerror="this.style.display='none';" />
               <div class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm font-bold">${post.id.charAt(0).toUpperCase()}</div>
             </div>
             <div class="flex-1 min-w-0">
