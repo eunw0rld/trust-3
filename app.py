@@ -136,6 +136,46 @@ HTML_PAGE = """<!DOCTYPE html>
   .back-to-nav-btn {
     display: inline-block;
   }
+  .history-view-toggle-btn {
+    color: #6b7280;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .history-view-toggle-btn.active {
+    background: #ffffff;
+    color: #f97316;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  .pouch-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff7ed;
+    color: #c2410c;
+    border-radius: 9999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pouch-chip button {
+    color: #fdba74;
+  }
+  .trip-segment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 9999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pouch-accordion-collapsed #pouchAccordionBody {
+    display: none;
+  }
+  .pouch-accordion-collapsed #pouchAccordionChevron {
+    transform: rotate(-90deg);
+  }
   .nav-tail {
     position: absolute;
     bottom: 4px;
@@ -556,231 +596,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
         </div>
 
-        <!-- 등록 (2): 여행지·여행 계획 입력 -->
-        <div id="register-step2" class="hidden space-y-8">
-
-          <div>
-            <button id="step2ToMainBtn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
-            <h2 class="text-base font-bold mb-1">여행지와 여행 계획을 알려주세요</h2>
-            <p class="text-sm text-gray-400 mb-4">입력한 여행지 기후에 맞춰 루틴을 조정해드려요</p>
-
-            <p class="text-xs font-semibold text-gray-400 mb-2">여행지</p>
-            <select id="destinationSelect" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:border-brand-500">
-              <option value="">여행지를 선택해주세요</option>
-              <option value="가나">가나</option>
-              <option value="가봉">가봉</option>
-              <option value="가이아나">가이아나</option>
-              <option value="감비아">감비아</option>
-              <option value="과테말라">과테말라</option>
-              <option value="그레나다">그레나다</option>
-              <option value="그리스">그리스</option>
-              <option value="기니">기니</option>
-              <option value="기니비사우">기니비사우</option>
-              <option value="나미비아">나미비아</option>
-              <option value="나우루">나우루</option>
-              <option value="나이지리아">나이지리아</option>
-              <option value="남수단">남수단</option>
-              <option value="남아프리카공화국">남아프리카공화국</option>
-              <option value="네덜란드">네덜란드</option>
-              <option value="네팔">네팔</option>
-              <option value="노르웨이">노르웨이</option>
-              <option value="뉴질랜드">뉴질랜드</option>
-              <option value="니제르">니제르</option>
-              <option value="니카라과">니카라과</option>
-              <option value="대만">대만</option>
-              <option value="대한민국">대한민국</option>
-              <option value="덴마크">덴마크</option>
-              <option value="도미니카">도미니카</option>
-              <option value="도미니카공화국">도미니카공화국</option>
-              <option value="독일">독일</option>
-              <option value="동티모르">동티모르</option>
-              <option value="라오스">라오스</option>
-              <option value="라이베리아">라이베리아</option>
-              <option value="라트비아">라트비아</option>
-              <option value="러시아">러시아</option>
-              <option value="레바논">레바논</option>
-              <option value="레소토">레소토</option>
-              <option value="루마니아">루마니아</option>
-              <option value="룩셈부르크">룩셈부르크</option>
-              <option value="르완다">르완다</option>
-              <option value="리비아">리비아</option>
-              <option value="리투아니아">리투아니아</option>
-              <option value="리히텐슈타인">리히텐슈타인</option>
-              <option value="마다가스카르">마다가스카르</option>
-              <option value="마셜제도">마셜제도</option>
-              <option value="말라위">말라위</option>
-              <option value="말레이시아">말레이시아</option>
-              <option value="말리">말리</option>
-              <option value="멕시코">멕시코</option>
-              <option value="모나코">모나코</option>
-              <option value="모로코">모로코</option>
-              <option value="모리셔스">모리셔스</option>
-              <option value="모리타니">모리타니</option>
-              <option value="모잠비크">모잠비크</option>
-              <option value="몬테네그로">몬테네그로</option>
-              <option value="몰도바">몰도바</option>
-              <option value="몰디브">몰디브</option>
-              <option value="몰타">몰타</option>
-              <option value="몽골">몽골</option>
-              <option value="미국">미국</option>
-              <option value="미얀마">미얀마</option>
-              <option value="미크로네시아">미크로네시아</option>
-              <option value="바누아투">바누아투</option>
-              <option value="바레인">바레인</option>
-              <option value="바베이도스">바베이도스</option>
-              <option value="바티칸">바티칸</option>
-              <option value="바하마">바하마</option>
-              <option value="방글라데시">방글라데시</option>
-              <option value="베냉">베냉</option>
-              <option value="베네수엘라">베네수엘라</option>
-              <option value="베트남">베트남</option>
-              <option value="벨기에">벨기에</option>
-              <option value="벨라루스">벨라루스</option>
-              <option value="벨리즈">벨리즈</option>
-              <option value="보스니아헤르체고비나">보스니아헤르체고비나</option>
-              <option value="보츠와나">보츠와나</option>
-              <option value="볼리비아">볼리비아</option>
-              <option value="부룬디">부룬디</option>
-              <option value="부르키나파소">부르키나파소</option>
-              <option value="부탄">부탄</option>
-              <option value="북마케도니아">북마케도니아</option>
-              <option value="북한">북한</option>
-              <option value="불가리아">불가리아</option>
-              <option value="브라질">브라질</option>
-              <option value="브루나이">브루나이</option>
-              <option value="사모아">사모아</option>
-              <option value="사우디아라비아">사우디아라비아</option>
-              <option value="산마리노">산마리노</option>
-              <option value="상투메프린시페">상투메프린시페</option>
-              <option value="세네갈">세네갈</option>
-              <option value="세르비아">세르비아</option>
-              <option value="세이셸">세이셸</option>
-              <option value="세인트루시아">세인트루시아</option>
-              <option value="세인트빈센트그레나딘">세인트빈센트그레나딘</option>
-              <option value="세인트키츠네비스">세인트키츠네비스</option>
-              <option value="소말리아">소말리아</option>
-              <option value="솔로몬제도">솔로몬제도</option>
-              <option value="수단">수단</option>
-              <option value="수리남">수리남</option>
-              <option value="스리랑카">스리랑카</option>
-              <option value="스웨덴">스웨덴</option>
-              <option value="스위스">스위스</option>
-              <option value="스페인">스페인</option>
-              <option value="슬로바키아">슬로바키아</option>
-              <option value="슬로베니아">슬로베니아</option>
-              <option value="시리아">시리아</option>
-              <option value="시에라리온">시에라리온</option>
-              <option value="싱가포르">싱가포르</option>
-              <option value="아랍에미리트">아랍에미리트</option>
-              <option value="아르메니아">아르메니아</option>
-              <option value="아르헨티나">아르헨티나</option>
-              <option value="아이슬란드">아이슬란드</option>
-              <option value="아이티">아이티</option>
-              <option value="아일랜드">아일랜드</option>
-              <option value="아제르바이잔">아제르바이잔</option>
-              <option value="아프가니스탄">아프가니스탄</option>
-              <option value="안도라">안도라</option>
-              <option value="알바니아">알바니아</option>
-              <option value="알제리">알제리</option>
-              <option value="앙골라">앙골라</option>
-              <option value="앤티가바부다">앤티가바부다</option>
-              <option value="에리트레아">에리트레아</option>
-              <option value="에스와티니">에스와티니</option>
-              <option value="에스토니아">에스토니아</option>
-              <option value="에콰도르">에콰도르</option>
-              <option value="에티오피아">에티오피아</option>
-              <option value="엘살바도르">엘살바도르</option>
-              <option value="영국">영국</option>
-              <option value="예멘">예멘</option>
-              <option value="오만">오만</option>
-              <option value="오스트리아">오스트리아</option>
-              <option value="온두라스">온두라스</option>
-              <option value="요르단">요르단</option>
-              <option value="우간다">우간다</option>
-              <option value="우루과이">우루과이</option>
-              <option value="우즈베키스탄">우즈베키스탄</option>
-              <option value="우크라이나">우크라이나</option>
-              <option value="이라크">이라크</option>
-              <option value="이란">이란</option>
-              <option value="이스라엘">이스라엘</option>
-              <option value="이집트">이집트</option>
-              <option value="이탈리아">이탈리아</option>
-              <option value="인도">인도</option>
-              <option value="인도네시아">인도네시아</option>
-              <option value="일본">일본</option>
-              <option value="자메이카">자메이카</option>
-              <option value="잠비아">잠비아</option>
-              <option value="적도기니">적도기니</option>
-              <option value="조지아">조지아</option>
-              <option value="중국">중국</option>
-              <option value="중앙아프리카공화국">중앙아프리카공화국</option>
-              <option value="지부티">지부티</option>
-              <option value="짐바브웨">짐바브웨</option>
-              <option value="차드">차드</option>
-              <option value="체코">체코</option>
-              <option value="칠레">칠레</option>
-              <option value="카메룬">카메룬</option>
-              <option value="카보베르데">카보베르데</option>
-              <option value="카자흐스탄">카자흐스탄</option>
-              <option value="카타르">카타르</option>
-              <option value="캄보디아">캄보디아</option>
-              <option value="캐나다">캐나다</option>
-              <option value="케냐">케냐</option>
-              <option value="코모로">코모로</option>
-              <option value="코스타리카">코스타리카</option>
-              <option value="코트디부아르">코트디부아르</option>
-              <option value="콜롬비아">콜롬비아</option>
-              <option value="콩고공화국">콩고공화국</option>
-              <option value="콩고민주공화국">콩고민주공화국</option>
-              <option value="쿠바">쿠바</option>
-              <option value="쿠웨이트">쿠웨이트</option>
-              <option value="크로아티아">크로아티아</option>
-              <option value="키르기스스탄">키르기스스탄</option>
-              <option value="키리바시">키리바시</option>
-              <option value="키프로스">키프로스</option>
-              <option value="타지키스탄">타지키스탄</option>
-              <option value="탄자니아">탄자니아</option>
-              <option value="태국">태국</option>
-              <option value="토고">토고</option>
-              <option value="통가">통가</option>
-              <option value="투르크메니스탄">투르크메니스탄</option>
-              <option value="투발루">투발루</option>
-              <option value="튀니지">튀니지</option>
-              <option value="튀르키예">튀르키예</option>
-              <option value="트리니다드토바고">트리니다드토바고</option>
-              <option value="파나마">파나마</option>
-              <option value="파라과이">파라과이</option>
-              <option value="파키스탄">파키스탄</option>
-              <option value="파푸아뉴기니">파푸아뉴기니</option>
-              <option value="팔라우">팔라우</option>
-              <option value="팔레스타인">팔레스타인</option>
-              <option value="페루">페루</option>
-              <option value="포르투갈">포르투갈</option>
-              <option value="폴란드">폴란드</option>
-              <option value="프랑스">프랑스</option>
-              <option value="피지">피지</option>
-              <option value="핀란드">핀란드</option>
-              <option value="필리핀">필리핀</option>
-              <option value="헝가리">헝가리</option>
-              <option value="호주">호주</option>
-            </select>
-
-            <p class="text-xs font-semibold text-gray-400 mb-2">여행 계획</p>
-            <div class="grid grid-cols-2 gap-2">
-              <input id="tripStartDate" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
-              <input id="tripEndDate" type="date" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
-            </div>
-          </div>
-
-          <div>
-            <p id="step2Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3"></p>
-            <button id="completeOnboardingBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">
-              여행지 등록 완료
-            </button>
-          </div>
-
-        </div>
-
       </section>
 
       <!-- ============ 2. 메인 페이지 (대시보드) ============ -->
@@ -789,6 +604,42 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 상단 바: 프로필 설정 바로가기 -->
         <div class="flex justify-end">
           <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
+        </div>
+
+        <!-- 여행 일정 등록 (다중 구간) -->
+        <div id="tripSegmentsSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="text-base font-bold">여행 일정 등록</h2>
+            <button id="tripSegmentsEditToggleBtn" type="button" class="hidden text-xs font-semibold text-brand-500">수정</button>
+          </div>
+          <p id="tripSegmentsHint" class="text-sm text-gray-400 mb-3">여행 구간을 추가하고 국가를 선택해주세요</p>
+
+          <div id="tripSegmentsSummary" class="hidden flex flex-wrap gap-2 mb-1"></div>
+
+          <div id="tripSegmentsForm" class="space-y-3">
+            <div id="tripSegmentRows" class="space-y-3"></div>
+            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
+            <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
+          </div>
+        </div>
+
+        <!-- 내 파우치 (아코디언, 빠른 등록) -->
+        <div id="pouchQuickAddSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+          <button id="pouchAccordionToggleBtn" type="button" class="w-full flex items-center justify-between">
+            <h2 class="text-base font-bold">내 파우치</h2>
+            <span id="pouchAccordionChevron" class="text-gray-400 text-sm">▾</span>
+          </button>
+          <p id="pouchQuickAddHint" class="text-sm text-gray-400 mt-1">보유한 화장품을 추가해주세요</p>
+
+          <div id="pouchAccordionBody" class="mt-3 space-y-3">
+            <div id="pouchChipList" class="flex flex-wrap gap-2"></div>
+            <div id="pouchQuickAddForm" class="hidden flex gap-2 items-center">
+              <input id="pouchQuickAddName" type="text" placeholder="제품명" class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+              <select id="pouchQuickAddCategory" class="border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 focus:outline-none focus:border-brand-500"></select>
+              <button id="pouchQuickAddConfirmBtn" type="button" class="text-brand-500 text-sm font-bold px-2 shrink-0">추가</button>
+            </div>
+            <button id="pouchQuickAddOpenBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 화장품 추가</button>
+          </div>
         </div>
 
         <!-- 오늘의 날씨 + 뷰티 인사이트 통합 카드 (여행지 등록 후에만 표시, 화면 최상단에 우선 노출) -->
@@ -954,10 +805,34 @@ HTML_PAGE = """<!DOCTYPE html>
 
       </section>
 
-      <!-- ============ 3. 사용후 페이지 (입국신고서 컨셉) ============ -->
+      <!-- ============ 3. 기록 페이지 (달력별 기록 / 지구본 기록) ============ -->
+      <section id="screen-history" class="hidden py-6 space-y-4">
+        <div>
+          <h2 class="text-base font-bold mb-1">여행 기록</h2>
+          <p class="text-sm text-gray-400 mb-4">등록한 여행 일정을 달력 또는 지구본으로 확인해보세요</p>
+        </div>
+
+        <div class="flex bg-gray-100 rounded-full p-1">
+          <button type="button" class="history-view-toggle-btn active flex-1 py-2 rounded-full text-sm font-semibold" data-view="calendar">📅 달력별 기록</button>
+          <button type="button" class="history-view-toggle-btn flex-1 py-2 rounded-full text-sm font-semibold" data-view="globe">🌐 지구본 기록</button>
+        </div>
+
+        <div id="historyCalendarView" class="space-y-2">
+          <p id="historyCalendarEmpty" class="hidden text-sm text-gray-400 text-center py-10">아직 등록된 여행 일정이 없어요</p>
+          <div id="historyCalendarList" class="space-y-2"></div>
+        </div>
+
+        <div id="historyGlobeView" class="hidden space-y-3">
+          <div id="historyGlobeViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+          <p id="historyGlobeEmpty" class="hidden text-sm text-gray-400 text-center py-6">아직 등록된 여행 일정이 없어요</p>
+          <div id="historyGlobeList" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- ============ 4. 사용후 페이지 (입국신고서 컨셉) ============ -->
       <section id="screen-afteruse" class="hidden py-6 space-y-6">
 
-        <button id="afterUseToSettingsBtn" type="button" class="text-xs text-gray-400">← 이전</button>
+        <button id="afterUseToSettingsBtn" type="button" class="back-to-nav-btn text-xs text-gray-400">← 이전</button>
 
         <div class="border border-gray-200 rounded-2xl p-5">
           <div class="flex items-center justify-between mb-1">
@@ -1190,6 +1065,11 @@ HTML_PAGE = """<!DOCTYPE html>
           <span class="flex-1 text-left text-sm font-semibold">내 피부 비교하기</span>
           <span class="text-gray-300">›</span>
         </button>
+        <button type="button" class="more-menu-item" data-target="skinReport">
+          <span class="text-lg">📝</span>
+          <span class="flex-1 text-left text-sm font-semibold">여행 후 피부 신고서</span>
+          <span class="text-gray-300">›</span>
+        </button>
         <button type="button" class="more-menu-item" data-target="settings">
           <span class="text-lg">⚙️</span>
           <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
@@ -1289,7 +1169,8 @@ HTML_PAGE = """<!DOCTYPE html>
     const screens = {
       register: document.getElementById('screen-register'),
       inuse: document.getElementById('screen-inuse'),
-      history: document.getElementById('screen-afteruse'),
+      history: document.getElementById('screen-history'),
+      skinReport: document.getElementById('screen-afteruse'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
       pouch: document.getElementById('screen-pouch'),
@@ -1325,6 +1206,7 @@ HTML_PAGE = """<!DOCTYPE html>
     let mapInstance = null;
     let cityMarkers = [];
     let currentCityStores = [];
+    let lastFlownMapDestination = null;
 
     // 초기 지구본 화면의 아주 느린 자동 회전 (거의 느껴지지 않을 정도) - 사용자 조작이나
     // 내 위치 확인 flyTo가 시작되면 멈춤
@@ -1631,11 +1513,7 @@ HTML_PAGE = """<!DOCTYPE html>
     });
 
     document.getElementById('goToAfterUseBtn').addEventListener('click', () => {
-      switchTab('history');
-    });
-
-    document.getElementById('afterUseToSettingsBtn').addEventListener('click', () => {
-      switchTab('settings');
+      switchTab('skinReport');
     });
 
     // 메인 대시보드의 바로가기 카드/버튼
@@ -1643,8 +1521,7 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('settings');
     });
     document.getElementById('mainRegisterTripBtn').addEventListener('click', () => {
-      switchTab('register');
-      showRegisterStep('step2');
+      expandTripSegmentsForm();
     });
     document.getElementById('mainPouchCardEmpty').addEventListener('click', () => {
       switchTab('pouch');
@@ -1716,21 +1593,6 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById(id).classList.add('hidden');
     }
 
-    function showRegisterStep(stepName) {
-      ['step1', 'step2'].forEach((key) => {
-        document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
-      });
-      playScreenTransition(document.getElementById(`register-${stepName}`));
-    }
-
-    // 등록 2단계에서 선택한 여행지를 사용중 탭의 기후 mock 데이터 키에 반영
-    document.getElementById('destinationSelect').addEventListener('change', () => {
-      const key = document.getElementById('destinationSelect').value;
-      if (key) {
-        currentTripDestination = key;
-      }
-    });
-
     // 피부 타입 버튼 토글 (등록 1단계)
     document.querySelectorAll('.skin-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1784,10 +1646,6 @@ HTML_PAGE = """<!DOCTYPE html>
       switchTab('inuse');
     });
 
-    document.getElementById('step2ToMainBtn').addEventListener('click', () => {
-      switchTab('inuse');
-    });
-
     // 피부 고민 칩 토글 (중복 선택 가능)
     document.querySelectorAll('.concern-chip').forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -1826,11 +1684,12 @@ HTML_PAGE = """<!DOCTYPE html>
       cosmeticRows.appendChild(buildCosmeticRow('', cosmeticCategories[0].value));
     });
 
-    // 화장품이 추가/삭제될 때마다 카운트 배지 갱신
+    // 화장품이 추가/삭제될 때마다 카운트 배지 + 메인 화면 파우치 칩 목록 갱신
     const cosmeticCountBadge = document.getElementById('cosmeticCountBadge');
     function updateCosmeticCountBadge() {
       const count = cosmeticRows.querySelectorAll('.cosmetic-row').length;
       cosmeticCountBadge.textContent = count > 0 ? `(${count})` : '';
+      renderPouchChips();
     }
     new MutationObserver(updateCosmeticCountBadge).observe(cosmeticRows, { childList: true });
     updateCosmeticCountBadge();
@@ -1919,26 +1778,6 @@ HTML_PAGE = """<!DOCTYPE html>
         .filter((product) => product.name);
     }
 
-    // 여행지 등록 완료 조건: 여행지 선택
-    function validateOnboarding() {
-      const missing = [];
-      if (!document.getElementById('destinationSelect').value) {
-        missing.push('여행지');
-      }
-      const start = document.getElementById('tripStartDate').value;
-      const end = document.getElementById('tripEndDate').value;
-      if (!start) {
-        missing.push('여행 시작일');
-      }
-      if (!end) {
-        missing.push('여행 종료일');
-      }
-      if (start && end && end < start) {
-        return { valid: false, missing: [], customMessage: '종료일은 시작일보다 늦어야 해요' };
-      }
-      return { valid: missing.length === 0, missing };
-    }
-
     // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
     const importBanData = {
       이탈리아: {
@@ -1953,8 +1792,7 @@ HTML_PAGE = """<!DOCTYPE html>
     };
 
     // 반입 금지 성분에 해당하면 경고 팝업을 띄우고 true를 반환
-    function checkImportBan() {
-      const destinationKey = document.getElementById('destinationSelect').value;
+    function checkImportBan(destinationKey) {
       const info = importBanData[destinationKey];
       if (!info) return false;
 
@@ -1969,33 +1807,8 @@ HTML_PAGE = """<!DOCTYPE html>
       return true;
     }
 
-    // 반입 금지 경고(있다면) 이후 이어지는 흐름: 파우치가 비어있으면 등록을 권하고, 아니면 메인으로
-    function continueAfterDestinationRegistration() {
-      if (getMyProducts().length === 0) {
-        document.getElementById('pouchPromptModal').classList.remove('hidden');
-      } else {
-        switchTab('inuse');
-      }
-    }
-
     document.getElementById('importBanCloseBtn').addEventListener('click', () => {
       document.getElementById('importBanModal').classList.add('hidden');
-      continueAfterDestinationRegistration();
-    });
-
-    document.getElementById('completeOnboardingBtn').addEventListener('click', () => {
-      const result = validateOnboarding();
-      if (!result.valid) {
-        showWarning('step2Warning', result.customMessage || `${result.missing.join(', ')}을(를) 먼저 입력해주세요`);
-        return;
-      }
-      onboardingComplete = true;
-      updateTabLockUI();
-      hideWarning('step2Warning');
-      if (checkImportBan()) {
-        return; // 확인했어요 버튼을 누르면 continueAfterDestinationRegistration()으로 이어짐
-      }
-      continueAfterDestinationRegistration();
     });
 
     document.getElementById('pouchPromptYesBtn').addEventListener('click', () => {
@@ -2005,13 +1818,238 @@ HTML_PAGE = """<!DOCTYPE html>
 
     document.getElementById('pouchPromptLaterBtn').addEventListener('click', () => {
       document.getElementById('pouchPromptModal').classList.add('hidden');
-      switchTab('inuse');
     });
 
     updateTabLockUI();
 
+    // ===== 여행 일정 등록 (다중 구간) =====
+    // 등록 2단계에서 쓰던 curated 국가 목록을 그대로 재사용
+    const ALL_COUNTRIES = [
+      '가나', '가봉', '가이아나', '감비아', '과테말라', '그레나다', '그리스', '기니', '기니비사우', '나미비아',
+      '나우루', '나이지리아', '남수단', '남아프리카공화국', '네덜란드', '네팔', '노르웨이', '뉴질랜드', '니제르', '니카라과',
+      '대만', '대한민국', '덴마크', '도미니카', '도미니카공화국', '독일', '동티모르', '라오스', '라이베리아', '라트비아',
+      '러시아', '레바논', '레소토', '루마니아', '룩셈부르크', '르완다', '리비아', '리투아니아', '리히텐슈타인', '마다가스카르',
+      '마셜제도', '말라위', '말레이시아', '말리', '멕시코', '모나코', '모로코', '모리셔스', '모리타니', '모잠비크',
+      '몬테네그로', '몰도바', '몰디브', '몰타', '몽골', '미국', '미얀마', '미크로네시아', '바누아투', '바레인',
+      '바베이도스', '바티칸', '바하마', '방글라데시', '베냉', '베네수엘라', '베트남', '벨기에', '벨라루스', '벨리즈',
+      '보스니아헤르체고비나', '보츠와나', '볼리비아', '부룬디', '부르키나파소', '부탄', '북마케도니아', '북한', '불가리아', '브라질',
+      '브루나이', '사모아', '사우디아라비아', '산마리노', '상투메프린시페', '세네갈', '세르비아', '세이셸', '세인트루시아', '세인트빈센트그레나딘',
+      '세인트키츠네비스', '소말리아', '솔로몬제도', '수단', '수리남', '스리랑카', '스웨덴', '스위스', '스페인', '슬로바키아',
+      '슬로베니아', '시리아', '시에라리온', '싱가포르', '아랍에미리트', '아르메니아', '아르헨티나', '아이슬란드', '아이티', '아일랜드',
+      '아제르바이잔', '아프가니스탄', '안도라', '알바니아', '알제리', '앙골라', '앤티가바부다', '에리트레아', '에스와티니', '에스토니아',
+      '에콰도르', '에티오피아', '엘살바도르', '영국', '예멘', '오만', '오스트리아', '온두라스', '요르단', '우간다',
+      '우루과이', '우즈베키스탄', '우크라이나', '이라크', '이란', '이스라엘', '이집트', '이탈리아', '인도', '인도네시아',
+      '일본', '자메이카', '잠비아', '적도기니', '조지아', '중국', '중앙아프리카공화국', '지부티', '짐바브웨', '차드',
+      '체코', '칠레', '카메룬', '카보베르데', '카자흐스탄', '카타르', '캄보디아', '캐나다', '케냐', '코모로',
+      '코스타리카', '코트디부아르', '콜롬비아', '콩고공화국', '콩고민주공화국', '쿠바', '쿠웨이트', '크로아티아', '키르기스스탄', '키리바시',
+      '키프로스', '타지키스탄', '탄자니아', '태국', '토고', '통가', '투르크메니스탄', '투발루', '튀니지', '튀르키예',
+      '트리니다드토바고', '파나마', '파라과이', '파키스탄', '파푸아뉴기니', '팔라우', '팔레스타인', '페루', '포르투갈', '폴란드',
+      '프랑스', '피지', '핀란드', '필리핀', '헝가리', '호주',
+    ];
+
+    let tripSegments = [];
+    let tripSegmentsExpanded = true;
+    let prevValidSegmentCount = 0;
+    let segmentRowCounter = 0;
+
+    function buildTripSegmentRow() {
+      segmentRowCounter += 1;
+      const row = document.createElement('div');
+      row.className = 'trip-segment-row border border-gray-100 rounded-xl p-3 space-y-2';
+      const countryOptions = ALL_COUNTRIES.map((c) => `<option value="${c}">${c}</option>`).join('');
+      row.innerHTML = `
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-gray-400">구간 ${segmentRowCounter}</p>
+          <button type="button" class="remove-segment-btn text-gray-300 hover:text-gray-500 text-sm px-1">✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="date" class="segment-start-input w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+          <input type="date" class="segment-end-input w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+        <select class="segment-country-select w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
+          <option value="">국가를 선택해주세요</option>
+          ${countryOptions}
+        </select>
+      `;
+      row.querySelector('.remove-segment-btn').addEventListener('click', () => {
+        row.remove();
+        syncTripSegmentsFromDOM();
+      });
+      row.querySelector('.segment-start-input').addEventListener('change', syncTripSegmentsFromDOM);
+      row.querySelector('.segment-end-input').addEventListener('change', syncTripSegmentsFromDOM);
+      row.querySelector('.segment-country-select').addEventListener('change', () => {
+        syncTripSegmentsFromDOM();
+        const country = row.querySelector('.segment-country-select').value;
+        if (country && getMyProducts().length > 0) {
+          checkImportBan(country);
+        }
+      });
+      return row;
+    }
+
+    const tripSegmentRowsEl = document.getElementById('tripSegmentRows');
+
+    document.getElementById('addTripSegmentBtn').addEventListener('click', () => {
+      tripSegmentRowsEl.appendChild(buildTripSegmentRow());
+    });
+
+    // 시작일/종료일/국가가 모두 채워진 구간만 유효한 여행 구간으로 인정
+    function readTripSegmentsFromDOM() {
+      const filled = Array.from(tripSegmentRowsEl.querySelectorAll('.trip-segment-row'))
+        .map((row) => ({
+          start: row.querySelector('.segment-start-input').value,
+          end: row.querySelector('.segment-end-input').value,
+          country: row.querySelector('.segment-country-select').value,
+        }))
+        .filter((seg) => seg.start && seg.end && seg.country);
+
+      const invalid = filled.some((seg) => seg.end < seg.start);
+      if (invalid) {
+        showWarning('tripSegmentWarning', '종료일은 시작일보다 늦어야 해요');
+        return filled.filter((seg) => seg.end >= seg.start);
+      }
+      hideWarning('tripSegmentWarning');
+      return filled;
+    }
+
+    function formatSegmentRange(seg) {
+      const shorten = (d) => d.slice(5).replace('-', '/');
+      return `${shorten(seg.start)}~${shorten(seg.end)}`;
+    }
+
+    function updateTripSegmentsUI() {
+      const hasSegments = tripSegments.length > 0;
+      const collapsed = hasSegments && !tripSegmentsExpanded;
+      document.getElementById('tripSegmentsSummary').innerHTML = tripSegments
+        .map((seg) => `<span class="trip-segment-chip">📍 ${seg.country} ${formatSegmentRange(seg)}</span>`)
+        .join('');
+      document.getElementById('tripSegmentsSummary').classList.toggle('hidden', !hasSegments);
+      document.getElementById('tripSegmentsEditToggleBtn').classList.toggle('hidden', !hasSegments);
+      document.getElementById('tripSegmentsEditToggleBtn').textContent = tripSegmentsExpanded ? '접기' : '수정';
+      document.getElementById('tripSegmentsHint').classList.toggle('hidden', collapsed);
+      document.getElementById('tripSegmentsForm').classList.toggle('hidden', collapsed);
+    }
+
+    document.getElementById('tripSegmentsEditToggleBtn').addEventListener('click', () => {
+      tripSegmentsExpanded = !tripSegmentsExpanded;
+      updateTripSegmentsUI();
+    });
+
+    // 여행지 수정하기(대시보드 배너) 클릭 시 이 섹션으로 스크롤 + 펼치기
+    function expandTripSegmentsForm() {
+      tripSegmentsExpanded = true;
+      updateTripSegmentsUI();
+      document.getElementById('tripSegmentsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function syncTripSegmentsFromDOM() {
+      tripSegments = readTripSegmentsFromDOM();
+      // 첫 구간이 완성되는 순간 자동으로 요약 형태로 접어줌
+      if (tripSegments.length > 0 && prevValidSegmentCount === 0) {
+        tripSegmentsExpanded = false;
+      }
+      updateTripSegmentsUI();
+      if (tripSegments.length > 0 && prevValidSegmentCount === 0 && getMyProducts().length === 0) {
+        document.getElementById('pouchPromptModal').classList.remove('hidden');
+      }
+      prevValidSegmentCount = tripSegments.length;
+      refreshAdjustedRoutine();
+      renderHistoryRecords();
+    }
+
+    // 오늘 날짜가 속한 구간 → 없으면 가장 가까운 미래 구간 → 없으면 가장 최근 지난 구간
+    function getActiveSegment() {
+      if (tripSegments.length === 0) return null;
+      const today = new Date();
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const withDates = tripSegments.map((seg) => ({
+        ...seg,
+        startDate: new Date(`${seg.start}T00:00:00`),
+        endDate: new Date(`${seg.end}T00:00:00`),
+      }));
+      const current = withDates.find((seg) => todayDate >= seg.startDate && todayDate <= seg.endDate);
+      if (current) return current;
+      const future = withDates.filter((seg) => seg.startDate > todayDate).sort((a, b) => a.startDate - b.startDate);
+      if (future.length > 0) return future[0];
+      const past = withDates.filter((seg) => seg.endDate < todayDate).sort((a, b) => b.endDate - a.endDate);
+      if (past.length > 0) return past[0];
+      return null;
+    }
+
+    function getCurrentTripDestination() {
+      const seg = getActiveSegment();
+      return seg ? seg.country : null;
+    }
+
+    tripSegmentRowsEl.appendChild(buildTripSegmentRow());
+    updateTripSegmentsUI();
+
+    // ===== 내 파우치 (메인 화면 아코디언 빠른 등록) =====
+    document.getElementById('pouchQuickAddCategory').innerHTML = cosmeticCategories
+      .map((c) => `<option value="${c.value}">${c.label}</option>`)
+      .join('');
+
+    // getMyProducts()와 동일한 데이터를 반환하되, 삭제 버튼에서 바로 지울 수 있도록 원본 row도 함께 담음
+    function getMyProductRows() {
+      return Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
+        .map((row) => ({
+          row,
+          name: row.querySelector('input').value.trim(),
+          category: row.querySelector('select').value,
+        }))
+        .filter((p) => p.name);
+    }
+
+    function renderPouchChips() {
+      const list = document.getElementById('pouchChipList');
+      const rows = getMyProductRows();
+      list.innerHTML = '';
+      rows.forEach(({ row, name, category }) => {
+        const info = cosmeticCategories.find((c) => c.value === category);
+        const chip = document.createElement('span');
+        chip.className = 'pouch-chip';
+        chip.innerHTML = `<span>${info ? info.icon : '🧴'}</span><span>${name}</span><button type="button">✕</button>`;
+        chip.querySelector('button').addEventListener('click', () => {
+          row.remove();
+          renderPouchChips();
+          refreshAdjustedRoutine();
+        });
+        list.appendChild(chip);
+      });
+      document.getElementById('pouchQuickAddHint').classList.toggle('hidden', rows.length > 0);
+    }
+
+    function setPouchAccordionCollapsed(collapsed) {
+      document.getElementById('pouchQuickAddSection').classList.toggle('pouch-accordion-collapsed', collapsed);
+    }
+
+    document.getElementById('pouchAccordionToggleBtn').addEventListener('click', () => {
+      const section = document.getElementById('pouchQuickAddSection');
+      setPouchAccordionCollapsed(!section.classList.contains('pouch-accordion-collapsed'));
+    });
+
+    document.getElementById('pouchQuickAddOpenBtn').addEventListener('click', () => {
+      document.getElementById('pouchQuickAddForm').classList.remove('hidden');
+      document.getElementById('pouchQuickAddName').focus();
+    });
+
+    document.getElementById('pouchQuickAddConfirmBtn').addEventListener('click', () => {
+      const nameInput = document.getElementById('pouchQuickAddName');
+      const name = nameInput.value.trim();
+      if (!name) return;
+      const category = document.getElementById('pouchQuickAddCategory').value;
+      cosmeticRows.appendChild(buildCosmeticRow(name, category));
+      nameInput.value = '';
+      document.getElementById('pouchQuickAddForm').classList.add('hidden');
+      renderPouchChips();
+      refreshAdjustedRoutine();
+      setPouchAccordionCollapsed(true);
+    });
+
+    renderPouchChips();
+
     // 국가별 기후 데이터 (전세계 196개국, '리뷰, 국가_수질 추가 DB' 원본의 체감온도·습도·기후·수질 평균값을 반영)
-    // 여행지 선택값(destinationSelect)이 국가명 그대로이므로 키도 국가명을 그대로 사용
+    // 여행 구간(tripSegments)의 country 값이 국가명 그대로이므로 키도 국가명을 그대로 사용
     const weatherData = {
       가나: { temp: 33, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
       가봉: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
@@ -2453,10 +2491,9 @@ HTML_PAGE = """<!DOCTYPE html>
       const toneLabel = toneBtn ? toneBtn.textContent : '-';
       const concernCount = document.querySelectorAll('.concern-chip.active').length;
       const productCount = getMyProducts().length;
-      const destinationKey = document.getElementById('destinationSelect').value;
-      const destinationLabel = destinationKey || '미선택';
-      const start = document.getElementById('tripStartDate').value || '-';
-      const end = document.getElementById('tripEndDate').value || '-';
+      const destinationLabel = tripSegments.length > 0 ? tripSegments.map((s) => s.country).join(', ') : '미선택';
+      const scheduleLabel =
+        tripSegments.length > 0 ? tripSegments.map((s) => `${s.start}~${s.end}`).join(' / ') : '-';
 
       const rows = [
         ['나이', `${age}세`],
@@ -2466,7 +2503,7 @@ HTML_PAGE = """<!DOCTYPE html>
         ['피부 고민', `${concernCount}개 선택`],
         ['보유 화장품', `${productCount}개`],
         ['여행지', destinationLabel],
-        ['여행 기간', `${start} ~ ${end}`],
+        ['여행 기간', scheduleLabel],
       ];
 
       document.getElementById('profileSummaryCard').innerHTML = rows
@@ -2626,7 +2663,8 @@ HTML_PAGE = """<!DOCTYPE html>
       const skinTypeMap = { dry: '건성', normal: '중성', oily: '지성', combination: '복합성', dehydrated: '수부지' };
       const skinType = skinTypeMap[activeSkinBtn ? activeSkinBtn.dataset.skin : 'dry'];
 
-      const byCountry = communityReviews.filter((r) => r.country === currentTripDestination);
+      const destination = getCurrentTripDestination();
+      const byCountry = communityReviews.filter((r) => r.country === destination);
       if (byCountry.length === 0) {
         section.classList.add('hidden');
         return;
@@ -2641,8 +2679,8 @@ HTML_PAGE = """<!DOCTYPE html>
       const pick = matched[Math.floor(Math.random() * matched.length)];
 
       document.getElementById('recommendedRoutineNote').textContent = usedFallback
-        ? `${currentTripDestination}을 다녀온 여행자 ${pick.id}님의 추천이에요`
-        : `나와 같은 ${skinType} 피부의 ${pick.id}님이 ${currentTripDestination}에서 추천한 루틴이에요`;
+        ? `${destination}을 다녀온 여행자 ${pick.id}님의 추천이에요`
+        : `나와 같은 ${skinType} 피부의 ${pick.id}님이 ${destination}에서 추천한 루틴이에요`;
       document.getElementById('recommendedCosmetics').textContent = pick.cosmetics;
       document.getElementById('recommendedSkincare').textContent = pick.skincare;
       document.getElementById('recommendedMakeup').textContent = pick.makeup;
@@ -2707,7 +2745,8 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     function renderTripOverview() {
-      const destinationKey = document.getElementById('destinationSelect').value;
+      const activeSegment = getActiveSegment();
+      const destinationKey = activeSegment ? activeSegment.country : null;
       const productCount = getMyProducts().length;
 
       if (!destinationKey) {
@@ -2741,25 +2780,28 @@ HTML_PAGE = """<!DOCTYPE html>
         document.getElementById('mainMapCard').insertAdjacentElement('beforebegin', pouchCard);
       }
 
-      const label = currentTripDestination || '여행지';
-      const start = document.getElementById('tripStartDate').value;
-      const end = document.getElementById('tripEndDate').value;
+      const label = destinationKey;
+      const start = activeSegment.start;
+      const end = activeSegment.end;
+      const otherSegmentsNote =
+        tripSegments.length > 1 ? `<p class="text-xs text-gray-400 mt-1">총 ${tripSegments.length}개 구간 등록됨</p>` : '';
       document.getElementById('tripSummaryBanner').innerHTML = `
         <div class="flex items-center justify-between">
           <div>
             <p class="text-xs text-gray-400 mb-0.5">이번 여행</p>
             <p class="text-base font-bold">📍 ${label}</p>
-            ${start && end ? `<p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p><p class="text-xs font-semibold text-brand-500 mt-1">${getTripScheduleLabel(start, end)}</p>` : ''}
+            <p class="text-xs text-gray-400 mt-0.5">${start} ~ ${end}</p>
+            <p class="text-xs font-semibold text-brand-500 mt-1">${getTripScheduleLabel(start, end)}</p>
+            ${otherSegmentsNote}
           </div>
-          <button id="tripSummaryEditBtn" type="button" class="text-xs font-semibold text-brand-500">여행지 수정 →</button>
+          <button id="tripSummaryEditBtn" type="button" class="text-xs font-semibold text-brand-500 shrink-0">여행지 수정 →</button>
         </div>
       `;
       document.getElementById('tripSummaryEditBtn').addEventListener('click', () => {
-        switchTab('register');
-        showRegisterStep('step2');
+        expandTripSegmentsForm();
       });
 
-      const weather = weatherData[currentTripDestination];
+      const weather = weatherData[destinationKey];
       let todayCondition = '쾌적한 날씨';
       if (weather.humidity >= 70) {
         todayCondition = '습도 상승 주의';
@@ -2767,6 +2809,13 @@ HTML_PAGE = """<!DOCTYPE html>
         todayCondition = '건조 주의';
       } else if (weather.uvi >= 8) {
         todayCondition = '자외선 주의';
+      }
+
+      // 오늘 날짜가 속한 여행 구간의 국가가 바뀌면 지도도 그 국가로 자동 flyTo (좌표가 있는 국가만 가능)
+      if (mapInstance && weather.lat != null && lastFlownMapDestination !== destinationKey) {
+        lastFlownMapDestination = destinationKey;
+        stopGlobeAutoRotate();
+        flyToCity(destinationKey, weather);
       }
 
       renderTodayInsightCard(label, weather);
@@ -2819,13 +2868,14 @@ HTML_PAGE = """<!DOCTYPE html>
       return dustByClimate[climate] || '보통';
     }
 
-    // 사용중 탭의 여행지 기준으로 조정 제안 계산 (등록 2단계에서 선택한 여행지로 갱신됨)
-    let currentTripDestination = '일본';
+    // 사용중 탭의 여행지 기준으로 조정 제안 계산 (오늘 날짜가 속한 여행 구간의 국가로 갱신됨)
     function refreshAdjustedRoutine() {
       renderTripOverview();
+      const destination = getCurrentTripDestination();
+      if (!destination) return;
       const activeSkinBtn = document.querySelector('.skin-btn.active');
       const skinType = activeSkinBtn ? activeSkinBtn.dataset.skin : 'oily';
-      const result = getAdjustedRoutine(currentTripDestination, skinType, getMyProducts());
+      const result = getAdjustedRoutine(destination, skinType, getMyProducts());
       renderAdjustedRoutine(result);
     }
     refreshAdjustedRoutine();
@@ -2837,6 +2887,130 @@ HTML_PAGE = """<!DOCTYPE html>
         btn.classList.add('active');
       });
     });
+
+    // ===== 기록 화면: 달력별 기록 / 지구본 기록 =====
+    function getSegmentStatus(seg) {
+      const today = new Date();
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const startDate = new Date(`${seg.start}T00:00:00`);
+      const endDate = new Date(`${seg.end}T00:00:00`);
+      if (todayDate < startDate) return { label: '예정', className: 'text-brand-500' };
+      if (todayDate > endDate) return { label: '다녀옴', className: 'text-gray-400' };
+      return { label: '진행중', className: 'text-green-600' };
+    }
+
+    function buildHistoryRecordCard(seg) {
+      const status = getSegmentStatus(seg);
+      const card = document.createElement('div');
+      card.className = 'flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3';
+      card.innerHTML = `
+        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center text-lg shrink-0">📍</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold">${seg.country}</p>
+          <p class="text-xs text-gray-400">${seg.start} ~ ${seg.end}</p>
+        </div>
+        <span class="text-xs font-semibold shrink-0 ${status.className}">${status.label}</span>
+      `;
+      return card;
+    }
+
+    function renderHistoryRecords() {
+      const sorted = [...tripSegments].sort((a, b) => new Date(a.start) - new Date(b.start));
+
+      const calendarList = document.getElementById('historyCalendarList');
+      calendarList.innerHTML = '';
+      sorted.forEach((seg) => calendarList.appendChild(buildHistoryRecordCard(seg)));
+      document.getElementById('historyCalendarEmpty').classList.toggle('hidden', sorted.length > 0);
+
+      const globeList = document.getElementById('historyGlobeList');
+      globeList.innerHTML = '';
+      sorted.forEach((seg) => globeList.appendChild(buildHistoryRecordCard(seg)));
+      document.getElementById('historyGlobeEmpty').classList.toggle('hidden', sorted.length > 0);
+
+      updateHistoryGlobeMarkers();
+    }
+
+    document.querySelectorAll('.history-view-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.history-view-toggle-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const view = btn.dataset.view;
+        document.getElementById('historyCalendarView').classList.toggle('hidden', view !== 'calendar');
+        document.getElementById('historyGlobeView').classList.toggle('hidden', view !== 'globe');
+        if (view === 'globe') {
+          initHistoryGlobeIfNeeded();
+        }
+      });
+    });
+
+    // 지구본 기록: 좌표가 있는 국가(mock 데이터 일부)만 지구본에 마커로 표시, 전체 목록은 텍스트로 항상 표시
+    let historyMapInstance = null;
+    let historyMapMarkers = [];
+
+    function initHistoryGlobeIfNeeded() {
+      if (historyMapInstance) {
+        updateHistoryGlobeMarkers();
+        return;
+      }
+      const el = document.getElementById('historyGlobeViz');
+      if (!el || typeof maplibregl === 'undefined') return;
+
+      historyMapInstance = new maplibregl.Map({
+        container: el,
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [20, 15],
+        zoom: 1.3,
+        attributionControl: false,
+      });
+
+      historyMapInstance.on('load', () => {
+        try {
+          historyMapInstance.setProjection({ type: 'globe' });
+        } catch (e) {
+          console.error('기록 지구본 setProjection 오류:', e);
+        }
+        try {
+          historyMapInstance.setSky({
+            'sky-color': '#eaf6ff',
+            'sky-horizon-blend': 0.8,
+            'horizon-color': '#ffffff',
+            'horizon-fog-blend': 0.6,
+            'fog-color': '#eaf6ff',
+            'fog-ground-blend': 0.5,
+          });
+        } catch (e) {
+          console.error('기록 지구본 setSky 오류:', e);
+        }
+        updateHistoryGlobeMarkers();
+      });
+
+      window.addEventListener('resize', () => {
+        if (historyMapInstance) historyMapInstance.resize();
+      });
+    }
+
+    function updateHistoryGlobeMarkers() {
+      if (!historyMapInstance) return;
+      historyMapMarkers.forEach((m) => m.remove());
+      historyMapMarkers = [];
+      tripSegments.forEach((seg) => {
+        const weather = weatherData[seg.country];
+        if (!weather || weather.lat == null || weather.lng == null) return;
+        const el = document.createElement('div');
+        el.className = 'store-marker';
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([weather.lng, weather.lat])
+          .setPopup(
+            new maplibregl.Popup({ offset: 16 }).setHTML(
+              `<div style="font-size:12px;font-weight:700;">${seg.country}</div><div style="font-size:11px;color:#6b7280;">${seg.start} ~ ${seg.end}</div>`
+            )
+          )
+          .addTo(historyMapInstance);
+        historyMapMarkers.push(marker);
+      });
+    }
+
+    renderHistoryRecords();
   </script>
 
 </body>
