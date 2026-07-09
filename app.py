@@ -34,17 +34,11 @@ HTML_PAGE = """<!DOCTYPE html>
   body {
     background: #f7f7f7;
   }
-  .tab-btn {
+  .bottom-nav-btn {
     color: #9ca3af;
-    border-bottom: 2px solid transparent;
   }
-  .tab-btn.active {
-    color: #111827;
-    border-bottom-color: #f97316;
-  }
-  .tab-btn.locked {
-    opacity: 0.4;
-    cursor: not-allowed;
+  .bottom-nav-btn.active {
+    color: #f97316;
   }
   .skin-btn {
     border: 1px solid #e5e7eb;
@@ -111,6 +105,15 @@ HTML_PAGE = """<!DOCTYPE html>
       <button id="startBtn" type="button" class="w-full py-4 rounded-2xl bg-orange-500 text-white text-base font-bold shadow-lg shadow-orange-200">
         처음 시작해요
       </button>
+      <button id="googleLoginBtn" type="button" class="w-full py-3.5 rounded-2xl border border-gray-200 text-gray-700 text-sm font-semibold flex items-center justify-center gap-2 mt-3">
+        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>
+        </svg>
+        구글로 로그인하기
+      </button>
       <button id="skipStartBtn" type="button" class="w-full text-center text-xs text-gray-400 underline mt-4">
         둘러보기
       </button>
@@ -118,23 +121,30 @@ HTML_PAGE = """<!DOCTYPE html>
 
   </div>
 
+  <!-- 구글 로그인 후 일정 연동 여부를 묻는 팝업 -->
+  <div id="calendarSyncModal" class="hidden fixed inset-0 bg-black/40 px-6 z-50">
+    <div class="flex items-center justify-center h-full">
+      <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
+        <p class="text-base font-bold mb-1">여행 일정 연동</p>
+        <p class="text-sm text-gray-500 mb-5">구글 캘린더와 연동하면 여행지와 일정을 자동으로 채워드려요. 지금 연동하시겠어요?</p>
+        <div class="space-y-2">
+          <button id="syncYesBtn" type="button" class="w-full py-3 rounded-lg bg-orange-500 text-white text-sm font-bold">네, 연동할게요</button>
+          <button id="syncNoBtn" type="button" class="w-full py-3 rounded-lg border border-gray-200 text-gray-600 text-sm font-semibold">아니오</button>
+          <button id="syncLaterBtn" type="button" class="w-full py-2 text-xs text-gray-400 underline">조금 이따가 할게요</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ 앱 화면 ============ -->
   <div id="appContainer" class="hidden max-w-md mx-auto min-h-screen bg-white border-x border-gray-100">
 
     <!-- 상단 로고 -->
-    <header class="px-5 pt-6 pb-4 flex items-center justify-between">
+    <header class="px-5 pt-6 pb-4">
       <p class="text-lg font-bold tracking-tight">Skin<span class="text-orange-500">Trip</span></p>
-      <button id="editProfileBtn" type="button" class="hidden text-xs text-gray-400 hover:text-orange-500 underline">여행지 수정하기</button>
     </header>
 
-    <!-- 상단 탭 (등록 완료 전에는 표시하지 않음, 완료 후에는 등록 탭을 숨김) -->
-    <nav id="tabNav" class="hidden border-b border-gray-100 px-5">
-      <button type="button" data-tab="register" data-label="등록" class="tab-btn active flex-1 py-3 text-sm font-semibold text-center">등록</button>
-      <button type="button" data-tab="inuse" data-label="사용중" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용중</button>
-      <button type="button" data-tab="afteruse" data-label="사용후" class="tab-btn flex-1 py-3 text-sm font-semibold text-center">사용후</button>
-    </nav>
-
-    <main class="px-5">
+    <main class="px-5 pb-24">
 
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-6">
@@ -201,54 +211,69 @@ HTML_PAGE = """<!DOCTYPE html>
 
         </div>
 
-        <!-- 등록 (1): 내 피부 프로필 -->
-        <div id="register-step1" class="hidden space-y-8">
+        <!-- 등록 (1): 내 정보 등록 -->
+        <div id="register-step1" class="hidden">
 
-          <div>
-            <button id="step1ToStep0Btn" type="button" class="text-xs text-gray-400 mb-3">← 이전</button>
-            <h2 class="text-base font-bold mb-1">내 피부 프로필</h2>
-            <p class="text-sm text-gray-400 mb-4">여행 루틴을 조정할 때 기준이 되는 정보예요</p>
+          <!-- 상단 바: 뒤로가기 · 제목 · 다음 -->
+          <div class="flex items-center justify-between mb-4">
+            <button id="step1ToStep0Btn" type="button" class="text-lg text-gray-400 w-8">←</button>
+            <p class="text-base font-bold">내 정보 등록</p>
+            <button id="step1ToStep2Btn" type="button" class="text-sm font-bold text-orange-500 w-8 text-right">다음</button>
+          </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-5">
-              <div>
-                <p class="text-xs font-semibold text-gray-400 mb-2">나이</p>
-                <input id="ageInput" type="number" min="1" max="120" placeholder="예: 27" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
+          <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4"></p>
+
+          <div class="space-y-6">
+
+            <!-- 기본 정보 -->
+            <div>
+              <div class="bg-gray-50 rounded-xl px-4 py-2.5 mb-3">
+                <p class="text-sm font-bold text-gray-700">기본 정보</p>
               </div>
-              <div>
-                <p class="text-xs font-semibold text-gray-400 mb-2">성별</p>
-                <div class="grid grid-cols-2 gap-2">
-                  <button type="button" data-gender="여성" class="gender-btn rounded-lg py-2.5 text-sm font-semibold">여성</button>
-                  <button type="button" data-gender="남성" class="gender-btn rounded-lg py-2.5 text-sm font-semibold">남성</button>
+              <div class="px-1 space-y-4">
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 mb-2">나이</p>
+                  <input id="ageInput" type="number" min="1" max="120" placeholder="예: 27" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 mb-2">성별</p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" data-gender="여성" class="gender-btn rounded-full px-5 py-2 text-sm font-semibold">여성</button>
+                    <button type="button" data-gender="남성" class="gender-btn rounded-full px-5 py-2 text-sm font-semibold">남성</button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <p class="text-xs font-semibold text-gray-400 mb-2">피부 타입</p>
-            <div class="grid grid-cols-4 gap-2">
-              <button type="button" data-skin="oily" class="skin-btn active rounded-lg py-2.5 text-sm font-semibold">지성</button>
-              <button type="button" data-skin="dry" class="skin-btn rounded-lg py-2.5 text-sm font-semibold">건성</button>
-              <button type="button" data-skin="combination" class="skin-btn rounded-lg py-2.5 text-sm font-semibold">복합성</button>
-              <button type="button" data-skin="sensitive" class="skin-btn rounded-lg py-2.5 text-sm font-semibold">민감성</button>
+            <!-- 피부 정보 -->
+            <div>
+              <div class="bg-gray-50 rounded-xl px-4 py-2.5 mb-3">
+                <p class="text-sm font-bold text-gray-700">피부 정보</p>
+                <p class="text-xs text-gray-400 mt-0.5">맞춤 루틴을 위해 꼭 선택해주세요</p>
+              </div>
+              <div class="px-1 space-y-4">
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 mb-2">피부 타입 <span class="text-gray-300 font-normal">(1개)</span></p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" data-skin="oily" class="skin-btn active rounded-full px-4 py-2 text-sm font-semibold">지성</button>
+                    <button type="button" data-skin="dry" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">건성</button>
+                    <button type="button" data-skin="combination" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">복합성</button>
+                    <button type="button" data-skin="sensitive" class="skin-btn rounded-full px-4 py-2 text-sm font-semibold">민감성</button>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-400 mb-2">피부 고민 <span class="text-gray-300 font-normal">(중복 선택 가능)</span></p>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" data-concern="trouble" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">트러블</button>
+                    <button type="button" data-concern="dryness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">건조함</button>
+                    <button type="button" data-concern="oiliness" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">유분과다</button>
+                    <button type="button" data-concern="sensitivity" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">민감성</button>
+                    <button type="button" data-concern="pigmentation" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">색소침착</button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <!-- 피부 고민 -->
-          <div>
-            <p class="text-xs font-semibold text-gray-400 mb-2">피부 고민 <span class="text-gray-300 font-normal">(중복 선택 가능)</span></p>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" data-concern="trouble" class="concern-chip rounded-full px-3 py-1.5 text-xs font-medium">트러블</button>
-              <button type="button" data-concern="dryness" class="concern-chip rounded-full px-3 py-1.5 text-xs font-medium">건조함</button>
-              <button type="button" data-concern="oiliness" class="concern-chip rounded-full px-3 py-1.5 text-xs font-medium">유분과다</button>
-              <button type="button" data-concern="sensitivity" class="concern-chip rounded-full px-3 py-1.5 text-xs font-medium">민감성</button>
-              <button type="button" data-concern="pigmentation" class="concern-chip rounded-full px-3 py-1.5 text-xs font-medium">색소침착</button>
-            </div>
-          </div>
-
-          <div>
-            <p id="step1Warning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3"></p>
-            <button id="step1ToStep2Btn" type="button" class="w-full py-3.5 rounded-lg bg-orange-500 text-white text-sm font-bold">
-              다음
-            </button>
           </div>
 
         </div>
@@ -345,6 +370,8 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 3. 사용후 페이지 (입국신고서 컨셉) ============ -->
       <section id="screen-afteruse" class="hidden py-6 space-y-6">
 
+        <button id="afterUseToSettingsBtn" type="button" class="text-xs text-gray-400">← 이전</button>
+
         <div class="border border-gray-200 rounded-2xl p-5">
           <div class="flex items-center justify-between mb-1">
             <p class="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">Arrival Skin Declaration</p>
@@ -387,7 +414,144 @@ HTML_PAGE = """<!DOCTYPE html>
 
       </section>
 
+      <!-- ============ 4. 지도 페이지 ============ -->
+      <section id="screen-map" class="hidden py-6 space-y-4">
+        <div>
+          <h2 class="text-base font-bold mb-1">내 주위 화장품 매장</h2>
+          <p class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
+        </div>
+
+        <div class="relative h-40 rounded-2xl border border-gray-100" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #e5e7eb 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, #e5e7eb 20px); background-color: #f3f4f6;">
+          <span class="absolute text-2xl" style="left: 28%; top: 30%;">📍</span>
+          <span class="absolute text-2xl" style="left: 62%; top: 22%;">📍</span>
+          <span class="absolute text-2xl" style="left: 70%; top: 60%;">📍</span>
+          <span class="absolute text-2xl -translate-x-1/2 -translate-y-1/2" style="left: 50%; top: 55%;">🧍</span>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">올리브영 강남역점</p>
+              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 3분</p>
+            </div>
+            <p class="text-xs text-gray-500 shrink-0">250m</p>
+          </div>
+          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">시코르 강남점</p>
+              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 5분</p>
+            </div>
+            <p class="text-xs text-gray-500 shrink-0">410m</p>
+          </div>
+          <div class="flex items-center gap-3 border border-gray-100 rounded-xl p-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-lg shrink-0">🏬</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">랄라블라 신논현점</p>
+              <p class="text-xs text-gray-400">헬스&뷰티 · 도보 8분</p>
+            </div>
+            <p class="text-xs text-gray-500 shrink-0">600m</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 5. 커뮤니티 페이지 ============ -->
+      <section id="screen-community" class="hidden py-6 space-y-3">
+        <div>
+          <h2 class="text-base font-bold mb-1">커뮤니티</h2>
+          <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
+        </div>
+
+        <div class="border border-gray-100 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">J</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">jiyeon_life</p>
+              <span class="text-[10px] text-gray-400">일본 여행</span>
+            </div>
+            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★★</span></p>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed">날씨는 선선했는데 실내 난방 때문에 오히려 피부가 건조하고 번들거렸어요.</p>
+        </div>
+
+        <div class="border border-gray-100 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">B</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">backpacklife_daily</p>
+              <span class="text-[10px] text-gray-400">싱가포르 여행</span>
+            </div>
+            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★</span><span class="text-gray-300">★</span></p>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed">실내는 에어컨 때문에 건조하고 밖은 습해서 피부가 오락가락했어요.</p>
+        </div>
+
+        <div class="border border-gray-100 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">H</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">hana99</p>
+              <span class="text-[10px] text-gray-400">아랍에미리트 여행</span>
+            </div>
+            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★</span><span class="text-gray-300">★</span></p>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed">낮은 습도 때문에 피부가 계속 당기고 화장이 들떴어요. 수분 로션이 필수였습니다.</p>
+        </div>
+
+        <div class="border border-gray-100 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">D</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold">dewyskin_k</p>
+              <span class="text-[10px] text-gray-400">프랑스 여행</span>
+            </div>
+            <p class="text-xs shrink-0"><span class="text-orange-500">★★★★★</span></p>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed">일교차가 커서 아침저녁으로 피부 컨디션이 완전히 달랐어요. 저자극 크림이 도움이 됐어요.</p>
+        </div>
+      </section>
+
+      <!-- ============ 6. 개인설정 페이지 ============ -->
+      <section id="screen-settings" class="hidden py-6 space-y-6">
+        <div>
+          <h2 class="text-base font-bold mb-1">개인설정</h2>
+          <p class="text-sm text-gray-400 mb-4">내 프로필과 여행 정보를 확인하고 수정할 수 있어요</p>
+        </div>
+
+        <div id="profileSummaryCard" class="border border-gray-100 rounded-2xl p-4 space-y-2"></div>
+
+        <div class="space-y-2">
+          <button id="settingsEditBtn" type="button" class="w-full py-3 rounded-lg border border-gray-200 text-gray-700 text-sm font-semibold">
+            정보 수정하기
+          </button>
+          <button id="goToAfterUseBtn" type="button" class="w-full py-3 rounded-lg bg-orange-500 text-white text-sm font-bold">
+            여행 후 피부 신고서 작성하기
+          </button>
+        </div>
+      </section>
+
     </main>
+
+    <!-- 하단 메뉴바 (등록 완료 후에만 표시) -->
+    <nav id="bottomNav" class="hidden fixed bottom-0 inset-x-0 max-w-md mx-auto bg-white border-t border-gray-100 z-40">
+      <button type="button" data-tab="map" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
+        <span class="text-xl">🗺️</span>
+        <span>지도</span>
+      </button>
+      <button type="button" data-tab="inuse" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
+        <span class="text-xl">🏠</span>
+        <span>메인</span>
+      </button>
+      <button type="button" data-tab="community" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
+        <span class="text-xl">💬</span>
+        <span>커뮤니티</span>
+      </button>
+      <button type="button" data-tab="settings" class="bottom-nav-btn flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium">
+        <span class="text-xl">👤</span>
+        <span>개인설정</span>
+      </button>
+    </nav>
 
   </div>
 
@@ -436,42 +600,89 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('skipStartBtn').addEventListener('click', enterApp);
     document.getElementById('step0ToLandingBtn').addEventListener('click', exitToLanding);
 
-    // 상단 탭 전환
-    const tabButtons = document.querySelectorAll('.tab-btn');
+    // 구글 로그인 → 여행 일정 연동 여부를 묻는 팝업
+    function formatDateInput(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    document.getElementById('googleLoginBtn').addEventListener('click', () => {
+      document.getElementById('calendarSyncModal').classList.remove('hidden');
+    });
+
+    function closeCalendarSyncModal() {
+      document.getElementById('calendarSyncModal').classList.add('hidden');
+    }
+
+    document.getElementById('syncYesBtn').addEventListener('click', () => {
+      closeCalendarSyncModal();
+      // mock: 구글 캘린더 일정에서 가져온 여행지·기간으로 자동 채움
+      const start = new Date();
+      start.setDate(start.getDate() + 7);
+      const end = new Date();
+      end.setDate(end.getDate() + 11);
+      document.getElementById('destinationSelect').value = 'tokyo';
+      document.getElementById('tripStartDate').value = formatDateInput(start);
+      document.getElementById('tripEndDate').value = formatDateInput(end);
+      currentTripDestination = 'tokyo';
+      enterApp();
+    });
+
+    document.getElementById('syncNoBtn').addEventListener('click', () => {
+      closeCalendarSyncModal();
+      enterApp();
+    });
+
+    document.getElementById('syncLaterBtn').addEventListener('click', () => {
+      closeCalendarSyncModal();
+      enterApp();
+    });
+
+    // 하단 메뉴바 전환 (지도/메인/커뮤니티/개인설정)
+    const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
     const screens = {
       register: document.getElementById('screen-register'),
       inuse: document.getElementById('screen-inuse'),
       afteruse: document.getElementById('screen-afteruse'),
+      map: document.getElementById('screen-map'),
+      community: document.getElementById('screen-community'),
+      settings: document.getElementById('screen-settings'),
     };
     let onboardingComplete = false;
 
     function switchTab(tabName) {
-      tabButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
+      bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
       Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
       if (tabName === 'inuse') {
         refreshAdjustedRoutine();
+      } else if (tabName === 'settings') {
+        renderProfileSummary();
       }
     }
 
-    // 등록 완료 전에는 상단 탭(등록/사용중/사용후) 자체를 숨기고,
-    // 완료 후에는 등록 탭을 탭 바에서 빼고 대신 헤더의 수정 아이콘으로만 되돌아갈 수 있게 함
+    // 등록 완료 전에는 하단 메뉴바 자체를 숨김 (등록 흐름 중에는 이전/다음 버튼으로만 이동)
     function updateTabLockUI() {
-      tabButtons.forEach((btn) => {
-        const locked = btn.dataset.tab !== 'register' && !onboardingComplete;
-        btn.classList.toggle('locked', locked);
-        btn.textContent = locked ? `🔒 ${btn.dataset.label}` : btn.dataset.label;
-        if (btn.dataset.tab === 'register') {
-          btn.classList.toggle('hidden', onboardingComplete);
-        }
-      });
-      const tabNav = document.getElementById('tabNav');
-      tabNav.classList.toggle('hidden', !onboardingComplete);
-      tabNav.classList.toggle('flex', onboardingComplete);
-      document.getElementById('editProfileBtn').classList.toggle('hidden', !onboardingComplete);
+      const bottomNav = document.getElementById('bottomNav');
+      bottomNav.classList.toggle('hidden', !onboardingComplete);
+      bottomNav.classList.toggle('flex', onboardingComplete);
     }
 
-    document.getElementById('editProfileBtn').addEventListener('click', () => {
+    document.getElementById('settingsEditBtn').addEventListener('click', () => {
       switchTab('register');
+    });
+
+    document.getElementById('goToAfterUseBtn').addEventListener('click', () => {
+      switchTab('afteruse');
+    });
+
+    document.getElementById('afterUseToSettingsBtn').addEventListener('click', () => {
+      switchTab('settings');
+    });
+
+    bottomNavButtons.forEach((btn) => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
     function showWarning(id, message) {
@@ -484,34 +695,11 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById(id).classList.add('hidden');
     }
 
-    // 등록 0/1/2 단계 중 현재 보이는 쪽에 경고 메시지를 띄움
-    const registerStepWarningIds = {
-      step0: 'step0Warning',
-      step1: 'step1Warning',
-      step2: 'step2Warning',
-    };
-    function showRegisterWarning(message) {
-      const visibleStep = Object.keys(registerStepWarningIds).find(
-        (stepName) => !document.getElementById(`register-${stepName}`).classList.contains('hidden')
-      );
-      showWarning(registerStepWarningIds[visibleStep || 'step0'], message);
-    }
-
     function showRegisterStep(stepName) {
-      Object.keys(registerStepWarningIds).forEach((key) => {
+      ['step0', 'step1', 'step2'].forEach((key) => {
         document.getElementById(`register-${key}`).classList.toggle('hidden', key !== stepName);
       });
     }
-
-    tabButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.tab !== 'register' && !onboardingComplete) {
-          showRegisterWarning('등록 페이지를 먼저 완료해야 다음 단계로 넘어갈 수 있어요');
-          return;
-        }
-        switchTab(btn.dataset.tab);
-      });
-    });
 
     // 등록 2단계에서 선택한 여행지를 사용중 탭의 기후 mock 데이터 키에 반영
     document.getElementById('destinationSelect').addEventListener('change', () => {
@@ -753,6 +941,42 @@ HTML_PAGE = """<!DOCTYPE html>
       dubai: '아랍에미리트',
       paris: '프랑스',
     };
+
+    // 개인설정 탭에 등록된 내 정보를 요약해서 보여줌
+    function renderProfileSummary() {
+      const age = document.getElementById('ageInput').value.trim() || '-';
+      const genderBtn = document.querySelector('.gender-btn.active');
+      const gender = genderBtn ? genderBtn.dataset.gender : '-';
+      const skinBtn = document.querySelector('.skin-btn.active');
+      const skinLabel = skinBtn ? skinBtn.textContent : '-';
+      const concernCount = document.querySelectorAll('.concern-chip.active').length;
+      const productCount = getMyProducts().length;
+      const destinationKey = document.getElementById('destinationSelect').value;
+      const destinationLabel = destinationLabels[destinationKey] || '미선택';
+      const start = document.getElementById('tripStartDate').value || '-';
+      const end = document.getElementById('tripEndDate').value || '-';
+
+      const rows = [
+        ['나이', `${age}세`],
+        ['성별', gender],
+        ['피부 타입', skinLabel],
+        ['피부 고민', `${concernCount}개 선택`],
+        ['보유 화장품', `${productCount}개`],
+        ['여행지', destinationLabel],
+        ['여행 기간', `${start} ~ ${end}`],
+      ];
+
+      document.getElementById('profileSummaryCard').innerHTML = rows
+        .map(
+          ([label, value]) => `
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-400">${label}</span>
+              <span class="font-semibold">${value}</span>
+            </div>
+          `
+        )
+        .join('');
+    }
 
     // 기후 + 보유 화장품을 기준으로 기존 루틴에서 뺄 것/조정할 것을 계산
     function getAdjustedRoutine(destination, skinType, myProducts) {
