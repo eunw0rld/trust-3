@@ -517,16 +517,15 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <div class="relative z-10 pt-10 px-6 text-center">
       <img src="__LOGO_URI__" alt="SkinTrip" class="welcome-logo" />
-      <p class="mt-3 text-sm text-white/90 leading-relaxed">
-        <span class="font-bold">스킨트립</span>과 함께,<br />어디서든 산뜻하게
+      <p class="mt-3 text-sm text-white/90 leading-relaxed font-normal">
+        <span class="font-bold">스킨트립</span>과 함께,<br />피부 걱정 없이 어디든
       </p>
-      <p class="mt-1 text-xs text-white/60">여행지 날씨에 맞는 스킨케어 루틴을 알려드려요</p>
     </div>
 
-    <div class="landing-bubble" style="top: 18%; left: 15%; z-index: 2;"><img src="__AVATAR_URI_1__" alt="" /></div>
-    <div class="landing-bubble" style="top: 30%; left: 70%; z-index: 2;"><img src="__AVATAR_URI_2__" alt="" /></div>
-    <div class="landing-bubble" style="top: 45%; left: 25%; z-index: 2;"><img src="__AVATAR_URI_3__" alt="" /></div>
-    <div class="landing-bubble" style="top: 50%; left: 75%; z-index: 2;"><img src="__AVATAR_URI_4__" alt="" /></div>
+    <div class="landing-bubble" style="top: 14%; left: 18%; z-index: 2;"><img src="__AVATAR_URI_1__" alt="" /></div>
+    <div class="landing-bubble" style="top: 20%; left: 68%; z-index: 2;"><img src="__AVATAR_URI_2__" alt="" /></div>
+    <div class="landing-bubble" style="top: 26%; left: 30%; z-index: 2;"><img src="__AVATAR_URI_3__" alt="" /></div>
+    <div class="landing-bubble" style="top: 24%; left: 78%; z-index: 2;"><img src="__AVATAR_URI_4__" alt="" /></div>
 
     <div class="absolute inset-x-0 bottom-0 z-10 px-6 pb-9">
       <button id="welcomeStartBtn" type="button" class="welcome-cta-btn w-full">시작하기</button>
