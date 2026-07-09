@@ -493,6 +493,72 @@ HTML_PAGE = """<!DOCTYPE html>
     background-color: #fff7ed;
     border-color: #fdba74;
   }
+
+  /* 피부 변화 리포트: 두 사진이 모두 등록된 직후 재생되는 "스캔 중" 연출 */
+  .skin-scan-overlay {
+    background: rgba(17, 24, 39, 0.15);
+  }
+  .skin-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -30%;
+    height: 30%;
+    background: linear-gradient(180deg, rgba(249, 115, 22, 0) 0%, rgba(249, 115, 22, 0.65) 50%, rgba(249, 115, 22, 0) 100%);
+    filter: blur(2px);
+    box-shadow: 0 0 14px 3px rgba(249, 115, 22, 0.55);
+    animation: skinScanMove 1.5s ease-in-out infinite;
+  }
+  @keyframes skinScanMove {
+    0% { top: -30%; }
+    100% { top: 100%; }
+  }
+  /* "피부를 분석하고 있어요" 문구 옆 점 3개 깜빡임 */
+  .skin-scan-dots span {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-left: 3px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.25;
+    animation: skinScanDotPulse 1.2s infinite;
+  }
+  .skin-scan-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .skin-scan-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes skinScanDotPulse {
+    0%, 80%, 100% { opacity: 0.25; }
+    40% { opacity: 1; }
+  }
+  /* 스캔 진행 프로그레스 바: 스캔 연출 시간(3초)과 맞춰 왼쪽에서 오른쪽으로 채워짐 */
+  .skin-scan-progress {
+    width: 55%;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 9999px;
+    background: #f3f4f6;
+    overflow: hidden;
+  }
+  .skin-scan-progress-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #fb923c, #f97316);
+    border-radius: 9999px;
+    transform-origin: left;
+    animation: skinScanProgress 3s linear forwards;
+  }
+  @keyframes skinScanProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  /* 스캔 연출이 끝나고 결과 카드가 나타날 때 부드럽게 페이드인 */
+  @keyframes skinFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .skin-fade-in {
+    animation: skinFadeIn 0.4s ease-out;
+  }
 </style>
 </head>
 <body class="font-sans text-gray-900">
@@ -927,75 +993,129 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교 -->
+          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 실제 카메라 촬영 화면(getUserMedia)이 열림.
+               카메라 권한이 없거나 지원하지 않는 환경에서는 숨겨진 file input(capture="user")으로 자동 대체됨 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <label for="skinReportStartPhotoInput" class="relative overflow-hidden border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
-                <img id="skinReportStartPhotoPreview" src="" alt="1일차 사진" class="hidden absolute inset-0 w-full h-full object-cover" />
-                <span id="skinReportStartPhotoIcon" class="text-xl">📷</span>
-                <span id="skinReportStartPhotoLabel" class="text-xs">1일차 사진</span>
-              </label>
-              <input id="skinReportStartPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+              <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
+                <img id="skinPhotoStartPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
+                <div id="skinPhotoStartPlaceholder" class="flex flex-col items-center gap-1">
+                  <span class="text-xl">📷</span>
+                  <span class="text-xs">1일차 사진</span>
+                </div>
+                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
+                <div id="skinPhotoStartScanOverlay" class="hidden absolute inset-0 skin-scan-overlay">
+                  <div class="skin-scan-line"></div>
+                </div>
+              </button>
+              <input id="skinPhotoStartInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
-              <label for="skinReportEndPhotoInput" class="relative overflow-hidden border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
-                <img id="skinReportEndPhotoPreview" src="" alt="마지막날 사진" class="hidden absolute inset-0 w-full h-full object-cover" />
-                <span id="skinReportEndPhotoIcon" class="text-xl">📷</span>
-                <span id="skinReportEndPhotoLabel" class="text-xs">마지막날 사진</span>
-              </label>
-              <input id="skinReportEndPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+              <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
+                <img id="skinPhotoEndPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
+                <div id="skinPhotoEndPlaceholder" class="flex flex-col items-center gap-1">
+                  <span class="text-xl">📷</span>
+                  <span class="text-xs">마지막날 사진</span>
+                </div>
+                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
+                <div id="skinPhotoEndScanOverlay" class="hidden absolute inset-0 skin-scan-overlay">
+                  <div class="skin-scan-line"></div>
+                </div>
+              </button>
+              <input id="skinPhotoEndInput" type="file" accept="image/*" capture="user" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
-          <p class="text-xs text-gray-400 mt-1">→ 사진을 등록하면 AI가 두 사진을 비교해 분석해드려요</p>
+          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요</p>
         </div>
 
         <!-- 항목별 변화 -->
         <div>
           <h3 class="text-sm font-semibold text-gray-700 mb-3">항목별 변화</h3>
-          <div class="space-y-3">
+
+          <!-- 초기 빈 상태 / 사진 등록 안내: 분석 전에는 mock 점수 대신 이 안내만 노출 -->
+          <div id="skinChangeEmptyState" class="text-center text-sm text-gray-400 py-10 leading-relaxed">
+            1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.
+          </div>
+
+          <!-- 스캔 연출: 두 사진이 모두 등록된 직후 약 3초간 표시 (실제 분석은 이미 끝난 상태, 연출용 지연) -->
+          <div id="skinChangeScanningState" class="hidden text-center py-10">
+            <p class="text-sm text-gray-500 mb-3">피부를 분석하고 있어요<span class="skin-scan-dots"><span></span><span></span><span></span></span></p>
+            <div class="skin-scan-progress"><div class="skin-scan-progress-bar"></div></div>
+          </div>
+
+          <!-- 분석 결과 카드: 스캔 연출이 끝난 뒤에만 노출. 카드별로 "상세보기"를 누르면 세부 피드백이 펼쳐짐 -->
+          <div id="skinChangeCards" class="hidden space-y-3">
             <div class="bg-white border border-gray-100 rounded-2xl p-4">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-semibold">💧 수분</p>
-                <span class="text-xs font-bold text-green-600 bg-green-50 rounded-full px-2 py-0.5">개선됨</span>
+                <span id="hydrationBadge" class="text-xs font-bold text-green-600 bg-green-50 rounded-full px-2 py-0.5">개선됨</span>
               </div>
-              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">54</span> → 마지막날 <span class="font-bold text-gray-900">72</span>/100 <span class="text-green-600 font-semibold ml-1">+18%</span></p>
-              <p class="text-xs text-gray-400 leading-relaxed">여행지 습도가 높고 물을 자주 마신 덕에 여행 중 수분감이 뚜렷하게 올라갔어요.</p>
+              <p id="hydrationScoreLine" class="text-sm text-gray-500 mb-2">1일차 <span class="font-bold text-gray-900">54</span> → 마지막날 <span class="font-bold text-gray-900">72</span>/100 <span class="text-green-600 font-semibold ml-1">+18%</span></p>
+              <button type="button" id="hydrationToggleBtn" aria-expanded="false" aria-controls="hydrationDetail" class="text-xs font-semibold text-brand-600 flex items-center gap-0.5">
+                상세보기 <span id="hydrationToggleArrow">▾</span>
+              </button>
+              <div id="hydrationDetail" class="hidden mt-2 pt-2 border-t border-dashed border-gray-100 space-y-1.5">
+                <p id="hydrationDesc" class="text-xs text-gray-400 leading-relaxed">여행지 습도가 높고 물을 자주 마신 덕에 여행 중 수분감이 뚜렷하게 올라갔어요.</p>
+                <p class="text-[11px] text-gray-400"><span class="font-semibold text-gray-500">분석 기준</span> · 피부 표면 미세 텍스처 분석</p>
+                <p class="text-xs text-gray-600 leading-relaxed">💡 세안 후 3분 이내에 스킨·로션으로 수분을 먼저 채우고, 자기 전 수분크림을 충분히 발라보세요.</p>
+              </div>
             </div>
             <div class="bg-white border border-gray-100 rounded-2xl p-4">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-semibold">☀️ 톤·홍조</p>
-                <span class="text-xs font-bold text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">주의 필요</span>
+                <span id="rednessBadge" class="text-xs font-bold text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">주의 필요</span>
               </div>
-              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">21</span> → 마지막날 <span class="font-bold text-gray-900">30</span>/100 <span class="text-amber-600 font-semibold ml-1">+9%</span></p>
-              <p class="text-xs text-gray-400 leading-relaxed">양볼 쪽에 붉은 기가 늘어난 편이에요. 강한 햇빛에 노출된 오후 시간대와 겹쳐요.</p>
+              <p id="rednessScoreLine" class="text-sm text-gray-500 mb-2">1일차 <span class="font-bold text-gray-900">21</span> → 마지막날 <span class="font-bold text-gray-900">30</span>/100 <span class="text-amber-600 font-semibold ml-1">+9%</span></p>
+              <button type="button" id="rednessToggleBtn" aria-expanded="false" aria-controls="rednessDetail" class="text-xs font-semibold text-brand-600 flex items-center gap-0.5">
+                상세보기 <span id="rednessToggleArrow">▾</span>
+              </button>
+              <div id="rednessDetail" class="hidden mt-2 pt-2 border-t border-dashed border-gray-100 space-y-1.5">
+                <p id="rednessDesc" class="text-xs text-gray-400 leading-relaxed">양볼 쪽에 붉은 기가 늘어난 편이에요. 강한 햇빛에 노출된 오후 시간대와 겹쳐요.</p>
+                <p class="text-[11px] text-gray-400"><span class="font-semibold text-gray-500">분석 기준</span> · R 채널 대비 붉은기 초과분 측정</p>
+                <p class="text-xs text-gray-600 leading-relaxed">💡 자외선 차단제를 2~3시간마다 덧바르고, 진정 성분(마데카소사이드·판테놀) 제품을 밤 루틴에 더해보세요.</p>
+              </div>
             </div>
             <div class="bg-white border border-gray-100 rounded-2xl p-4">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-semibold">💧 유분</p>
-                <span class="text-xs font-bold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">변화 없음</span>
+                <span id="oilinessBadge" class="text-xs font-bold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">변화 없음</span>
               </div>
-              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">46</span> → 마지막날 <span class="font-bold text-gray-900">48</span>/100 T존 <span class="text-gray-500 font-semibold ml-1">±2%</span></p>
-              <p class="text-xs text-gray-400 leading-relaxed">T존 유분은 여행 전과 큰 차이가 없어요. 기존 루틴이 잘 유지된 편이에요.</p>
+              <p id="oilinessScoreLine" class="text-sm text-gray-500 mb-2">1일차 <span class="font-bold text-gray-900">46</span> → 마지막날 <span class="font-bold text-gray-900">48</span>/100 T존 <span class="text-gray-500 font-semibold ml-1">±2%</span></p>
+              <button type="button" id="oilinessToggleBtn" aria-expanded="false" aria-controls="oilinessDetail" class="text-xs font-semibold text-brand-600 flex items-center gap-0.5">
+                상세보기 <span id="oilinessToggleArrow">▾</span>
+              </button>
+              <div id="oilinessDetail" class="hidden mt-2 pt-2 border-t border-dashed border-gray-100 space-y-1.5">
+                <p id="oilinessDesc" class="text-xs text-gray-400 leading-relaxed">T존 유분은 여행 전과 큰 차이가 없어요. 기존 루틴이 잘 유지된 편이에요.</p>
+                <p class="text-[11px] text-gray-400"><span class="font-semibold text-gray-500">분석 기준</span> · 빛 반사·번들거림 측정</p>
+                <p class="text-xs text-gray-600 leading-relaxed">💡 T존 위주로 피지 흡수 시트나 매트 선크림을 사용해 유분을 관리해보세요.</p>
+              </div>
             </div>
             <div class="bg-white border border-gray-100 rounded-2xl p-4">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-semibold">🦠 트러블</p>
-                <span class="text-xs font-bold text-red-600 bg-red-50 rounded-full px-2 py-0.5">2건 증가</span>
+                <span id="blemishBadge" class="text-xs font-bold text-red-600 bg-red-50 rounded-full px-2 py-0.5">2건 증가</span>
               </div>
-              <p class="text-sm text-gray-500 mb-1">1일차 <span class="font-bold text-gray-900">0건</span> → 마지막날 <span class="font-bold text-gray-900">2건</span> <span class="text-red-600 font-semibold ml-1">+2건</span></p>
-              <p class="text-xs text-gray-400 leading-relaxed">턱선에 좁쌀 트러블 2개가 새로 보여요. 자기 전 세안이 부실했던 날과 맞물려요.</p>
+              <p id="blemishScoreLine" class="text-sm text-gray-500 mb-2">1일차 <span class="font-bold text-gray-900">0건</span> → 마지막날 <span class="font-bold text-gray-900">2건</span> <span class="text-red-600 font-semibold ml-1">+2건</span></p>
+              <button type="button" id="blemishToggleBtn" aria-expanded="false" aria-controls="blemishDetail" class="text-xs font-semibold text-brand-600 flex items-center gap-0.5">
+                상세보기 <span id="blemishToggleArrow">▾</span>
+              </button>
+              <div id="blemishDetail" class="hidden mt-2 pt-2 border-t border-dashed border-gray-100 space-y-1.5">
+                <p id="blemishDesc" class="text-xs text-gray-400 leading-relaxed">턱선에 좁쌀 트러블 2개가 새로 보여요. 자기 전 세안이 부실했던 날과 맞물려요.</p>
+                <p class="text-[11px] text-gray-400"><span class="font-semibold text-gray-500">분석 기준</span> · 붉은 반점 군집(blob) 탐지</p>
+                <p class="text-xs text-gray-600 leading-relaxed">💡 자기 전 세안을 꼼꼼히 하고, 트러블 부위는 손으로 만지지 않는 게 좋아요.</p>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 종합 요약 -->
         <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4">
-          <p class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
+          <p id="skinReportSummary" class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
         </div>
 
-        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">여행 리포트 공유하기</button>
+        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
 
       </section>
 
@@ -1140,6 +1260,16 @@ HTML_PAGE = """<!DOCTYPE html>
           <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
           <span class="text-gray-300">›</span>
         </button>
+      </div>
+    </div>
+
+    <!-- 피부 변화 리포트: 실제 카메라 촬영 화면 (getUserMedia 라이브 프리뷰 + 셔터) -->
+    <div id="skinCameraModal" class="hidden absolute inset-0 z-[60] bg-black flex flex-col">
+      <video id="skinCameraVideo" autoplay playsinline muted class="flex-1 w-full object-cover"></video>
+      <div class="p-5 flex items-center justify-between bg-black">
+        <button id="skinCameraCancelBtn" type="button" class="text-white text-sm font-semibold px-2">취소</button>
+        <button id="skinCameraShutterBtn" type="button" class="w-14 h-14 rounded-full bg-white border-4 border-gray-400" aria-label="촬영"></button>
+        <span class="w-10"></span>
       </div>
     </div>
 
@@ -1678,25 +1808,417 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('skinReportEndDate').textContent = end || '-';
     }
 
-    // "1일차 사진"/"마지막날 사진" 탭 -> 파우치 촬영과 동일하게 카메라 앱(모바일)/파일 선택(웹)을 바로 띄움
-    function wireSkinReportPhotoInput(prefix) {
-      document.getElementById(`${prefix}PhotoInput`).addEventListener('change', () => {
-        const input = document.getElementById(`${prefix}PhotoInput`);
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const preview = document.getElementById(`${prefix}PhotoPreview`);
-          preview.src = reader.result;
-          preview.classList.remove('hidden');
-          document.getElementById(`${prefix}PhotoIcon`).classList.add('hidden');
-          document.getElementById(`${prefix}PhotoLabel`).classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-      });
+    // ===== 피부 변화 리포트: 사진 업로드/촬영 → Canvas 픽셀 분석 → 항목별 카드 자동 갱신 =====
+    // 외부 API/라이브러리 없이 순수 JS + Canvas로 계산하는 "근사 스크리닝"입니다.
+    // 실제 피부과적 진단이 아니라, 두 사진의 픽셀 패턴을 비교해 변화 추이만 보여주는 목적입니다.
+
+    const SKIN_ANALYSIS_SIZE = 96; // 분석용 캔버스 한 변 크기(px). 클수록 정교하지만 느려짐
+    const skinPhotoImages = { start: null, end: null }; // 업로드/촬영된 두 장의 <img> 엘리먼트 보관
+    let skinScanTimeoutId = null; // 스캔 연출 타이머 핸들 (사진 재등록 시 중복 실행 방지용)
+
+    // 0~100 사이로 값을 잘라내는 유틸
+    function clampSkinScore(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
-    wireSkinReportPhotoInput('skinReportStart');
-    wireSkinReportPhotoInput('skinReportEnd');
+
+    // 원본 이미지를 정사각형으로 중앙 크롭해 고정 크기 캔버스에 그린 뒤 픽셀 데이터를 반환
+    // (사진의 크기·비율이 달라도 항상 같은 조건으로 분석하기 위함)
+    function drawImageToAnalysisCanvas(imgEl) {
+      const canvas = document.createElement('canvas');
+      canvas.width = SKIN_ANALYSIS_SIZE;
+      canvas.height = SKIN_ANALYSIS_SIZE;
+      const ctx = canvas.getContext('2d');
+      const srcW = imgEl.naturalWidth || imgEl.width;
+      const srcH = imgEl.naturalHeight || imgEl.height;
+      const side = Math.min(srcW, srcH);
+      const sx = (srcW - side) / 2;
+      const sy = (srcH - side) / 2;
+      ctx.drawImage(imgEl, sx, sy, side, side, 0, 0, SKIN_ANALYSIS_SIZE, SKIN_ANALYSIS_SIZE);
+      return ctx.getImageData(0, 0, SKIN_ANALYSIS_SIZE, SKIN_ANALYSIS_SIZE);
+    }
+
+    // 격자 블록(8x8px) 단위로 "주변 평균보다 붉고 어두운" 블록을 표시한 뒤,
+    // 인접한 블록끼리 4방향 flood fill로 묶어 트러블 반점(blob) 개수를 근사 카운트
+    // ※ avgRedness/avgBrightness는 같은 이미지 내부의 평균값이므로, 여기서는 lightingFactor를
+    //   따로 곱하지 않고 블록 값과 같은 단위(원본 픽셀값)로 그대로 비교해야 함
+    function countBlemishBlobs(data, width, height, avgRedness, avgBrightness) {
+      const blockSize = 8;
+      const cols = Math.floor(width / blockSize);
+      const rows = Math.floor(height / blockSize);
+      const flagged = new Array(cols * rows).fill(false);
+
+      for (let by = 0; by < rows; by++) {
+        for (let bx = 0; bx < cols; bx++) {
+          let rSum = 0, gSum = 0, bSum = 0, n = 0;
+          for (let y = by * blockSize; y < by * blockSize + blockSize; y++) {
+            for (let x = bx * blockSize; x < bx * blockSize + blockSize; x++) {
+              const o = (y * width + x) * 4;
+              rSum += data[o]; gSum += data[o + 1]; bSum += data[o + 2];
+              n++;
+            }
+          }
+          const r = rSum / n, g = gSum / n, b = bSum / n;
+          const blockRedness = r - (g + b) / 2;
+          const blockBrightness = (r + g + b) / 3;
+          // 주변보다 붉은기가 뚜렷이 높으면서 밝기는 오히려 낮은(홍조성 반점) 블록만 이상 블록으로 표시
+          if (blockRedness > avgRedness + 14 && blockBrightness < avgBrightness - 4) {
+            flagged[by * cols + bx] = true;
+          }
+        }
+      }
+
+      const visited = new Array(cols * rows).fill(false);
+      let blobCount = 0;
+      for (let idx = 0; idx < flagged.length; idx++) {
+        if (!flagged[idx] || visited[idx]) continue;
+        blobCount++;
+        const stack = [idx];
+        while (stack.length) {
+          const cur = stack.pop();
+          if (visited[cur] || !flagged[cur]) continue;
+          visited[cur] = true;
+          const cx = cur % cols, cy = Math.floor(cur / cols);
+          if (cx > 0) stack.push(cur - 1);
+          if (cx < cols - 1) stack.push(cur + 1);
+          if (cy > 0) stack.push(cur - cols);
+          if (cy < rows - 1) stack.push(cur + cols);
+        }
+      }
+      return clampSkinScore(blobCount, 0, 12);
+    }
+
+    // 사진 한 장을 분석해 수분/톤·홍조/유분 점수(0~100)와 트러블 반점 개수를 반환
+    function analyzeSkinPhoto(imgEl) {
+      const { data, width, height } = drawImageToAnalysisCanvas(imgEl);
+      const pixelCount = width * height;
+
+      let brightnessSum = 0;
+      let rednessSum = 0;
+      let oilyPixelCount = 0;
+      const brightness = new Float32Array(pixelCount);
+
+      for (let i = 0; i < pixelCount; i++) {
+        const o = i * 4;
+        const r = data[o], g = data[o + 1], b = data[o + 2];
+        const bright = (r + g + b) / 3;
+        brightness[i] = bright;
+        brightnessSum += bright;
+        // 톤·홍조 지표: R이 G·B 평균보다 얼마나 높은지 (양수일수록 붉은기가 강함)
+        rednessSum += r - (g + b) / 2;
+
+        // 유분 지표: 밝고(반사광) 채도가 낮은(번들거리는) 픽셀 비율
+        const maxC = Math.max(r, g, b);
+        const minC = Math.min(r, g, b);
+        const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
+        if (bright > 190 && saturation < 0.18) oilyPixelCount++;
+      }
+
+      const avgBrightness = brightnessSum / pixelCount;
+      const avgRedness = rednessSum / pixelCount;
+      // 조명(전체 밝기) 편차를 보정하기 위한 정규화 비율 (기준 밝기 128 대비)
+      const lightingFactor = clampSkinScore(128 / Math.max(avgBrightness, 1), 0.6, 1.6);
+
+      // 수분(hydration): 인접 픽셀 간 밝기 변화(엣지 밀도)로 표면 질감을 근사.
+      // 요철·각질이 많을수록 엣지가 많아져 매끈함(수분감) 점수는 낮아짐
+      let edgeSum = 0;
+      let edgeSamples = 0;
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = y * width + x;
+          const dx = brightness[idx + 1] - brightness[idx - 1];
+          const dy = brightness[idx + width] - brightness[idx - width];
+          edgeSum += Math.sqrt(dx * dx + dy * dy);
+          edgeSamples++;
+        }
+      }
+      const avgEdge = (edgeSum / edgeSamples) * lightingFactor;
+      const hydration = clampSkinScore(100 - avgEdge * 3.2, 0, 100); // 경험적 스케일링 상수
+
+      // 대부분의 피부는 원래 R값이 G·B보다 높으므로(자연스러운 살빛), 배율을 과하게 주면
+      // 거의 모든 사진이 100점에 붙어버려 비교가 무의미해짐 → 완만한 배율로 조정
+      const redness = clampSkinScore(avgRedness * lightingFactor * 1.6, 0, 100);
+      const oiliness = clampSkinScore((oilyPixelCount / pixelCount) * 260, 0, 100);
+      const blemish = countBlemishBlobs(data, width, height, avgRedness, avgBrightness);
+
+      return { hydration, redness, oiliness, blemish };
+    }
+
+    // dataURL(카메라 캡처 또는 파일 선택 결과)을 미리보기에 채우고, 양쪽 사진이 모두 채워지면 자동 분석 실행
+    function applySkinPhoto(kind, dataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        skinPhotoImages[kind] = img;
+        const previewEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPreview' : 'skinPhotoEndPreview');
+        const placeholderEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPlaceholder' : 'skinPhotoEndPlaceholder');
+        previewEl.src = dataUrl;
+        previewEl.classList.remove('hidden');
+        placeholderEl.classList.add('hidden');
+        updateSkinPhotoHint();
+        updateSkinChangeEmptyState();
+        if (skinPhotoImages.start && skinPhotoImages.end) {
+          runSkinPhotoAnalysis();
+        }
+      };
+      img.src = dataUrl;
+    }
+
+    // (폴백 경로) 파일 선택창에서 고른 파일을 읽어 applySkinPhoto로 전달
+    function loadSkinPhoto(kind, file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => applySkinPhoto(kind, reader.result);
+      reader.readAsDataURL(file);
+    }
+
+    function updateSkinPhotoHint() {
+      const hintEl = document.getElementById('skinPhotoHint');
+      const count = (skinPhotoImages.start ? 1 : 0) + (skinPhotoImages.end ? 1 : 0);
+      if (count >= 2) {
+        hintEl.textContent = '✓ 두 사진을 비교해 아래 리포트를 갱신했어요';
+      } else if (count === 1) {
+        hintEl.textContent = '나머지 한 장을 더 등록해 주세요';
+      } else {
+        hintEl.textContent = '→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요';
+      }
+    }
+
+    // "항목별 변화" 빈 상태 안내: 등록된 사진 개수(0/1/2장)에 따라 문구를 갱신.
+    // 두 장이 모두 채워지면 이 안내는 숨기고 스캔 연출(beginSkinScan)로 넘어감
+    function updateSkinChangeEmptyState() {
+      const emptyEl = document.getElementById('skinChangeEmptyState');
+      const count = (skinPhotoImages.start ? 1 : 0) + (skinPhotoImages.end ? 1 : 0);
+      if (count >= 2) {
+        emptyEl.classList.add('hidden');
+        return;
+      }
+      emptyEl.classList.remove('hidden');
+      emptyEl.innerHTML = count === 1
+        ? '나머지 한 장을 더 등록해 주세요'
+        : '1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.';
+    }
+
+    document.getElementById('skinPhotoStartInput').addEventListener('change', (e) => {
+      loadSkinPhoto('start', e.target.files[0]);
+    });
+    document.getElementById('skinPhotoEndInput').addEventListener('change', (e) => {
+      loadSkinPhoto('end', e.target.files[0]);
+    });
+
+    // ===== 실제 카메라 촬영 (getUserMedia 라이브 프리뷰 + 셔터) =====
+    // 카메라 아이콘 박스를 탭하면 이 모달이 열려 실시간 카메라 화면을 보여줌.
+    // getUserMedia를 지원하지 않거나(구형 브라우저) 권한이 거부된 경우에는
+    // 숨겨진 file input(capture="user")을 대신 열어 OS 카메라/갤러리로 자연스럽게 대체됨
+    let skinCameraStream = null;
+    let skinCameraTargetKind = null; // 현재 촬영 대상: 'start' | 'end'
+
+    async function openSkinCamera(kind) {
+      skinCameraTargetKind = kind;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
+        return;
+      }
+      try {
+        skinCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        document.getElementById('skinCameraVideo').srcObject = skinCameraStream;
+        document.getElementById('skinCameraModal').classList.remove('hidden');
+      } catch (err) {
+        console.error('카메라 접근 실패, 파일 선택으로 대체합니다:', err);
+        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
+      }
+    }
+
+    function closeSkinCamera() {
+      if (skinCameraStream) {
+        skinCameraStream.getTracks().forEach((track) => track.stop());
+        skinCameraStream = null;
+      }
+      document.getElementById('skinCameraModal').classList.add('hidden');
+    }
+
+    // 셔터 탭: 현재 비디오 프레임을 캔버스에 그려 이미지로 캡처 → 기존 미리보기/분석 파이프라인으로 전달
+    function captureSkinPhoto() {
+      const video = document.getElementById('skinCameraVideo');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || SKIN_ANALYSIS_SIZE;
+      canvas.height = video.videoHeight || SKIN_ANALYSIS_SIZE;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      applySkinPhoto(skinCameraTargetKind, canvas.toDataURL('image/png'));
+      closeSkinCamera();
+    }
+
+    document.getElementById('skinPhotoStartBox').addEventListener('click', () => openSkinCamera('start'));
+    document.getElementById('skinPhotoEndBox').addEventListener('click', () => openSkinCamera('end'));
+    document.getElementById('skinCameraShutterBtn').addEventListener('click', captureSkinPhoto);
+    document.getElementById('skinCameraCancelBtn').addEventListener('click', closeSkinCamera);
+
+    // 배지(개선됨/주의 필요/변화 없음) 색상 ↔ Tailwind 클래스 매핑
+    const skinBadgeColorClasses = {
+      green: 'text-green-600 bg-green-50',
+      amber: 'text-amber-600 bg-amber-50',
+      gray: 'text-gray-500 bg-gray-100',
+      red: 'text-red-600 bg-red-50',
+    };
+    const skinTextColorClasses = {
+      green: 'text-green-600',
+      amber: 'text-amber-600',
+      gray: 'text-gray-500',
+      red: 'text-red-600',
+    };
+
+    function setSkinBadge(id, label, colorKey) {
+      const el = document.getElementById(id);
+      el.className = `text-xs font-bold rounded-full px-2 py-0.5 ${skinBadgeColorClasses[colorKey]}`;
+      el.textContent = label;
+    }
+
+    // 점수(0~100)형 지표의 배지를 계산. higherIsBetter=false인 지표(홍조·유분)는 오를수록 "주의 필요".
+    // threshold 이내의 변화는 "변화 없음"으로 간주
+    function computeScoreBadge(delta, higherIsBetter, threshold = 3) {
+      if (Math.abs(delta) <= threshold) return { label: '변화 없음', color: 'gray' };
+      const improved = higherIsBetter ? delta > 0 : delta < 0;
+      return improved ? { label: '개선됨', color: 'green' } : { label: '주의 필요', color: 'amber' };
+    }
+
+    // 건수(트러블)형 지표는 배지 자체에 증감 건수를 표시
+    function computeBlemishBadge(delta) {
+      if (delta === 0) return { label: '변화 없음', color: 'gray' };
+      if (delta > 0) return { label: `${delta}건 증가`, color: 'red' };
+      return { label: `${Math.abs(delta)}건 감소`, color: 'green' };
+    }
+
+    function formatPercentDelta(start, end) {
+      if (start <= 0) return end > 0 ? '+100%' : '±0%';
+      const pct = Math.round(((end - start) / start) * 100);
+      if (pct === 0) return '±0%';
+      return pct > 0 ? `+${pct}%` : `${pct}%`;
+    }
+
+    // 두 사진이 모두 준비되면 실제 픽셀 분석은 여기서 즉시 끝내고 값만 보관함.
+    // 결과를 바로 보여주지 않고 beginSkinScan()으로 넘겨 스캔 연출(3초) 뒤에 표시함 —
+    // 즉, 3초 동안 무거운 연산을 도는 게 아니라 순전히 연출용 지연임
+    function runSkinPhotoAnalysis() {
+      const startScores = analyzeSkinPhoto(skinPhotoImages.start);
+      const endScores = analyzeSkinPhoto(skinPhotoImages.end);
+      beginSkinScan(startScores, endScores);
+    }
+
+    // 사진 두 장 위에 스캔 라인 오버레이 + "분석 중" 상태를 3초간 보여준 뒤 결과 카드를 드러냄.
+    // 이미 결과가 표시된 상태에서 사진을 다시 등록해도 이 함수가 다시 호출되므로 스캔 연출부터 재생됨
+    function beginSkinScan(startScores, endScores) {
+      if (skinScanTimeoutId) {
+        clearTimeout(skinScanTimeoutId); // 기존 타이머가 남아있으면 정리해 중복 실행 방지
+      }
+
+      document.getElementById('skinChangeEmptyState').classList.add('hidden');
+      const cardsEl = document.getElementById('skinChangeCards');
+      cardsEl.classList.add('hidden');
+      cardsEl.classList.remove('skin-fade-in');
+      document.getElementById('skinChangeScanningState').classList.remove('hidden');
+      document.getElementById('skinPhotoStartScanOverlay').classList.remove('hidden');
+      document.getElementById('skinPhotoEndScanOverlay').classList.remove('hidden');
+
+      skinScanTimeoutId = setTimeout(() => {
+        document.getElementById('skinPhotoStartScanOverlay').classList.add('hidden');
+        document.getElementById('skinPhotoEndScanOverlay').classList.add('hidden');
+        document.getElementById('skinChangeScanningState').classList.add('hidden');
+        renderSkinChangeCards(startScores, endScores);
+        cardsEl.classList.remove('hidden');
+        cardsEl.classList.add('skin-fade-in');
+        skinScanTimeoutId = null;
+      }, 3000);
+    }
+
+    // 분석된 1일차/마지막날 점수로 "항목별 변화" 카드 4개 + 종합 요약을 동적으로 갱신
+    function renderSkinChangeCards(startScores, endScores) {
+      const s = {
+        hydration: Math.round(startScores.hydration),
+        redness: Math.round(startScores.redness),
+        oiliness: Math.round(startScores.oiliness),
+        blemish: Math.round(startScores.blemish),
+      };
+      const e = {
+        hydration: Math.round(endScores.hydration),
+        redness: Math.round(endScores.redness),
+        oiliness: Math.round(endScores.oiliness),
+        blemish: Math.round(endScores.blemish),
+      };
+
+      // 수분: 오를수록 좋음(초록)
+      const hydrationBadge = computeScoreBadge(e.hydration - s.hydration, true);
+      setSkinBadge('hydrationBadge', hydrationBadge.label, hydrationBadge.color);
+      document.getElementById('hydrationScoreLine').innerHTML =
+        `1일차 <span class="font-bold text-gray-900">${s.hydration}</span> → 마지막날 <span class="font-bold text-gray-900">${e.hydration}</span>/100 <span class="${skinTextColorClasses[hydrationBadge.color]} font-semibold ml-1">${formatPercentDelta(s.hydration, e.hydration)}</span>`;
+      document.getElementById('hydrationDesc').textContent = hydrationBadge.label === '개선됨'
+        ? '사진 비교 결과 표면이 매끈해져 수분감이 올라간 것으로 보여요.'
+        : hydrationBadge.label === '주의 필요'
+          ? '표면 텍스처가 거칠어져 수분감이 떨어진 것으로 보여요. 수분크림을 더 챙겨보세요.'
+          : '수분감은 1일차와 큰 차이가 없어요.';
+
+      // 톤·홍조: 오를수록 나쁨(빨강/주황)
+      const rednessBadge = computeScoreBadge(e.redness - s.redness, false);
+      setSkinBadge('rednessBadge', rednessBadge.label, rednessBadge.color);
+      document.getElementById('rednessScoreLine').innerHTML =
+        `1일차 <span class="font-bold text-gray-900">${s.redness}</span> → 마지막날 <span class="font-bold text-gray-900">${e.redness}</span>/100 <span class="${skinTextColorClasses[rednessBadge.color]} font-semibold ml-1">${formatPercentDelta(s.redness, e.redness)}</span>`;
+      document.getElementById('rednessDesc').textContent = rednessBadge.label === '주의 필요'
+        ? '사진 속 붉은 영역이 넓어졌어요. 강한 자외선 노출과 관련 있을 수 있어요.'
+        : rednessBadge.label === '개선됨'
+          ? '붉은기가 가라앉아 톤이 안정된 것으로 보여요.'
+          : '톤·홍조는 1일차와 큰 차이가 없어요.';
+
+      // 유분: 오를수록 나쁨(번들거림)
+      const oilinessBadge = computeScoreBadge(e.oiliness - s.oiliness, false);
+      setSkinBadge('oilinessBadge', oilinessBadge.label, oilinessBadge.color);
+      document.getElementById('oilinessScoreLine').innerHTML =
+        `1일차 <span class="font-bold text-gray-900">${s.oiliness}</span> → 마지막날 <span class="font-bold text-gray-900">${e.oiliness}</span>/100 T존 <span class="${skinTextColorClasses[oilinessBadge.color]} font-semibold ml-1">${formatPercentDelta(s.oiliness, e.oiliness)}</span>`;
+      document.getElementById('oilinessDesc').textContent = oilinessBadge.label === '주의 필요'
+        ? 'T존 반사광이 늘어 유분이 증가한 것으로 보여요.'
+        : oilinessBadge.label === '개선됨'
+          ? 'T존 번들거림이 줄어 유분이 안정된 것으로 보여요.'
+          : 'T존 유분은 1일차와 큰 차이가 없어요.';
+
+      // 트러블: 반점(blob) 개수 차이를 "건수"로 표시
+      const blemishDelta = e.blemish - s.blemish;
+      const blemishBadge = computeBlemishBadge(blemishDelta);
+      setSkinBadge('blemishBadge', blemishBadge.label, blemishBadge.color);
+      const blemishDiffText = blemishDelta === 0 ? '±0건' : blemishDelta > 0 ? `+${blemishDelta}건` : `${blemishDelta}건`;
+      document.getElementById('blemishScoreLine').innerHTML =
+        `1일차 <span class="font-bold text-gray-900">${s.blemish}건</span> → 마지막날 <span class="font-bold text-gray-900">${e.blemish}건</span> <span class="${skinTextColorClasses[blemishBadge.color]} font-semibold ml-1">${blemishDiffText}</span>`;
+      document.getElementById('blemishDesc').textContent = blemishDelta > 0
+        ? '새로운 트러블이 감지됐어요. 세안과 보습 루틴을 다시 점검해보세요.'
+        : blemishDelta < 0
+          ? '트러블이 줄어들어 피부가 안정된 것으로 보여요.'
+          : '트러블 개수는 1일차와 같아요.';
+
+      // 종합 요약: 홍조·트러블 악화 여부에 따라 조언 문구를 조건 분기
+      const worsenedRedness = rednessBadge.label === '주의 필요';
+      const worsenedBlemish = blemishDelta > 0;
+      const improvedHydration = hydrationBadge.label === '개선됨';
+      let summary;
+      if (worsenedRedness && worsenedBlemish) {
+        summary = '여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.';
+      } else if (worsenedRedness) {
+        summary = '홍조가 도드라진 편이에요. 자외선 차단제를 자주 덧발라 톤을 관리해보세요.';
+      } else if (worsenedBlemish) {
+        summary = '트러블이 새로 생겼어요. 자기 전 세안과 보습을 조금 더 신경 써보세요.';
+      } else if (improvedHydration) {
+        summary = '전반적으로 피부가 편안해졌어요. 지금의 수분 관리 루틴을 계속 유지해보세요.';
+      } else {
+        summary = '전체적으로 여행 전과 비슷한 상태를 유지했어요.';
+      }
+      document.getElementById('skinReportSummary').textContent = summary;
+    }
+
+    // 카드별 "상세보기" 아코디언 토글. 카드마다 독립적으로 펼침/접힘 가능(동시 펼침 허용)
+    function toggleSkinDetail(key) {
+      const detailEl = document.getElementById(`${key}Detail`);
+      const willExpand = detailEl.classList.contains('hidden');
+      detailEl.classList.toggle('hidden', !willExpand);
+      document.getElementById(`${key}ToggleBtn`).setAttribute('aria-expanded', String(willExpand));
+      document.getElementById(`${key}ToggleArrow`).textContent = willExpand ? '▴' : '▾';
+    }
+    ['hydration', 'redness', 'oiliness', 'blemish'].forEach((key) => {
+      document.getElementById(`${key}ToggleBtn`).addEventListener('click', () => toggleSkinDetail(key));
+    });
 
     function updateWizardNextButton(stepId, enabled) {
       const btn = document.querySelector(`#${stepId} .wizard-next-btn`);
