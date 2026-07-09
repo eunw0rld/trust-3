@@ -985,18 +985,28 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 랜딩 페이지 ↔ 앱 화면 전환
     // 온보딩은 피부 정보(1단계)만 필수이고, 화장품·여행지 등록은 이후 개인설정 메뉴에서 진행
+    // 화면 전환(hidden 토글) 자체는 항상 먼저 실행되도록 하고, 페이드 애니메이션 등 부가 효과는
+    // try/catch로 감싸서 그 부분에서 오류가 나더라도 실제 화면 전환은 막히지 않게 함
     function enterApp() {
       document.getElementById('screen-landing').classList.add('hidden');
       const app = document.getElementById('appContainer');
       app.classList.remove('hidden');
-      showRegisterStep('step1');
-      playScreenTransition(app);
+      try {
+        showRegisterStep('step1');
+        playScreenTransition(app);
+      } catch (e) {
+        console.error('enterApp 전환 중 오류:', e);
+      }
     }
     function exitToLanding() {
       document.getElementById('appContainer').classList.add('hidden');
       const landing = document.getElementById('screen-landing');
       landing.classList.remove('hidden');
-      playScreenTransition(landing);
+      try {
+        playScreenTransition(landing);
+      } catch (e) {
+        console.error('exitToLanding 전환 중 오류:', e);
+      }
     }
     document.getElementById('startBtn').addEventListener('click', enterApp);
     document.getElementById('skipStartBtn').addEventListener('click', enterApp);
@@ -1054,20 +1064,26 @@ HTML_PAGE = """<!DOCTYPE html>
     };
     let onboardingComplete = false;
 
+    // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
+    // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
     function switchTab(tabName) {
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
       Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
-      playScreenTransition(screens[tabName]);
-      if (tabName === 'inuse') {
-        refreshAdjustedRoutine();
-      } else if (tabName === 'settings') {
-        renderProfileSummary();
-      } else if (tabName === 'community') {
-        if (!communityDefaultApplied) {
-          applyDefaultCommunityFilter();
-          communityDefaultApplied = true;
+      try {
+        playScreenTransition(screens[tabName]);
+        if (tabName === 'inuse') {
+          refreshAdjustedRoutine();
+        } else if (tabName === 'settings') {
+          renderProfileSummary();
+        } else if (tabName === 'community') {
+          if (!communityDefaultApplied) {
+            applyDefaultCommunityFilter();
+            communityDefaultApplied = true;
+          }
+          renderCommunityFeed();
         }
-        renderCommunityFeed();
+      } catch (e) {
+        console.error(`switchTab('${tabName}') 렌더링 중 오류:`, e);
       }
     }
 
