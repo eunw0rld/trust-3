@@ -627,6 +627,19 @@ HTML_PAGE = """<!DOCTYPE html>
           <button id="mainProfileBtn" type="button" class="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5">프로필 설정</button>
         </div>
 
+        <!-- 오늘의 날씨 + 뷰티 인사이트 통합 카드 (여행지 등록 후에만 표시, 화면 최상단에 우선 노출) -->
+        <div id="todayInsightCard" class="hidden rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);">
+          <div class="flex items-center justify-between mb-3">
+            <p id="todayInsightLocation" class="text-sm font-bold">📍 여행지</p>
+            <p id="todayInsightDate" class="text-xs font-medium text-white/80"></p>
+          </div>
+          <div id="todayInsightMetrics" class="flex items-center gap-3 text-sm font-semibold mb-4"></div>
+          <div class="flex items-start gap-2 bg-black/15 rounded-xl p-3">
+            <span class="text-base shrink-0">🔔</span>
+            <p id="todayInsightText" class="text-sm font-medium leading-relaxed"></p>
+          </div>
+        </div>
+
         <p id="mainGreeting" class="text-sm text-gray-400 mb-1">안녕하세요!</p>
 
         <!-- 여행지 미등록 상태 -->
@@ -647,21 +660,6 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 여행지 등록 상태: 대시보드 -->
         <div id="mainDashboard" class="hidden space-y-6">
 
-          <!-- 오늘의 날씨 히어로 카드: 메인 문구를 크게 강조 (메인 상단에 항시 표시) -->
-          <div id="weatherHeroCard" class="rounded-2xl p-5 text-white" style="background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);">
-            <div class="flex items-start justify-between mb-6">
-              <p id="weatherHeroHeadline" class="text-2xl font-bold leading-snug whitespace-pre-line"></p>
-              <span id="weatherHeroLocation" class="text-xs font-semibold bg-white/20 rounded-full px-3 py-1.5 shrink-0">📍 여행지</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span id="weatherHeroIcon" class="text-4xl"></span>
-              <p>
-                <span id="weatherHeroTemp" class="text-3xl font-bold"></span>
-                <span id="weatherHeroCondition" class="text-base font-medium opacity-90 ml-1"></span>
-              </p>
-            </div>
-          </div>
-
           <!-- 여행 일정 -->
           <div id="tripSummaryBanner" class="bg-white border border-gray-100 rounded-2xl p-4"></div>
 
@@ -678,40 +676,6 @@ HTML_PAGE = """<!DOCTYPE html>
           <div>
             <h3 class="text-sm font-semibold text-gray-700 mb-3">일정 기반 기후 안내</h3>
             <div id="climateTable" class="bg-white border border-gray-100 rounded-xl divide-y divide-gray-100"></div>
-          </div>
-
-          <!-- 알림 목업 -->
-          <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">오늘의 알림</h3>
-            <p class="text-xs text-gray-400 mb-3">실제 앱에서는 푸시 알림으로 도착해요. 아래는 미리보기예요</p>
-            <div class="space-y-3">
-              <div class="bg-white border border-gray-100 rounded-2xl p-3">
-                <div class="flex gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">🧴</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between">
-                      <p class="text-xs font-bold text-gray-500">SkinTrip</p>
-                      <p class="text-[10px] text-gray-400">지금</p>
-                    </div>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">습도가 오늘 밤부터 오를 예정이에요</p>
-                    <p class="text-xs text-gray-500 mt-0.5">보유 중인 <span class="text-brand-500 font-semibold">에멀전</span>은 오늘 저녁 루틴에서 빼는 걸 추천해요</p>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-white border border-gray-100 rounded-2xl p-3">
-                <div class="flex gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center text-sm shrink-0">☀️</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between">
-                      <p class="text-xs font-bold text-gray-500">SkinTrip</p>
-                      <p class="text-[10px] text-gray-400">3시간 전</p>
-                    </div>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">오늘 자외선 지수 매우 높음</p>
-                    <p class="text-xs text-gray-500 mt-0.5">2~3시간마다 <span class="text-brand-500 font-semibold">선크림</span> 재도포를 잊지 마세요</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- 오늘의 루틴 조정 제안 (갖고 있는 화장품 기반) -->
@@ -2288,6 +2252,42 @@ HTML_PAGE = """<!DOCTYPE html>
       return `여행 ${dayNumber}일차 · 총 ${totalDays}일 일정`;
     }
 
+    // 날씨 원인(습도/자외선)과 뷰티 행동을 한 문장으로 연결하는 오늘의 인사이트
+    function getTodayInsight(weather) {
+      if (weather.humidity <= 30) {
+        return { cause: '건조한 날씨', action: '오늘은 고보습 크림을 두 겹 발라주세요', highlight: 'humidity' };
+      }
+      if (weather.humidity >= 70) {
+        return { cause: '습도 높은 날씨', action: '가벼운 토너 위주로 산뜻하게 마무리하세요', highlight: 'humidity' };
+      }
+      if (weather.uvi >= 8) {
+        return { cause: '자외선이 강한 날씨', action: '2~3시간마다 선크림을 덧발라주세요', highlight: 'uvi' };
+      }
+      return { cause: '맑고 쾌적한 날씨', action: '가벼운 데일리 선크림 하나면 충분해요', highlight: 'temp' };
+    }
+
+    function formatTodayDate() {
+      const now = new Date();
+      return `${now.getMonth() + 1}월 ${now.getDate()}일`;
+    }
+
+    // 날씨 요약 + 오늘의 뷰티 인사이트 통합 카드 렌더링
+    function renderTodayInsightCard(label, weather) {
+      const insight = getTodayInsight(weather);
+      const highlightClass = 'text-yellow-200 underline underline-offset-2 decoration-2';
+      const metricClass = (key) => (insight.highlight === key ? highlightClass : '');
+
+      document.getElementById('todayInsightLocation').textContent = `📍 ${label}`;
+      document.getElementById('todayInsightDate').textContent = formatTodayDate();
+      document.getElementById('todayInsightMetrics').innerHTML = `
+        <span class="${metricClass('temp')}">🌡️ ${weather.temp}°C</span>
+        <span class="${metricClass('humidity')}">💧 습도 ${weather.humidity}%</span>
+        <span class="${metricClass('uvi')}">☀️ 자외선 ${weather.uvi}</span>
+      `;
+      document.getElementById('todayInsightText').innerHTML =
+        `<span class="${highlightClass} font-bold">${insight.cause}</span>예요. ${insight.action}`;
+    }
+
     function renderTripOverview() {
       const destinationKey = document.getElementById('destinationSelect').value;
       const productCount = getMyProducts().length;
@@ -2295,6 +2295,7 @@ HTML_PAGE = """<!DOCTYPE html>
       if (!destinationKey) {
         document.getElementById('mainEmptyState').classList.remove('hidden');
         document.getElementById('mainDashboard').classList.add('hidden');
+        document.getElementById('todayInsightCard').classList.add('hidden');
         document.getElementById('mainPouchEmptyText').textContent =
           productCount > 0 ? `화장품 ${productCount}개 등록됨` : '아직 등록된 화장품이 없어요';
         return;
@@ -2302,6 +2303,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
       document.getElementById('mainEmptyState').classList.add('hidden');
       document.getElementById('mainDashboard').classList.remove('hidden');
+      document.getElementById('todayInsightCard').classList.remove('hidden');
       renderMyRoutineGrid();
 
       // 여행지는 등록했지만 파우치가 비어있으면 살짝 눈에 띄는 알림 스타일로 표시
@@ -2349,19 +2351,7 @@ HTML_PAGE = """<!DOCTYPE html>
         todayCondition = '자외선 주의';
       }
 
-      // 오늘의 날씨 히어로 카드: 상황별 아이콘·문구를 매핑
-      const weatherMoodByCondition = {
-        '쾌적한 날씨': { icon: '☀️', label: '맑음', headline: '선크림 바르기\\n좋은 날' },
-        '습도 상승 주의': { icon: '💧', label: '습함', headline: '가벼운 스킨케어 하기\\n좋은 날' },
-        '건조 주의': { icon: '🌬️', label: '건조함', headline: '수분크림 챙기기\\n좋은 날' },
-        '자외선 주의': { icon: '🔆', label: '맑음', headline: '선크림 덧바르기\\n좋은 날' },
-      };
-      const mood = weatherMoodByCondition[todayCondition];
-      document.getElementById('weatherHeroHeadline').textContent = mood.headline;
-      document.getElementById('weatherHeroLocation').textContent = `📍 ${label}`;
-      document.getElementById('weatherHeroIcon').textContent = mood.icon;
-      document.getElementById('weatherHeroTemp').textContent = `${weather.temp}°C`;
-      document.getElementById('weatherHeroCondition').textContent = mood.label;
+      renderTodayInsightCard(label, weather);
 
       const days = [
         { dayLabel: '어제', temp: weather.temp - 1, humidity: weather.humidity - 13, uvi: Math.max(weather.uvi - 2, 1), condition: '맑음', highlight: false },
