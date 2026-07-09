@@ -173,27 +173,29 @@ HTML_PAGE = """<!DOCTYPE html>
     background: #fff7ed;
     color: #c2410c;
   }
-  .wizard-next-btn {
-    color: #d1d5db;
-    transition: color 0.15s ease;
-  }
-  .wizard-next-btn:not(:disabled) {
-    color: #f97316;
-  }
-  .wizard-dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 20px 0 6px;
-  }
-  .wizard-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 9999px;
+  .wizard-progress-track {
+    height: 4px;
     background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
   }
-  .wizard-dot.active {
+  .wizard-progress-fill {
+    height: 100%;
     background: #f97316;
+    border-radius: 9999px;
+    transition: width 0.25s ease;
+  }
+  .wizard-cta-btn {
+    height: 54px;
+    border-radius: 16px;
+    background: #f97316;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.15s ease;
+  }
+  .wizard-cta-btn:disabled {
+    background: #d1d5db;
   }
   .history-view-toggle-btn {
     color: #6b7280;
@@ -578,11 +580,15 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- ============ 1. 등록 페이지 ============ -->
       <section id="screen-register" class="py-2">
 
-        <!-- 온보딩 1단계: 피부타입 -->
-        <div id="reg-skintype" class="wizard-step flex flex-col" style="min-height: calc(var(--app-height) - 32px);">
-          <div class="flex items-center justify-between mb-2">
+        <!-- 온보딩 진행 바 (완료 화면에서는 숨김) -->
+        <div id="wizardProgressTrack" class="wizard-progress-track mx-1 mb-1">
+          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 50%;"></div>
+        </div>
+
+        <!-- 온보딩 1단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-skintype" class="wizard-step relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="welcome">← 이전</button>
-            <button type="button" class="wizard-next-btn text-sm font-bold" data-next="reg-concerns" disabled>다음</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">피부타입이<br />어떻게 되나요?</h2>
@@ -594,21 +600,14 @@ HTML_PAGE = """<!DOCTYPE html>
               <button type="button" data-skin="dehydrated" class="skin-btn wizard-choice-btn col-span-2">수부지</button>
             </div>
           </div>
-          <div class="wizard-dots">
-            <span class="wizard-dot active"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-          </div>
         </div>
 
-        <!-- 온보딩 2단계: 피부 고민 -->
-        <div id="reg-concerns" class="wizard-step hidden flex flex-col" style="min-height: calc(var(--app-height) - 32px);">
-          <div class="flex items-center justify-between mb-2">
+        <!-- 온보딩 2단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
+        <div id="reg-concerns" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-skintype">← 이전</button>
-            <button type="button" class="wizard-next-btn text-sm font-bold" data-next="reg-cosmetics" disabled>다음</button>
           </div>
-          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2 pb-20">
             <h2 class="text-xl font-bold mb-8">요즘 피부 고민이<br />있나요?</h2>
             <div class="flex flex-wrap gap-2 justify-center max-w-xs">
               <button type="button" data-concern="atopy" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">아토피</button>
@@ -625,62 +624,17 @@ HTML_PAGE = """<!DOCTYPE html>
               <button type="button" data-concern="none" class="concern-chip rounded-full px-4 py-2 text-sm font-medium">해당없음</button>
             </div>
           </div>
-          <div class="wizard-dots">
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot active"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-          </div>
-        </div>
-
-        <!-- 온보딩 3단계: 평소 쓰는 화장품 -->
-        <div id="reg-cosmetics" class="wizard-step hidden flex flex-col" style="min-height: calc(var(--app-height) - 32px);">
-          <div class="flex items-center justify-between mb-2">
-            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-concerns">← 이전</button>
-            <button type="button" class="wizard-next-btn text-sm font-bold" data-next="reg-trip" disabled>다음</button>
-          </div>
-          <div class="flex-1 flex flex-col items-center justify-center text-center px-6">
-            <h2 class="text-xl font-bold mb-6">평소 쓰는 화장품을<br />알려주세요</h2>
-            <div id="onboardingCosmeticChipList" class="pouch-chip-list flex flex-wrap gap-2 justify-center mb-4 w-full"></div>
-            <div class="flex gap-2 items-center w-full max-w-xs">
-              <input id="onboardingCosmeticName" type="text" placeholder="제품명" class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
-              <select id="onboardingCosmeticCategory" class="border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 focus:outline-none focus:border-brand-500"></select>
-            </div>
-            <button id="onboardingAddCosmeticBtn" type="button" class="mt-3 w-full max-w-xs py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 화장품 추가</button>
-          </div>
-          <div class="wizard-dots">
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot active"></span>
-            <span class="wizard-dot"></span>
-          </div>
-        </div>
-
-        <!-- 온보딩 4단계: 이번 여행 일정 -->
-        <div id="reg-trip" class="wizard-step hidden flex flex-col" style="min-height: calc(var(--app-height) - 32px);">
-          <div class="flex items-center justify-between mb-2">
-            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-cosmetics">← 이전</button>
-            <button id="wizardTripNextBtn" type="button" class="wizard-next-btn text-sm font-bold" disabled>다음</button>
-          </div>
-          <div class="flex-1 flex flex-col items-center px-6 py-4 overflow-y-auto">
-            <h2 class="text-xl font-bold text-center mb-6 shrink-0">이번 여행 일정을<br />알려주세요</h2>
-            <div id="onboardingSegmentRows" class="space-y-3 w-full max-w-xs"></div>
-            <button id="onboardingAddSegmentBtn" type="button" class="mt-3 w-full max-w-xs py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold shrink-0">+ 구간 추가</button>
-          </div>
-          <div class="wizard-dots">
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot"></span>
-            <span class="wizard-dot active"></span>
+          <div class="absolute inset-x-0 bottom-6 px-4">
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-complete" disabled>선택 완료</button>
           </div>
         </div>
 
         <!-- 온보딩 완료 화면 -->
-        <div id="reg-complete" class="hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 32px);">
+        <div id="reg-complete" class="wizard-step hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 40px);">
           <span class="text-5xl mb-4">✅</span>
           <h2 class="text-xl font-bold mb-2">Thanks!</h2>
           <p class="text-sm text-gray-400 mb-10">이제 다 준비됐어요</p>
-          <button id="wizardFinishBtn" type="button" class="w-full max-w-xs py-3.5 rounded-full bg-brand-500 text-white text-sm font-bold shadow-lg">시작하기</button>
+          <button id="wizardFinishBtn" type="button" class="wizard-cta-btn w-full max-w-xs">시작하기</button>
         </div>
 
       </section>
@@ -1697,9 +1651,18 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // ===== 온보딩 위저드: 화면 전환 + 진행 상태 =====
+    const WIZARD_STEP_ORDER = ['reg-skintype', 'reg-concerns'];
+
     function showWizardStep(stepId) {
       document.querySelectorAll('.wizard-step').forEach((el) => el.classList.toggle('hidden', el.id !== stepId));
-      document.getElementById('reg-complete').classList.add('hidden');
+      const progressTrack = document.getElementById('wizardProgressTrack');
+      const stepIndex = WIZARD_STEP_ORDER.indexOf(stepId);
+      if (stepIndex === -1) {
+        progressTrack.classList.add('hidden');
+      } else {
+        progressTrack.classList.remove('hidden');
+        document.getElementById('wizardProgressFill').style.width = `${((stepIndex + 1) / WIZARD_STEP_ORDER.length) * 100}%`;
+      }
       playScreenTransition(document.getElementById(stepId));
     }
 
@@ -1749,12 +1712,12 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 피부 타입 버튼 토글 (온보딩 1단계)
+    // 피부 타입 버튼 토글 (온보딩 1단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
     document.querySelectorAll('.skin-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.skin-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        updateWizardNextButton('reg-skintype', true);
+        setTimeout(() => showWizardStep('reg-concerns'), 200);
       });
     });
 
@@ -2028,17 +1991,6 @@ HTML_PAGE = """<!DOCTYPE html>
     });
 
     // 시작일/종료일/국가가 모두 채워진 구간만 유효한 여행 구간으로 인정
-    function readSegmentsFromContainer(containerEl) {
-      return Array.from(containerEl.querySelectorAll('.trip-segment-row'))
-        .map((row) => ({
-          start: row.querySelector('.segment-start-input').value,
-          end: row.querySelector('.segment-end-input').value,
-          country: row.querySelector('.segment-country-select').value,
-        }))
-        .filter((seg) => seg.start && seg.end && seg.country)
-        .filter((seg) => seg.end >= seg.start);
-    }
-
     function readTripSegmentsFromDOM() {
       const filled = Array.from(tripSegmentRowsEl.querySelectorAll('.trip-segment-row'))
         .map((row) => ({
@@ -2129,36 +2081,6 @@ HTML_PAGE = """<!DOCTYPE html>
     tripSegmentRowsEl.appendChild(buildTripSegmentRow(tripSegmentRowsEl, syncTripSegmentsFromDOM));
     updateTripSegmentsUI();
 
-    // ===== 온보딩 4단계: 이번 여행 일정 (완료 시 위 tripSegmentRows로 옮겨짐) =====
-    const onboardingSegmentRowsEl = document.getElementById('onboardingSegmentRows');
-    const wizardTripNextBtn = document.getElementById('wizardTripNextBtn');
-
-    function syncOnboardingSegments() {
-      const valid = readSegmentsFromContainer(onboardingSegmentRowsEl);
-      wizardTripNextBtn.disabled = valid.length === 0;
-    }
-
-    document.getElementById('onboardingAddSegmentBtn').addEventListener('click', () => {
-      onboardingSegmentRowsEl.appendChild(buildTripSegmentRow(onboardingSegmentRowsEl, syncOnboardingSegments));
-    });
-    onboardingSegmentRowsEl.appendChild(buildTripSegmentRow(onboardingSegmentRowsEl, syncOnboardingSegments));
-
-    // 온보딩에서 입력한 구간을 메인 화면의 실제 tripSegmentRows 컨테이너로 옮기고 완료 화면으로 이동
-    wizardTripNextBtn.addEventListener('click', () => {
-      if (wizardTripNextBtn.disabled) return;
-      const onboardingSegments = readSegmentsFromContainer(onboardingSegmentRowsEl);
-      if (tripSegmentRowsEl.querySelector('.trip-segment-row')) {
-        tripSegmentRowsEl.innerHTML = '';
-      }
-      onboardingSegments.forEach((seg) => {
-        tripSegmentRowsEl.appendChild(buildTripSegmentRow(tripSegmentRowsEl, syncTripSegmentsFromDOM, seg));
-      });
-      syncTripSegmentsFromDOM();
-      document.getElementById('reg-complete').classList.remove('hidden');
-      document.querySelectorAll('.wizard-step').forEach((el) => el.classList.add('hidden'));
-      playScreenTransition(document.getElementById('reg-complete'));
-    });
-
     document.getElementById('wizardFinishBtn').addEventListener('click', () => {
       onboardingComplete = true;
       updateTabLockUI();
@@ -2169,21 +2091,6 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('pouchQuickAddCategory').innerHTML = cosmeticCategories
       .map((c) => `<option value="${c.value}">${c.label}</option>`)
       .join('');
-    document.getElementById('onboardingCosmeticCategory').innerHTML = cosmeticCategories
-      .map((c) => `<option value="${c.value}">${c.label}</option>`)
-      .join('');
-
-    // 온보딩 3단계: 화장품 추가 (메인 화면과 동일한 공유 cosmeticRows 컨테이너에 기록됨)
-    document.getElementById('onboardingAddCosmeticBtn').addEventListener('click', () => {
-      const nameInput = document.getElementById('onboardingCosmeticName');
-      const name = nameInput.value.trim();
-      if (!name) return;
-      const category = document.getElementById('onboardingCosmeticCategory').value;
-      cosmeticRows.appendChild(buildCosmeticRow(name, category));
-      nameInput.value = '';
-      renderPouchChips();
-      updateWizardNextButton('reg-cosmetics', true);
-    });
 
     // getMyProducts()와 동일한 데이터를 반환하되, 삭제 버튼에서 바로 지울 수 있도록 원본 row도 함께 담음
     function getMyProductRows() {
@@ -2196,7 +2103,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .filter((p) => p.name);
     }
 
-    // 메인 화면(#pouchChipList)과 온보딩 3단계(#onboardingCosmeticChipList) 두 곳 모두 갱신
+    // 메인 화면의 파우치 칩 목록(#pouchChipList) 갱신
     function renderPouchChips() {
       const rows = getMyProductRows();
       document.querySelectorAll('.pouch-chip-list').forEach((list) => {
@@ -2210,7 +2117,6 @@ HTML_PAGE = """<!DOCTYPE html>
             row.remove();
             renderPouchChips();
             refreshAdjustedRoutine();
-            if (getMyProducts().length === 0) updateWizardNextButton('reg-cosmetics', false);
           });
           list.appendChild(chip);
         });
