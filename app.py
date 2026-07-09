@@ -1,7 +1,30 @@
+import base64
+from pathlib import Path
+
 import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="SkinTrip", layout="centered")
+
+# 웰컴 화면에 쓰이는 로컬 이미지들을 base64 data URI로 인코딩
+# (components.html은 srcdoc 기반 sandbox iframe이라 상대경로로 로컬 파일을 못 읽어옴)
+_ASSET_DIR = Path(__file__).parent / "01 landing page"
+_AVATAR_DIR = _ASSET_DIR / "사람 이미지"
+
+
+def _data_uri(path: Path, mime: str) -> str:
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
+EARTH_BG_URI = _data_uri(_ASSET_DIR / "지구.jpg", "image/jpeg")
+LOGO_URI = _data_uri(_ASSET_DIR / "logo.png", "image/png")
+AVATAR_URIS = [
+    _data_uri(_AVATAR_DIR / "p1.jpg", "image/jpeg"),
+    _data_uri(_AVATAR_DIR / "p3.jpg", "image/jpeg"),
+    _data_uri(_AVATAR_DIR / "p5.jpg", "image/jpeg"),
+    _data_uri(_AVATAR_DIR / "다운로드 (1).jpg", "image/jpeg"),
+]
 
 st.markdown(
     """
@@ -331,6 +354,52 @@ HTML_PAGE = """<!DOCTYPE html>
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
   }
+  /* 웰컴 화면: 지구 배경 위/아래 가장자리를 살짝 어둡게 페이드 */
+  .welcome-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 100% 38% at 50% 0%, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 70%),
+      radial-gradient(ellipse 100% 45% at 50% 100%, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 70%);
+  }
+  .welcome-logo {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+    filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.35));
+  }
+  /* 웰컴 화면 "시작하기": 리퀴드 글래스 스타일 */
+  .welcome-cta-btn {
+    position: relative;
+    overflow: hidden;
+    background: rgba(20, 25, 40, 0.55);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 9999px;
+    padding: 14px 0;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .welcome-cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%);
+    pointer-events: none;
+  }
+  .welcome-cta-btn:active {
+    transform: scale(0.97);
+    background: rgba(20, 25, 40, 0.7);
+  }
   /* 매장 찾기 지도: 기본 파란 핀 대신 주황색 원형 커스텀 마커 */
   .store-marker {
     width: 22px;
@@ -451,14 +520,24 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 웰컴 화면 ============ -->
-  <div id="screen-welcome" class="hidden mx-auto bg-white flex flex-col" style="width: var(--app-width); height: var(--app-height);">
-    <div class="flex-1 flex flex-col items-center justify-center text-center px-10">
-      <span class="text-6xl mb-6">🧴✈️</span>
-      <h1 class="text-2xl font-bold leading-snug mb-3">스킨트립과 함께,<br />어디서든 산뜻하게</h1>
-      <p class="text-sm text-gray-400">여행지 날씨에 맞는 스킨케어 루틴을 알려드려요</p>
+  <div id="screen-welcome" class="hidden relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
+    <div class="welcome-vignette"></div>
+
+    <div class="relative z-10 pt-10 px-6 text-center">
+      <img src="__LOGO_URI__" alt="SkinTrip" class="welcome-logo" />
+      <p class="mt-3 text-sm text-white/90 leading-relaxed">
+        <span class="font-bold">스킨트립</span>과 함께,<br />어디서든 산뜻하게
+      </p>
+      <p class="mt-1 text-xs text-white/60">여행지 날씨에 맞는 스킨케어 루틴을 알려드려요</p>
     </div>
-    <div class="px-6 pb-9">
-      <button id="welcomeStartBtn" type="button" class="w-full py-3.5 rounded-full bg-brand-500 text-white text-sm font-bold shadow-lg">시작하기</button>
+
+    <div class="landing-bubble" style="top: 18%; left: 15%; z-index: 2;"><img src="__AVATAR_URI_1__" alt="" /></div>
+    <div class="landing-bubble" style="top: 30%; left: 70%; z-index: 2;"><img src="__AVATAR_URI_2__" alt="" /></div>
+    <div class="landing-bubble" style="top: 45%; left: 25%; z-index: 2;"><img src="__AVATAR_URI_3__" alt="" /></div>
+    <div class="landing-bubble" style="top: 50%; left: 75%; z-index: 2;"><img src="__AVATAR_URI_4__" alt="" /></div>
+
+    <div class="absolute inset-x-0 bottom-0 z-10 px-6 pb-9">
+      <button id="welcomeStartBtn" type="button" class="welcome-cta-btn w-full">시작하기</button>
     </div>
   </div>
 
@@ -3090,5 +3169,13 @@ HTML_PAGE = """<!DOCTYPE html>
 </html>
 """
 
+HTML_PAGE = (
+    HTML_PAGE.replace("__EARTH_BG_URI__", EARTH_BG_URI)
+    .replace("__LOGO_URI__", LOGO_URI)
+    .replace("__AVATAR_URI_1__", AVATAR_URIS[0])
+    .replace("__AVATAR_URI_2__", AVATAR_URIS[1])
+    .replace("__AVATAR_URI_3__", AVATAR_URIS[2])
+    .replace("__AVATAR_URI_4__", AVATAR_URIS[3])
+)
 
 components.html(HTML_PAGE, height=852, scrolling=True)
