@@ -835,6 +835,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="space-y-2 mb-2">
           <select id="communityCountryFilter" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-brand-500">
             <option value="">전체 여행지</option>
+            <option value="이탈리아">이탈리아</option>
             <option value="일본">일본</option>
             <option value="태국">태국</option>
             <option value="아랍에미리트">아랍에미리트</option>
@@ -1897,7 +1898,40 @@ HTML_PAGE = """<!DOCTYPE html>
       { id: `frostyvibe_daily`, gender: `남성`, age: 37, rating: 4, skinType: `지성`, country: `싱가포르`, cosmetics: `워터프루프 아이라이너, 피지 흡수 패드, 쿨링 젤`, makeup: `얇은 베이스에 워터프루프 제품 위주로 메이크업하고 픽싱 스프레이로 마무리하는 것을 추천합니다.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 관리하고 쿨링 토너로 진정시켜 주세요.`, review: `야외 일정이 많았는데 자외선이 강해서 워터프루프 아이라이너을 자주 덧발라야 했어요.` },
       { id: `jaewon_diary`, gender: `여성`, age: 44, rating: 5, skinType: `지성`, country: `싱가포르`, cosmetics: `워터프루프 선크림, 피지 컨트롤 파우더, 픽싱 미스트`, makeup: `매트한 베이스로 유분과 땀을 컨트롤하며 색조는 최소화하는 것이 좋습니다.`, skincare: `자외선 노출 후에는 진정 스프레이와 수분 시트마스크로 피부를 달래주는 것이 좋습니다.`, review: `고온다습한 날씨 탓에 피부 트러블이 갑자기 올라와서 당황했어요.` },
       { id: `serumfan01`, gender: `남성`, age: 51, rating: 3, skinType: `지성`, country: `싱가포르`, cosmetics: `매트 선크림, 블로팅 페이퍼, 쿨링 토너`, makeup: `촉촉한 쿠션으로 습기에도 밀리지 않게 가볍게 표현하는 것을 추천합니다.`, skincare: `실내외 온습도 차이가 크므로 미스트로 수시로 수분을 보충해 주세요.`, review: `에어컨 실내와 습한 실외를 오가다 보니 피부 컨디션이 계속 오락가락했어요.` },
+      { id: `sunnykiss_roma`, gender: `여성`, age: 26, rating: 5, skinType: `건성`, country: `이탈리아`, cosmetics: `저자극 선크림, 수분 크림, 립밤`, makeup: `촉촉한 쿠션으로 건조함을 가려주고 립밤을 자주 덧발라주세요.`, skincare: `자외선이 강해 저자극 선크림을 2~3시간마다 덧바르고, 밤에는 고보습 크림으로 마무리하세요.`, review: `로마는 해가 정말 강해서 선크림 없이는 하루도 못 버텼어요. 걷다 보면 입술도 금방 트더라고요.` },
+      { id: `pastachef_mimo`, gender: `남성`, age: 33, rating: 4, skinType: `복합성`, country: `이탈리아`, cosmetics: `올인원 로션, 톤업 선크림`, makeup: `간단하게 톤업 선크림만 발라도 자연스러운 피부 표현이 가능합니다.`, skincare: `낮에는 가벼운 로션, 저녁엔 이중세안으로 하루종일 쌓인 유분을 깨끗이 씻어내세요.`, review: `낮엔 건조한데 저녁엔 유분이 올라와서 복합성 피부 관리가 애매했어요. 로션 하나로 버티기엔 부족했습니다.` },
+      { id: `gelato_girl92`, gender: `여성`, age: 24, rating: 3, skinType: `지성`, country: `이탈리아`, cosmetics: `피지 컨트롤 파우더, 블로팅 페이퍼`, makeup: `베이스는 얇게 펴 바르고 픽싱 스프레이로 유지력을 높이세요.`, skincare: `외출 중 블로팅 페이퍼로 피지를 자주 정리하고 저녁엔 약산성 클렌저로 세안하세요.`, review: `생각보다 햇볕이 강해서 피지가 많이 올라왔어요. 블로팅 페이퍼가 정말 필수였습니다.` },
+      { id: `duomo_wanderer`, gender: `남성`, age: 45, rating: 5, skinType: `민감성`, country: `이탈리아`, cosmetics: `저자극 진정 크림, 무향 선크림`, makeup: `자극이 적은 무향 제품 위주로 가볍게 사용하는 것이 좋습니다.`, skincare: `강한 자외선에 피부가 쉽게 붉어져서 저자극 진정 크림으로 꾸준히 관리했습니다.`, review: `두오모 광장에서 오래 걸었더니 얼굴이 금방 붉어지더라고요. 진정 크림 없이는 힘들었을 것 같아요.` },
+      { id: `veneto_breeze`, gender: `여성`, age: 31, rating: 4, skinType: `건성`, country: `이탈리아`, cosmetics: `고보습 세럼, 미스트, 립밤`, makeup: `수분감 있는 쿠션으로 건조함을 커버하는 것을 추천합니다.`, skincare: `건조한 바람 때문에 수시로 미스트를 뿌려주고 자기 전엔 고보습 세럼을 겹겹이 발라주세요.`, review: `베네치아는 바람이 많이 불어서 피부가 계속 당기는 느낌이었어요. 미스트를 손에서 놓을 수가 없었습니다.` },
+      { id: `espresso_daily`, gender: `남성`, age: 28, rating: 3, skinType: `지성`, country: `이탈리아`, cosmetics: `선크림 SPF50+, 쿨링 토너`, makeup: `유분이 적은 제품 위주로 가볍게 사용하세요.`, skincare: `낮 동안 쌓인 유분과 열기를 쿨링 토너로 진정시켜주는 게 도움이 됩니다.`, review: `카페 투어 다니면서 뜨거운 햇볕 아래 오래 있었더니 얼굴이 번들거리더라고요. 쿨링 토너가 큰 도움이 됐습니다.` },
+      { id: `tuscan_sunny`, gender: `여성`, age: 37, rating: 5, skinType: `복합성`, country: `이탈리아`, cosmetics: `수분 크림, 피지 조절 로션`, makeup: `T존은 가볍게, 볼은 촉촉하게 이중 관리하는 것을 추천합니다.`, skincare: `부위별로 다르게 관리해야 해서 T존엔 산뜻한 로션, 볼엔 수분 크림을 따로 발랐어요.`, review: `토스카나 시골길을 걸을 때마다 볼은 건조하고 T존은 번들거려서 부위별 관리가 필요했어요.` },
+      { id: `milano_walker`, gender: `남성`, age: 40, rating: 4, skinType: `민감성`, country: `이탈리아`, cosmetics: `저자극 로션, 진정 젤`, makeup: `자극적인 성분이 없는 제품으로 최소한만 사용하세요.`, skincare: `도심 매장을 오래 돌아다니느라 자외선과 스트레스에 피부가 예민해져서 진정 젤로 자주 케어했습니다.`, review: `밀라노에서 종일 쇼핑하며 걸었더니 피부가 화끈거리더라고요. 진정 젤이 없었으면 고생했을 것 같아요.` },
+      { id: `cinquestrada`, gender: `여성`, age: 29, rating: 4, skinType: `건성`, country: `이탈리아`, cosmetics: `수분 앰플, 저자극 선크림`, makeup: `촉촉한 베이스 위에 가볍게 파우더만 얹는 정도로 마무리하세요.`, skincare: `해안가 마을을 걷다 보니 소금기와 바람에 피부가 쉽게 건조해져서 수분 앰플로 집중 케어했어요.`, review: `친퀘테레 절벽길을 걷는 내내 바닷바람에 피부가 뻣뻣해지는 느낌이었어요. 앰플 없인 힘들었을 거예요.` },
+      { id: `romanholiday7`, gender: `여성`, age: 34, rating: 5, skinType: `복합성`, country: `이탈리아`, cosmetics: `수분 크림, 피지 흡수 패드, 선크림`, makeup: `이른 아침엔 촉촉하게, 낮엔 피지 흡수 패드로 유지력을 챙기세요.`, skincare: `아침저녁 온도차가 커서 아침엔 수분 크림, 낮엔 피지 관리로 이원화했습니다.`, review: `아침엔 쌀쌀하고 낮엔 뜨거워서 하루에도 피부 상태가 계속 바뀌더라고요. 시간대별로 다르게 관리해야 했어요.` },
     ];
+
+    // 리뷰 ID를 시드로 항상 같은 조합이 나오는 귀여운 닉네임 생성 (수분/피부 관련 단어 + 동물 이름)
+    const nicknameWords = ['고보습', '산뜻한', '촉촉한', '진정력만렙', '수분폭탄', '유수분밸런스', '트러블제로', '광채나는', '뽀송뽀송', '탱글탱글'];
+    const nicknameAnimals = ['두더지', '라마', '수달', '코알라', '판다', '여우', '펭귄', '토끼', '고슴도치', '알파카'];
+    function hashStringToInt(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+      }
+      return hash;
+    }
+    function getNicknameForId(id) {
+      const hash = hashStringToInt(id);
+      const wordIndex = hash % nicknameWords.length;
+      const animalIndex = Math.floor(hash / nicknameWords.length) % nicknameAnimals.length;
+      return `${nicknameWords[wordIndex]} ${nicknameAnimals[animalIndex]}`;
+    }
+
+    // 피부타입별 아바타 배경 파스텔 컬러 (지성=블루, 건성=오렌지, 복합성=퍼플, 민감성=그린)
+    function getSkinTypeAvatarBg(skinType) {
+      const bgMap = { 지성: 'bg-blue-100', 건성: 'bg-orange-100', 복합성: 'bg-purple-100', 민감성: 'bg-green-100' };
+      return bgMap[skinType] || 'bg-gray-100';
+    }
 
     function renderStars(rating) {
       const filled = '★'.repeat(rating);
@@ -1935,11 +1969,14 @@ HTML_PAGE = """<!DOCTYPE html>
         const card = document.createElement('div');
         card.className = 'bg-white border border-gray-100 rounded-xl p-4';
         card.innerHTML = `
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">${post.id.charAt(0).toUpperCase()}</div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-11 h-11 rounded-full ${getSkinTypeAvatarBg(post.skinType)} shrink-0 relative overflow-hidden">
+              <img src="https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(post.id)}" alt="${post.id}" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none';" />
+              <div class="absolute inset-0 flex items-center justify-center text-gray-600 text-sm font-bold">${post.id.charAt(0).toUpperCase()}</div>
+            </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-semibold truncate">${post.id}</p>
-              <span class="text-[10px] text-gray-400">${post.country} 여행 · ${post.gender} · ${post.age}세 · ${post.skinType} 피부</span>
+              <p class="text-sm font-bold truncate">${getNicknameForId(post.id)}</p>
+              <span class="block text-[11px] text-gray-400 truncate">@${post.id} · ${post.country} 여행 · ${post.gender} · ${post.age}세 · ${post.skinType} 피부</span>
             </div>
             <p class="text-xs shrink-0">${renderStars(post.rating)}</p>
           </div>
@@ -1961,16 +1998,10 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     }
 
-    // 커뮤니티 탭에 처음 들어올 때만 등록된 여행지를 기본 필터로 설정 (이후엔 사용자가 고른 필터를 유지)
-    // 커뮤니티는 5개국 리뷰만 있으므로, 등록한 여행지가 그중 하나일 때만 기본값으로 반영
+    // 커뮤니티 탭에 처음 들어올 때만 기본 필터를 이탈리아로 고정 (이후엔 사용자가 고른 필터를 유지)
     let communityDefaultApplied = false;
     function applyDefaultCommunityFilter() {
-      const destinationKey = document.getElementById('destinationSelect').value;
-      const communityFilter = document.getElementById('communityCountryFilter');
-      const isSupported = Array.from(communityFilter.options).some((opt) => opt.value === destinationKey);
-      if (isSupported) {
-        communityFilter.value = destinationKey;
-      }
+      document.getElementById('communityCountryFilter').value = '이탈리아';
     }
 
     ['communityCountryFilter', 'communityGenderFilter', 'communityAgeFilter', 'communitySkinFilter'].forEach((id) => {
