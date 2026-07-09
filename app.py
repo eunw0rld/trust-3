@@ -1968,10 +1968,10 @@ HTML_PAGE = """<!DOCTYPE html>
 
       // 오늘의 날씨 히어로 카드: 상황별 아이콘·문구를 매핑
       const weatherMoodByCondition = {
-        '쾌적한 날씨': { icon: '☀️', label: '맑음', headline: '선크림 바르기\n좋은 날' },
-        '습도 상승 주의': { icon: '💧', label: '습함', headline: '가벼운 스킨케어 하기\n좋은 날' },
-        '건조 주의': { icon: '🌬️', label: '건조함', headline: '수분크림 챙기기\n좋은 날' },
-        '자외선 주의': { icon: '🔆', label: '맑음', headline: '선크림 덧바르기\n좋은 날' },
+        '쾌적한 날씨': { icon: '☀️', label: '맑음', headline: '선크림 바르기\\n좋은 날' },
+        '습도 상승 주의': { icon: '💧', label: '습함', headline: '가벼운 스킨케어 하기\\n좋은 날' },
+        '건조 주의': { icon: '🌬️', label: '건조함', headline: '수분크림 챙기기\\n좋은 날' },
+        '자외선 주의': { icon: '🔆', label: '맑음', headline: '선크림 덧바르기\\n좋은 날' },
       };
       const mood = weatherMoodByCondition[todayCondition];
       document.getElementById('weatherHeroHeadline').textContent = mood.headline;
