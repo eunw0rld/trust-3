@@ -567,13 +567,74 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- 온보딩 진행 바 (완료 화면에서는 숨김) -->
         <div id="wizardProgressTrack" class="wizard-progress-track mx-1 mb-1">
-          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 50%;"></div>
+          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 16.6667%;"></div>
         </div>
 
-        <!-- 온보딩 1단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
-        <div id="reg-skintype" class="wizard-step relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+        <!-- 온보딩 1단계: 이름 (텍스트 입력, "다음" 버튼으로 진행) -->
+        <div id="reg-name" class="wizard-step relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="welcome">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">이름이<br />어떻게 되나요?</h2>
+            <input id="regNameInput" type="text" placeholder="이름을 입력해주세요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+          </div>
+          <div class="absolute inset-x-0 bottom-6 px-4">
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-nickname" disabled>다음</button>
+          </div>
+        </div>
+
+        <!-- 온보딩 2단계: 닉네임 (텍스트 입력, "다음" 버튼으로 진행) -->
+        <div id="reg-nickname" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-name">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">어떻게<br />불러드릴까요?</h2>
+            <input id="regNicknameInput" type="text" placeholder="다른 사용자에게 보여질 닉네임이에요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+            <p class="text-xs text-gray-400 mt-2">커뮤니티에서 이 닉네임으로 보여요</p>
+          </div>
+          <div class="absolute inset-x-0 bottom-6 px-4">
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-gender" disabled>다음</button>
+          </div>
+        </div>
+
+        <!-- 온보딩 3단계: 성별 (단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-gender" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-nickname">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">성별이<br />어떻게 되나요?</h2>
+            <div class="grid grid-cols-2 gap-3 w-full max-w-xs">
+              <button type="button" data-gender="여성" class="onboard-gender-btn wizard-choice-btn">여성</button>
+              <button type="button" data-gender="남성" class="onboard-gender-btn wizard-choice-btn">남성</button>
+              <button type="button" data-gender="선택 안 함" class="onboard-gender-btn wizard-choice-btn col-span-2">선택 안 함</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 온보딩 4단계: 나이 (연령대 단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-age" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-gender">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">나이가<br />어떻게 되나요?</h2>
+            <div class="grid grid-cols-2 gap-3 w-full max-w-xs">
+              <button type="button" data-age="10대" class="onboard-age-btn wizard-choice-btn">10대</button>
+              <button type="button" data-age="20대" class="onboard-age-btn wizard-choice-btn">20대</button>
+              <button type="button" data-age="30대" class="onboard-age-btn wizard-choice-btn">30대</button>
+              <button type="button" data-age="40대" class="onboard-age-btn wizard-choice-btn">40대</button>
+              <button type="button" data-age="50대 이상" class="onboard-age-btn wizard-choice-btn col-span-2">50대 이상</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 온보딩 5단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-skintype" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-age">← 이전</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">피부타입이<br />어떻게 되나요?</h2>
@@ -587,7 +648,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 온보딩 2단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
+        <!-- 온보딩 6단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
         <div id="reg-concerns" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-skintype">← 이전</button>
@@ -1577,7 +1638,10 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // ===== 온보딩 위저드: 화면 전환 + 진행 상태 =====
-    const WIZARD_STEP_ORDER = ['reg-skintype', 'reg-concerns'];
+    const WIZARD_STEP_ORDER = ['reg-name', 'reg-nickname', 'reg-gender', 'reg-age', 'reg-skintype', 'reg-concerns'];
+
+    // 온보딩에서 수집한 기본 정보 (이후 프로필/커뮤니티 화면에서 활용)
+    let userProfile = { name: '', nickname: '', gender: '', age: '' };
 
     function showWizardStep(stepId) {
       document.querySelectorAll('.wizard-step').forEach((el) => el.classList.toggle('hidden', el.id !== stepId));
@@ -1658,7 +1722,49 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 피부 타입 버튼 토글 (온보딩 1단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    // 온보딩 1단계: 이름 입력 - 값이 있어야 "다음" 버튼 활성화, 입력하는 대로 프로필/인사말에도 반영
+    const regNameInput = document.getElementById('regNameInput');
+    regNameInput.addEventListener('input', () => {
+      const value = regNameInput.value.trim();
+      updateWizardNextButton('reg-name', value.length > 0);
+      userProfile.name = value;
+      document.getElementById('nameInput').value = regNameInput.value;
+      refreshGreetings();
+    });
+
+    // 온보딩 2단계: 닉네임 입력 - 값이 있어야 "다음" 버튼 활성화
+    const regNicknameInput = document.getElementById('regNicknameInput');
+    regNicknameInput.addEventListener('input', () => {
+      const value = regNicknameInput.value.trim();
+      updateWizardNextButton('reg-nickname', value.length > 0);
+      userProfile.nickname = value;
+      document.getElementById('nicknameInput').value = regNicknameInput.value;
+      refreshGreetings();
+    });
+
+    // 온보딩 3단계: 성별 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    document.querySelectorAll('.onboard-gender-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.onboard-gender-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        userProfile.gender = btn.dataset.gender;
+        // 개인설정 화면의 성별 버튼도 함께 반영 (여성/남성일 때만, "선택 안 함"은 둘 다 비활성)
+        document.querySelectorAll('.gender-btn').forEach((b) => b.classList.toggle('active', b.dataset.gender === btn.dataset.gender));
+        setTimeout(() => showWizardStep('reg-age'), 200);
+      });
+    });
+
+    // 온보딩 4단계: 연령대 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    document.querySelectorAll('.onboard-age-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.onboard-age-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        userProfile.age = btn.dataset.age;
+        setTimeout(() => showWizardStep('reg-skintype'), 200);
+      });
+    });
+
+    // 피부 타입 버튼 토글 (온보딩 5단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
     document.querySelectorAll('.skin-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.skin-btn').forEach((b) => b.classList.remove('active'));
