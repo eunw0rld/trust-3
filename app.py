@@ -19,6 +19,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SkinTrip — 여행지 스킨케어 플래너</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/globe.gl"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -757,12 +758,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
         </div>
 
-        <div class="relative h-40 rounded-2xl border border-gray-100" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #e5e7eb 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, #e5e7eb 20px); background-color: #f3f4f6;">
-          <span class="absolute text-2xl" style="left: 28%; top: 30%;">📍</span>
-          <span class="absolute text-2xl" style="left: 62%; top: 22%;">📍</span>
-          <span class="absolute text-2xl" style="left: 70%; top: 60%;">📍</span>
-          <span class="absolute text-2xl -translate-x-1/2 -translate-y-1/2" style="left: 50%; top: 55%;">🧍</span>
-        </div>
+        <div id="globeViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
 
         <div class="space-y-2">
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
@@ -1028,6 +1024,23 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 탭 전환(hidden 토글) 자체는 항상 먼저 실행하고, 화면별 렌더링 로직은
     // try/catch로 감싸서 그 안에서 오류가 나더라도 탭 전환 자체는 항상 되게 함
+    // 지도 탭: globe.gl 3D 지구본 (처음 지도 탭을 열 때 한 번만 초기화)
+    let globeInstance = null;
+    function initGlobeIfNeeded() {
+      if (globeInstance) return;
+      const el = document.getElementById('globeViz');
+      if (!el || typeof Globe === 'undefined') return;
+      globeInstance = Globe()(el)
+        .backgroundColor('rgba(0,0,0,0)')
+        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+        .width(el.clientWidth)
+        .height(el.clientHeight);
+      window.addEventListener('resize', () => {
+        if (!globeInstance) return;
+        globeInstance.width(el.clientWidth).height(el.clientHeight);
+      });
+    }
+
     function switchTab(tabName) {
       bottomNavButtons.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
       Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== tabName));
@@ -1043,6 +1056,8 @@ HTML_PAGE = """<!DOCTYPE html>
             communityDefaultApplied = true;
           }
           renderCommunityFeed();
+        } else if (tabName === 'map') {
+          initGlobeIfNeeded();
         }
       } catch (e) {
         console.error(`switchTab('${tabName}') 렌더링 중 오류:`, e);
