@@ -125,7 +125,7 @@ HTML_PAGE = """<!DOCTYPE html>
   /* 온보딩 완료 후: 앱 셸을 고정 높이로 만들고 본문만 스크롤되게 해서
      화면 길이가 어떻든 하단 메뉴바가 항상 화면 하단에 붙어있도록 함 */
   .app-shell-fixed {
-    height: 760px;
+    height: 874px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -162,7 +162,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 ============ -->
-  <div id="screen-landing" class="relative h-[780px] overflow-hidden bg-black text-white">
+  <div id="screen-landing" class="relative h-[874px] max-w-[402px] mx-auto overflow-hidden bg-black text-white">
     <div class="absolute inset-0">
       <img src="https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57723/globe_west_2048.jpg" alt="지구" class="w-full h-full object-cover object-[62%_38%]" />
       <div class="absolute inset-0 bg-gradient-to-b from-black/25 via-black/0 to-black/75"></div>
@@ -234,7 +234,7 @@ HTML_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- ============ 앱 화면 ============ -->
-  <div id="appContainer" class="hidden max-w-md mx-auto bg-gray-50 border-x border-gray-100">
+  <div id="appContainer" class="hidden max-w-[402px] mx-auto bg-gray-50 border-x border-gray-100">
 
     <!-- 상단 로고 -->
     <header class="px-5 pt-6 pb-4">
@@ -758,7 +758,13 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">현재 위치 기준으로 가까운 매장을 보여드려요 (mock)</p>
         </div>
 
-        <div id="globeViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+        <div class="relative w-full">
+          <div id="globeViz" class="relative w-full rounded-2xl overflow-hidden" style="height: 320px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+          <div class="absolute top-3 left-3 right-3 z-10">
+            <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-white/95 shadow-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
+            <p id="globeSearchNotFound" class="hidden mt-1.5 ml-2 text-xs font-medium text-red-400">찾을 수 없어요</p>
+          </div>
+        </div>
 
         <div class="space-y-2">
           <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3">
@@ -1039,6 +1045,35 @@ HTML_PAGE = """<!DOCTYPE html>
         if (!globeInstance) return;
         globeInstance.width(el.clientWidth).height(el.clientHeight);
       });
+
+      // 검색창: 나라/도시 이름(한글 또는 영어 일부)으로 weatherData를 찾아 지구본을 그 위치로 회전+확대
+      document.getElementById('globeSearchInput').addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        searchCityOnGlobe();
+      });
+    }
+
+    function searchCityOnGlobe() {
+      const input = document.getElementById('globeSearchInput');
+      const notFound = document.getElementById('globeSearchNotFound');
+      const query = input.value.trim().toLowerCase();
+      if (!query) {
+        notFound.classList.add('hidden');
+        return;
+      }
+      const matchKey = Object.keys(weatherData).find((key) => {
+        const entry = weatherData[key];
+        return key.toLowerCase().includes(query) || (entry.en && entry.en.toLowerCase().includes(query));
+      });
+      const match = matchKey ? weatherData[matchKey] : null;
+      if (match && match.lat != null && match.lng != null) {
+        notFound.classList.add('hidden');
+        if (globeInstance) {
+          globeInstance.pointOfView({ lat: match.lat, lng: match.lng, altitude: 0.5 }, 1200);
+        }
+      } else {
+        notFound.classList.remove('hidden');
+      }
     }
 
     function switchTab(tabName) {
@@ -1517,8 +1552,14 @@ HTML_PAGE = """<!DOCTYPE html>
       슬로베니아: { temp: 21, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
       시리아: { temp: 35, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       시에라리온: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
-      싱가포르: { temp: 34, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
+      싱가포르: { temp: 34, humidity: 83, uvi: 10, climate: `열대기후`, waterQuality: `연수`, en: `Singapore`, lat: 1.3521, lng: 103.8198 },
       아랍에미리트: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
+
+      // 지구본 검색용 도시 좌표 (국가 키와 별도로 도시명으로도 검색 가능하게 추가)
+      도쿄: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수`, en: `Tokyo`, lat: 35.6762, lng: 139.6503 },
+      방콕: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수`, en: `Bangkok`, lat: 13.7563, lng: 100.5018 },
+      두바이: { temp: 36, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수`, en: `Dubai`, lat: 25.2048, lng: 55.2708 },
+      파리: { temp: 22, humidity: 56, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Paris`, lat: 48.8566, lng: 2.3522 },
       아르메니아: { temp: 36, humidity: 26, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       아르헨티나: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
       아이슬란드: { temp: 7, humidity: 56, uvi: 2, climate: `한대기후`, waterQuality: `연수` },
@@ -2141,4 +2182,4 @@ HTML_PAGE = """<!DOCTYPE html>
 """
 
 
-components.html(HTML_PAGE, height=700, scrolling=True)
+components.html(HTML_PAGE, height=874, scrolling=True)
