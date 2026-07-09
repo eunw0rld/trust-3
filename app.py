@@ -280,6 +280,23 @@ HTML_PAGE = """<!DOCTYPE html>
   @keyframes myLocationSpin {
     to { transform: rotate(360deg); }
   }
+  /* "어디로 여행 가실 예정이신가요?" bottom sheet */
+  .trip-destination-sheet {
+    animation: tripSheetSlideUp 0.3s ease-out;
+  }
+  @keyframes tripSheetSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .trip-destination-chip {
+    padding: 6px 14px;
+    border-radius: 9999px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #fed7aa;
+  }
   /* 리스트 아이템이 지도로 flyTo되는 동안 살짝 강조 */
   .map-store-list-item.active-store-item {
     background-color: #fff7ed;
@@ -351,6 +368,27 @@ HTML_PAGE = """<!DOCTYPE html>
           <button id="pouchPromptYesBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">지금 등록할게요</button>
           <button id="pouchPromptLaterBtn" type="button" class="w-full py-2 text-xs text-gray-400 underline">나중에 할게요</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 위치 확인 직후 1회 표시되는 "어디로 여행 가실 예정이신가요?" bottom sheet -->
+  <div id="tripDestinationModal" class="hidden fixed inset-0 z-50">
+    <div id="tripDestinationBackdrop" class="absolute inset-0 bg-black/40"></div>
+    <div class="trip-destination-sheet absolute inset-x-0 bottom-0 bg-white rounded-t-3xl p-5 pb-7">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-base font-bold">어디로 여행 가실 예정이신가요?</p>
+        <button id="tripDestinationCloseBtn" type="button" class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 text-sm flex items-center justify-center shrink-0">✕</button>
+      </div>
+      <input id="tripDestinationSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2.5 px-4 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors" />
+      <p id="tripDestinationNotFound" class="hidden mt-1.5 ml-2 inline-block text-[11px] font-medium text-orange-500 bg-orange-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
+      <p class="text-xs font-semibold text-gray-400 mb-2 mt-4">인기 여행지</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+        <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
+        <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
+        <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
+        <button type="button" class="trip-destination-chip" data-city="두바이">두바이</button>
       </div>
     </div>
   </div>
@@ -1195,29 +1233,79 @@ HTML_PAGE = """<!DOCTYPE html>
         new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([myLng, myLat])
           .addTo(mapInstance);
+
+        // 내 위치 확인 애니메이션이 끝난 직후 여행지 추천 bottom sheet를 1회 표시
+        mapInstance.once('moveend', () => {
+          showTripDestinationModal();
+        });
       }, 1000);
+    }
+
+    // 나라/도시 이름(한글 또는 영어 일부)으로 weatherData에서 일치하는 항목 찾기
+    function findCityMatch(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return null;
+      const matchKey = Object.keys(weatherData).find((key) => {
+        const entry = weatherData[key];
+        return key.toLowerCase().includes(q) || (entry.en && entry.en.toLowerCase().includes(q));
+      });
+      if (!matchKey) return null;
+      const weather = weatherData[matchKey];
+      if (weather.lat == null || weather.lng == null) return null;
+      return { key: matchKey, weather };
     }
 
     function searchCityOnMap() {
       const input = document.getElementById('globeSearchInput');
       const notFound = document.getElementById('globeSearchNotFound');
-      const query = input.value.trim().toLowerCase();
-      if (!query) {
+      const match = findCityMatch(input.value);
+      if (match) {
         notFound.classList.add('hidden');
-        return;
-      }
-      const matchKey = Object.keys(weatherData).find((key) => {
-        const entry = weatherData[key];
-        return key.toLowerCase().includes(query) || (entry.en && entry.en.toLowerCase().includes(query));
-      });
-      const match = matchKey ? weatherData[matchKey] : null;
-      if (match && match.lat != null && match.lng != null) {
-        notFound.classList.add('hidden');
-        flyToCity(matchKey, match);
+        flyToCity(match.key, match.weather);
       } else {
         notFound.classList.remove('hidden');
       }
     }
+
+    // 내 위치 확인 직후 뜨는 "어디로 여행 가실 예정이신가요?" bottom sheet
+    let tripDestinationModalShown = false;
+    function showTripDestinationModal() {
+      if (tripDestinationModalShown) return;
+      tripDestinationModalShown = true;
+      document.getElementById('tripDestinationModal').classList.remove('hidden');
+    }
+
+    function closeTripDestinationModal() {
+      document.getElementById('tripDestinationModal').classList.add('hidden');
+      if (mapInstance) {
+        mapInstance.flyTo({ center: [127.1112, 37.3947], zoom: 13, duration: 1200, essential: true });
+      }
+    }
+
+    document.getElementById('tripDestinationCloseBtn').addEventListener('click', closeTripDestinationModal);
+    document.getElementById('tripDestinationBackdrop').addEventListener('click', closeTripDestinationModal);
+
+    document.getElementById('tripDestinationSearchInput').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const notFound = document.getElementById('tripDestinationNotFound');
+      const match = findCityMatch(e.target.value);
+      if (match) {
+        notFound.classList.add('hidden');
+        flyToCity(match.key, match.weather);
+        document.getElementById('tripDestinationModal').classList.add('hidden');
+      } else {
+        notFound.classList.remove('hidden');
+      }
+    });
+
+    document.querySelectorAll('.trip-destination-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const match = findCityMatch(chip.dataset.city);
+        if (!match) return;
+        flyToCity(match.key, match.weather);
+        document.getElementById('tripDestinationModal').classList.add('hidden');
+      });
+    });
 
     // 도시 좌표로 부드럽게 확대(zoom 11 이상 → globe 투영이 자연스럽게 평면 지도처럼 전환됨)
     // 1.5~2초 사이의 자연스러운 속도가 되도록 거리와 무관하게 duration을 고정
@@ -1831,7 +1919,7 @@ HTML_PAGE = """<!DOCTYPE html>
       이란: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이스라엘: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이집트: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
-      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수` },
+      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Italy`, lat: 41.9028, lng: 12.4964 },
       인도: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
       인도네시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
       일본: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
