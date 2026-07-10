@@ -1154,14 +1154,13 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 실제 카메라 촬영 화면(getUserMedia)이 열림.
-               카메라 권한이 없거나 지원하지 않는 환경에서는 숨겨진 file input(capture="user")으로 자동 대체됨 -->
+          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 기기의 사진 파일 선택창(file input)이 열림 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
               <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
                 <img id="skinPhotoStartPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
                 <div id="skinPhotoStartPlaceholder" class="flex flex-col items-center gap-1">
-                  <span class="text-xl">📷</span>
+                  <span class="text-xl">🖼️</span>
                   <span class="text-xs">1일차 사진</span>
                 </div>
                 <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
@@ -1169,14 +1168,14 @@ HTML_PAGE = """<!DOCTYPE html>
                   <div class="skin-scan-line"></div>
                 </div>
               </button>
-              <input id="skinPhotoStartInput" type="file" accept="image/*" capture="user" class="hidden" />
+              <input id="skinPhotoStartInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
               <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
                 <img id="skinPhotoEndPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
                 <div id="skinPhotoEndPlaceholder" class="flex flex-col items-center gap-1">
-                  <span class="text-xl">📷</span>
+                  <span class="text-xl">🖼️</span>
                   <span class="text-xs">마지막날 사진</span>
                 </div>
                 <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
@@ -1184,11 +1183,11 @@ HTML_PAGE = """<!DOCTYPE html>
                   <div class="skin-scan-line"></div>
                 </div>
               </button>
-              <input id="skinPhotoEndInput" type="file" accept="image/*" capture="user" class="hidden" />
+              <input id="skinPhotoEndInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
-          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요</p>
+          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요</p>
         </div>
 
         <!-- 항목별 변화 -->
@@ -1479,16 +1478,6 @@ HTML_PAGE = """<!DOCTYPE html>
           <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
           <span class="text-gray-300">›</span>
         </button>
-      </div>
-    </div>
-
-    <!-- 피부 변화 리포트: 실제 카메라 촬영 화면 (getUserMedia 라이브 프리뷰 + 셔터) -->
-    <div id="skinCameraModal" class="hidden absolute inset-0 z-[60] bg-black flex flex-col">
-      <video id="skinCameraVideo" autoplay playsinline muted class="flex-1 w-full object-cover"></video>
-      <div class="p-5 flex items-center justify-between bg-black">
-        <button id="skinCameraCancelBtn" type="button" class="text-white text-sm font-semibold px-2">취소</button>
-        <button id="skinCameraShutterBtn" type="button" class="w-14 h-14 rounded-full bg-white border-4 border-gray-400" aria-label="촬영"></button>
-        <span class="w-10"></span>
       </div>
     </div>
 
@@ -2231,7 +2220,7 @@ HTML_PAGE = """<!DOCTYPE html>
       } else if (count === 1) {
         hintEl.textContent = '나머지 한 장을 더 등록해 주세요';
       } else {
-        hintEl.textContent = '→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요';
+        hintEl.textContent = '→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요';
       }
     }
 
@@ -2257,52 +2246,13 @@ HTML_PAGE = """<!DOCTYPE html>
       loadSkinPhoto('end', e.target.files[0]);
     });
 
-    // ===== 실제 카메라 촬영 (getUserMedia 라이브 프리뷰 + 셔터) =====
-    // 카메라 아이콘 박스를 탭하면 이 모달이 열려 실시간 카메라 화면을 보여줌.
-    // getUserMedia를 지원하지 않거나(구형 브라우저) 권한이 거부된 경우에는
-    // 숨겨진 file input(capture="user")을 대신 열어 OS 카메라/갤러리로 자연스럽게 대체됨
-    let skinCameraStream = null;
-    let skinCameraTargetKind = null; // 현재 촬영 대상: 'start' | 'end'
-
-    async function openSkinCamera(kind) {
-      skinCameraTargetKind = kind;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
-        return;
-      }
-      try {
-        skinCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        document.getElementById('skinCameraVideo').srcObject = skinCameraStream;
-        document.getElementById('skinCameraModal').classList.remove('hidden');
-      } catch (err) {
-        console.error('카메라 접근 실패, 파일 선택으로 대체합니다:', err);
-        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
-      }
-    }
-
-    function closeSkinCamera() {
-      if (skinCameraStream) {
-        skinCameraStream.getTracks().forEach((track) => track.stop());
-        skinCameraStream = null;
-      }
-      document.getElementById('skinCameraModal').classList.add('hidden');
-    }
-
-    // 셔터 탭: 현재 비디오 프레임을 캔버스에 그려 이미지로 캡처 → 기존 미리보기/분석 파이프라인으로 전달
-    function captureSkinPhoto() {
-      const video = document.getElementById('skinCameraVideo');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || SKIN_ANALYSIS_SIZE;
-      canvas.height = video.videoHeight || SKIN_ANALYSIS_SIZE;
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      applySkinPhoto(skinCameraTargetKind, canvas.toDataURL('image/png'));
-      closeSkinCamera();
-    }
-
-    document.getElementById('skinPhotoStartBox').addEventListener('click', () => openSkinCamera('start'));
-    document.getElementById('skinPhotoEndBox').addEventListener('click', () => openSkinCamera('end'));
-    document.getElementById('skinCameraShutterBtn').addEventListener('click', captureSkinPhoto);
-    document.getElementById('skinCameraCancelBtn').addEventListener('click', closeSkinCamera);
+    // 사진 박스 탭 → 숨겨진 file input을 열어 기기에 저장된 사진을 첨부
+    document.getElementById('skinPhotoStartBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoStartInput').click();
+    });
+    document.getElementById('skinPhotoEndBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoEndInput').click();
+    });
 
     // 배지(개선됨/주의 필요/변화 없음) 색상 ↔ Tailwind 클래스 매핑
     const skinBadgeColorClasses = {
@@ -2526,6 +2476,43 @@ HTML_PAGE = """<!DOCTYPE html>
       irritant: '자극성·민감성 트러블',
     };
 
+    // 트러블은 없지만 사진 분석 점수상 "그래도 케어하면 좋은" 항목이 있을 때 추천할 제품.
+    // 수분/유분은 분석 항목과 그대로 매칭하고, 톤·홍조는 가장 가까운 "미백/톤 케어" 카테고리로 매핑.
+    // (제공된 목록 중 카테고리별 대표 1개만 사용, 픽서·헤어 카테고리는 대응되는 분석 지표가 없어 제외)
+    const CARE_TIP_PRODUCTS = {
+      hydration: {
+        brand: '아비브(ABIB)',
+        name: '약산성 pH 시트 마스크 핏 - 부활초 핏',
+        benefit: '약산성 시트에 부활초 성분을 더해 수분과 진정을 함께 채워주는 마스크',
+        query: '아비브 약산성 pH 시트 마스크 핏 부활초 핏',
+      },
+      tone: {
+        brand: '구달(goodal)',
+        name: '청귤 비타C 잡티케어 세럼마스크 알파',
+        benefit: '비타민C 성분으로 칙칙해진 톤을 환하게 정돈해주는 세럼 마스크',
+        query: '구달 청귤 비타C 잡티케어 세럼마스크 알파',
+      },
+      oiliness: {
+        brand: '토리든(TORRIDEN)',
+        name: '패드 밸런스풀',
+        benefit: '유수분 밸런스를 맞춰 번들거림을 가라앉혀주는 저자극 패드',
+        query: '토리든 패드 밸런스풀',
+      },
+    };
+
+    // 트러블이 없을 때, 마지막날 점수 기준으로 "그래도 케어하면 좋은" 항목을 하나 고름 (없으면 null)
+    // 기준선(65/30/40)보다 부족한 정도(margin)가 가장 큰 항목을 우선 추천
+    function pickCareTipCategory(end) {
+      const candidates = [
+        { key: 'hydration', margin: 65 - end.hydration },
+        { key: 'tone', margin: end.redness - 30 },
+        { key: 'oiliness', margin: end.oiliness - 40 },
+      ].filter((c) => c.margin > 0);
+      if (candidates.length === 0) return null;
+      candidates.sort((a, b) => b.margin - a.margin);
+      return candidates[0].key;
+    }
+
     // 구매 링크 생성기: 특정 상품 페이지가 아닌 검색 결과 URL이라 품절·개편에도 안 깨짐
     function makeBuyLinks(query) {
       const q = encodeURIComponent(query);
@@ -2556,11 +2543,26 @@ HTML_PAGE = """<!DOCTYPE html>
       }
 
       if (end.blemishCount === 0) {
-        // 트러블 없음: 제품 추천 없이 안내만 표시 (수분/홍조/유분 기반 대체 추천 없음)
+        // 트러블 없음: 케어가 "필요한" 건 아니므로 aftercareNeedsSection은 계속 숨김.
+        // 다만 수분/톤·홍조/유분 중 아쉬운 항목이 있으면 선택적으로 제품 하나를 추천
         needsSection.classList.add('hidden');
-        productSection.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        emptyState.innerHTML = '이번 여행에서는 눈에 띄는 트러블이 발견되지 않았어요.<br />지금 루틴을 잘 유지해 주세요 👍';
+        const careTipKey = pickCareTipCategory(end);
+        if (careTipKey) {
+          emptyState.classList.remove('hidden');
+          emptyState.textContent = '잘 관리하고 있어요! 혹시 그래도 여행 중 부족한 부분을 케어하고 싶으면 아래와 같은 제품을 추천드려요';
+          productSection.classList.remove('hidden');
+          const tip = CARE_TIP_PRODUCTS[careTipKey];
+          document.getElementById('aftercareProductBrand').textContent = tip.brand;
+          document.getElementById('aftercareProductName').textContent = tip.name;
+          document.getElementById('aftercareProductBenefit').textContent = tip.benefit;
+          const tipLinks = makeBuyLinks(tip.query);
+          document.getElementById('aftercareOliveyoungLink').href = tipLinks.oliveyoung;
+          document.getElementById('aftercareCoupangLink').href = tipLinks.coupang;
+        } else {
+          emptyState.classList.remove('hidden');
+          emptyState.innerHTML = '이번 여행에서는 눈에 띄는 트러블이 발견되지 않았어요.<br />지금 루틴을 잘 유지해 주세요 👍';
+          productSection.classList.add('hidden');
+        }
         return;
       }
 
