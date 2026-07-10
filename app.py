@@ -510,24 +510,77 @@ HTML_PAGE = """<!DOCTYPE html>
     border-color: #fdba74;
   }
 
-  /* 피부 변화 리포트: 두 사진이 모두 등록된 직후 재생되는 "스캔 중" 연출 */
+  /* 피부 변화 리포트: 두 사진이 모두 등록된 직후 재생되는 "스캔 중" 연출.
+     얼굴 위에 랜드마크 노드 + 삼각망을 순차적으로 점등시키는 페이스 스캔 애니메이션.
+     opacity/transform만 애니메이션해 레이아웃 리플로우 없이 60fps에 가깝게 동작함 */
   .skin-scan-overlay {
-    background: rgba(17, 24, 39, 0.15);
+    background: transparent; /* 사진이 그대로 비치도록 어둡게 덮지 않음 */
   }
-  .skin-scan-line {
+  .skin-scan-mesh-mount,
+  .skin-scan-mesh-svg {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: -30%;
-    height: 30%;
-    background: linear-gradient(180deg, rgba(249, 115, 22, 0) 0%, rgba(249, 115, 22, 0.65) 50%, rgba(249, 115, 22, 0) 100%);
-    filter: blur(2px);
-    box-shadow: 0 0 14px 3px rgba(249, 115, 22, 0.55);
-    animation: skinScanMove 1.5s ease-in-out infinite;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
-  @keyframes skinScanMove {
-    0% { top: -30%; }
-    100% { top: 100%; }
+  .skin-scan-mesh-svg {
+    animation: skinMeshFlash var(--mesh-cycle, 2400ms) ease-in-out infinite;
+  }
+  .skin-scan-node {
+    fill: #22d3ee;
+    filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.95));
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation-name: skinMeshNodeAppear;
+    animation-duration: var(--mesh-cycle, 2400ms);
+    animation-timing-function: ease-out;
+    animation-iteration-count: infinite;
+  }
+  .skin-scan-ring {
+    fill: none;
+    stroke: #67e8f9;
+    stroke-width: 1;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation-name: skinMeshRingPulse;
+    animation-duration: var(--mesh-cycle, 2400ms);
+    animation-timing-function: ease-out;
+    animation-iteration-count: infinite;
+  }
+  .skin-scan-edge {
+    stroke: #67e8f9;
+    stroke-width: 0.6;
+    opacity: 0;
+    animation-name: skinMeshEdgeAppear;
+    animation-duration: var(--mesh-cycle, 2400ms);
+    animation-timing-function: ease-out;
+    animation-iteration-count: infinite;
+  }
+  @keyframes skinMeshNodeAppear {
+    0% { opacity: 0; transform: scale(0.3); }
+    6% { opacity: 1; transform: scale(1.35); }
+    12% { transform: scale(1); }
+    88% { opacity: 1; }
+    96%, 100% { opacity: 0; }
+  }
+  @keyframes skinMeshRingPulse {
+    0% { opacity: 0; transform: scale(0.5); }
+    8% { opacity: 0.9; transform: scale(0.7); }
+    35% { opacity: 0; transform: scale(2.4); }
+    100% { opacity: 0; }
+  }
+  @keyframes skinMeshEdgeAppear {
+    0% { opacity: 0; }
+    8% { opacity: 0.85; }
+    90% { opacity: 0.85; }
+    97%, 100% { opacity: 0; }
+  }
+  @keyframes skinMeshFlash {
+    0%, 78% { filter: brightness(1); }
+    87% { filter: brightness(1.9) drop-shadow(0 0 8px rgba(34, 211, 238, 0.9)); }
+    97%, 100% { filter: brightness(1); }
   }
   /* "피부를 분석하고 있어요" 문구 옆 점 3개 깜빡임 */
   .skin-scan-dots span {
@@ -1154,33 +1207,34 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 기기의 사진 파일 선택창(file input)이 열림 -->
+          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 기기의 사진 파일 선택창(file input)이 열림.
+               사진 등록 전에는 업로드 칸을 크게(뷰포트 높이 비례) 키워 빈 화면을 채움 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
+              <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-[38vh] flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
                 <img id="skinPhotoStartPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
                 <div id="skinPhotoStartPlaceholder" class="flex flex-col items-center gap-1">
                   <span class="text-xl">🖼️</span>
                   <span class="text-xs">1일차 사진</span>
                 </div>
-                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
+                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 (얼굴 랜드마크 mesh 스캔) -->
                 <div id="skinPhotoStartScanOverlay" class="hidden absolute inset-0 skin-scan-overlay">
-                  <div class="skin-scan-line"></div>
+                  <div class="skin-scan-mesh-mount"></div>
                 </div>
               </button>
               <input id="skinPhotoStartInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
-              <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
+              <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-[38vh] flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
                 <img id="skinPhotoEndPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
                 <div id="skinPhotoEndPlaceholder" class="flex flex-col items-center gap-1">
                   <span class="text-xl">🖼️</span>
                   <span class="text-xs">마지막날 사진</span>
                 </div>
-                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
+                <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 (얼굴 랜드마크 mesh 스캔) -->
                 <div id="skinPhotoEndScanOverlay" class="hidden absolute inset-0 skin-scan-overlay">
-                  <div class="skin-scan-line"></div>
+                  <div class="skin-scan-mesh-mount"></div>
                 </div>
               </button>
               <input id="skinPhotoEndInput" type="file" accept="image/*" class="hidden" />
@@ -1190,12 +1244,12 @@ HTML_PAGE = """<!DOCTYPE html>
           <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요</p>
         </div>
 
-        <!-- 항목별 변화 -->
+        <!-- 항목별 변화: 두 사진이 모두 등록되기 전에는 제목·안내·버튼을 DOM에서 숨김(조건부 렌더링) -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">항목별 변화</h3>
+          <h3 id="skinChangeSectionTitle" class="hidden text-sm font-semibold text-gray-700 mb-3">항목별 변화</h3>
 
           <!-- 초기 빈 상태 / 사진 등록 안내: 분석 전에는 mock 점수 대신 이 안내만 노출 -->
-          <div id="skinChangeEmptyState" class="text-center text-sm text-gray-400 py-10 leading-relaxed">
+          <div id="skinChangeEmptyState" class="hidden text-center text-sm text-gray-400 py-10 leading-relaxed">
             1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.
           </div>
 
@@ -1276,7 +1330,7 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
 
         <p id="aftercareMissingPhotosWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">먼저 1일차·마지막날 사진을 등록해 주세요</p>
-        <button id="goToAftercareBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
+        <button id="goToAftercareBtn" type="button" class="hidden w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
 
       </section>
 
@@ -2058,6 +2112,62 @@ HTML_PAGE = """<!DOCTYPE html>
     const skinPhotoScores = { start: null, end: null };
     let skinScanTimeoutId = null; // 스캔 연출 타이머 핸들 (사진 재등록 시 중복 실행 방지용)
 
+    // ===== 얼굴 랜드마크 mesh 스캔 연출 (SVG) =====
+    // 실제 얼굴 검출은 하지 않고, 얼굴형 사진 위에 자연스럽게 겹치도록 상대좌표(%)로
+    // 미리 배치해둔 포인트들을 순차 점등시켜 "AI가 얼굴을 스캔하는" 느낌만 낸다.
+    const SKIN_MESH_POINTS = [
+      [50, 8], [30, 14], [70, 14],           // 0-2  이마
+      [22, 26], [40, 24], [60, 24], [78, 26], // 3-6  눈썹
+      [26, 38], [74, 38],                     // 7-8  눈 바깥 코너
+      [50, 34],                                // 9    콧대 위
+      [50, 48],                                // 10   코끝
+      [34, 46], [66, 46],                     // 11-12 광대
+      [50, 58],                                // 13   인중
+      [36, 64], [64, 64],                     // 14-15 입꼬리
+      [50, 68],                                // 16   입술 아래
+      [50, 84],                                // 17   턱끝
+    ];
+    const SKIN_MESH_EDGES = [
+      [0, 1], [0, 2], [1, 3], [1, 4], [2, 5], [2, 6], [3, 4], [4, 5], [5, 6],
+      [3, 7], [6, 8], [4, 9], [5, 9], [7, 9], [8, 9], [7, 11], [8, 12],
+      [9, 10], [10, 11], [10, 12], [11, 13], [12, 13], [10, 13],
+      [13, 14], [13, 15], [14, 16], [15, 16], [14, 17], [15, 17], [16, 17],
+      [11, 14], [12, 15],
+    ];
+    const SKIN_MESH_CYCLE_MS = 2400; // CSS --mesh-cycle과 일치시켜야 딜레이 계산이 맞음
+    const SKIN_MESH_NODE_STEP_MS = 90; // 노드가 하나씩 점등되는 간격
+
+    // 노드/링/엣지에 순차 딜레이를 부여한 SVG 마크업 문자열을 생성 (두 사진 오버레이에 동일하게 재사용)
+    function buildFaceMeshScanSVG() {
+      const nodeDelays = SKIN_MESH_POINTS.map((_, i) => i * SKIN_MESH_NODE_STEP_MS);
+
+      const edgeMarkup = SKIN_MESH_EDGES.map(([a, b]) => {
+        const [x1, y1] = SKIN_MESH_POINTS[a];
+        const [x2, y2] = SKIN_MESH_POINTS[b];
+        const delay = Math.max(nodeDelays[a], nodeDelays[b]) + 30;
+        return `<line class="skin-scan-edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="animation-delay:${delay}ms" />`;
+      }).join('');
+
+      const nodeMarkup = SKIN_MESH_POINTS.map(([x, y], i) => {
+        const delay = nodeDelays[i];
+        return (
+          `<circle class="skin-scan-ring" cx="${x}" cy="${y}" r="3.2" style="animation-delay:${delay}ms" />` +
+          `<circle class="skin-scan-node" cx="${x}" cy="${y}" r="1.1" style="animation-delay:${delay}ms" />`
+        );
+      }).join('');
+
+      return (
+        `<svg class="skin-scan-mesh-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="--mesh-cycle:${SKIN_MESH_CYCLE_MS}ms">` +
+        edgeMarkup + nodeMarkup +
+        `</svg>`
+      );
+    }
+
+    // 두 사진 박스의 스캔 오버레이 마운트 지점에 동일한 mesh SVG를 한 번씩 심어둠
+    document.querySelectorAll('.skin-scan-mesh-mount').forEach((mount) => {
+      mount.innerHTML = buildFaceMeshScanSVG();
+    });
+
     // 0~100 사이로 값을 잘라내는 유틸
     function clampSkinScore(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -2197,6 +2307,7 @@ HTML_PAGE = """<!DOCTYPE html>
         placeholderEl.classList.add('hidden');
         updateSkinPhotoHint();
         updateSkinChangeEmptyState();
+        updateSkinChangeSectionVisibility();
         if (skinPhotoImages.start && skinPhotoImages.end) {
           runSkinPhotoAnalysis();
         }
@@ -2227,16 +2338,23 @@ HTML_PAGE = """<!DOCTYPE html>
     // "항목별 변화" 빈 상태 안내: 등록된 사진 개수(0/1/2장)에 따라 문구를 갱신.
     // 두 장이 모두 채워지면 이 안내는 숨기고 스캔 연출(beginSkinScan)로 넘어감
     function updateSkinChangeEmptyState() {
+      // 두 사진이 모두 등록되기 전에는 이 안내 자체를 숨김 — "나머지 한 장" 안내는
+      // 바로 위 #skinPhotoHint가 이미 하고 있어 중복 표시하지 않음
       const emptyEl = document.getElementById('skinChangeEmptyState');
       const count = (skinPhotoImages.start ? 1 : 0) + (skinPhotoImages.end ? 1 : 0);
-      if (count >= 2) {
+      if (count < 2) {
         emptyEl.classList.add('hidden');
         return;
       }
       emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = count === 1
-        ? '나머지 한 장을 더 등록해 주세요'
-        : '1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.';
+      emptyEl.innerHTML = '1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.';
+    }
+
+    // "항목별 변화" 제목과 "내 피부 사후관리하기" 버튼은 두 사진이 모두 등록되기 전에는 DOM에서 숨김
+    function updateSkinChangeSectionVisibility() {
+      const bothRegistered = !!(skinPhotoImages.start && skinPhotoImages.end);
+      document.getElementById('skinChangeSectionTitle').classList.toggle('hidden', !bothRegistered);
+      document.getElementById('goToAftercareBtn').classList.toggle('hidden', !bothRegistered);
     }
 
     document.getElementById('skinPhotoStartInput').addEventListener('change', (e) => {
@@ -2575,13 +2693,14 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('aftercareTypeLabel').textContent = BLEMISH_TYPE_LABEL[type];
       document.getElementById('aftercareCountLine').textContent = `1일차 ${start.blemishCount}건 → 마지막날 ${end.blemishCount}건`;
 
+      // 판정 근거를 "피부 변화 리포트" 하단 요약과 동일한 방식(1일차 → 마지막날 + 증감률)으로 제시
       let reason;
       if (type === 'irritant') {
-        reason = '붉은기가 늘어 자극성·민감성 트러블로 보여요.';
+        reason = `톤·홍조가 1일차 ${start.redness} → 마지막날 ${end.redness}로 뚜렷하게 늘어(${formatPercentDelta(start.redness, end.redness)}) 자극성·민감성 트러블로 보여요.`;
       } else if (type === 'dry') {
-        reason = '수분이 부족해 건조 트러블로 보여요.';
+        reason = `수분이 1일차 ${start.hydration} → 마지막날 ${end.hydration}로 줄어(${formatPercentDelta(start.hydration, end.hydration)}) 건조 트러블로 보여요.`;
       } else {
-        reason = '뚜렷한 홍조·건조 변화 없이 트러블만 도드라져 염증성 트러블로 보여요.';
+        reason = `톤·홍조(${start.redness}→${end.redness})와 수분(${start.hydration}→${end.hydration})은 큰 변화가 없지만, 트러블이 1일차 ${start.blemishCount}건 → 마지막날 ${end.blemishCount}건으로 나타나 염증성 트러블로 보여요.`;
       }
       document.getElementById('aftercareReasonText').textContent = reason;
 
