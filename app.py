@@ -715,6 +715,30 @@ HTML_PAGE = """<!DOCTYPE html>
     border: 2px solid #ffffff;
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.9);
   }
+  /* 내 파우치: 등록된 화장품 카드를 세로 그리드 대신 가로 캐러셀로 스와이프 */
+  #pouchProductGrid.pouch-carousel {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 12px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #pouchProductGrid.pouch-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  #pouchProductGrid.pouch-carousel > .pouch-card {
+    flex: 0 0 124px;
+    width: 124px;
+    scroll-snap-align: start;
+  }
+  #pouchProductGrid.pouch-carousel > .pouch-card p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   /* 실제 제품 사진이 있는 경우 일러스트 대신 사진을 그대로, 라벨 없이 크게 보여줌 (등록하기 바구니 애니메이션).
      너비/높이는 제품별로 buildPouchItemEl에서 인라인으로 지정 */
   .pouch-item-photo {
@@ -984,7 +1008,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <p id="pouchSectionSubtitle" class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
 
           <!-- 등록된 화장품 카드 그리드 (1개 이상 등록되면 노출) -->
-          <div id="pouchProductGrid" class="hidden grid grid-cols-2 gap-2"></div>
+          <div id="pouchProductGrid" class="hidden pouch-carousel"></div>
 
           <!-- 촬영/직접입력 UI (비어있을 때 기본 노출, "+ 추가" 클릭 시 다시 노출) -->
           <div id="pouchCaptureUI">
@@ -3237,7 +3261,7 @@ HTML_PAGE = """<!DOCTYPE html>
     function buildProductCard(product) {
       const category = cosmeticCategories.find((c) => c.value === product.category);
       const card = document.createElement('div');
-      card.className = 'bg-white border border-gray-100 rounded-2xl p-3';
+      card.className = 'pouch-card bg-white border border-gray-100 rounded-2xl p-3';
       card.innerHTML = `
         <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2">${category ? category.icon : '🧴'}</div>
         <p class="text-sm font-semibold truncate">${product.name}</p>
