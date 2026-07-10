@@ -74,6 +74,9 @@ HTML_PAGE = """<!DOCTYPE html>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
 <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
 <script>
   tailwind.config = {
     theme: {
@@ -559,6 +562,151 @@ HTML_PAGE = """<!DOCTYPE html>
   .skin-fade-in {
     animation: skinFadeIn 0.4s ease-out;
   }
+  /* "내 파우치" 등록 완료 후 뜨는 바구니 애니메이션 페이지 */
+  .pouch-title-font {
+    font-family: 'Playfair Display', 'Noto Serif KR', serif;
+    font-style: italic;
+  }
+  .pouch-basket-stage {
+    position: relative;
+    width: 300px;
+    height: 440px;
+    margin: 0 auto;
+  }
+  /* 핑크 와이어 바구니를 위에서 내려다본 듯한 느낌으로 표현 (그라디언트+교차 해칭+인셋 셰도우) */
+  .pouch-basket {
+    position: absolute;
+    inset: 0;
+    border-radius: 40px / 46px;
+    background:
+      repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.55) 0 2px, transparent 2px 14px),
+      repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.32) 0 2px, transparent 2px 14px),
+      linear-gradient(160deg, #fbb6ce 0%, #f472a0 55%, #ec5f96 100%);
+    box-shadow:
+      inset 0 18px 30px rgba(255, 255, 255, 0.55),
+      inset 0 -24px 36px rgba(190, 24, 93, 0.35),
+      0 18px 30px rgba(190, 24, 93, 0.25);
+    border: 3px solid #f9a8c9;
+  }
+  .pouch-basket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 6%;
+    right: 6%;
+    height: 38px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  }
+  .pouch-basket-items {
+    position: absolute;
+    inset: 16px 12px 12px 12px;
+    z-index: 2;
+  }
+  .pouch-item {
+    position: absolute;
+    opacity: 0;
+    transform: translate(var(--from-x, 0px), var(--from-y, -240px)) rotate(var(--from-rot, -30deg)) scale(0.85);
+    animation: pouchItemFlyIn 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+    animation-delay: var(--delay, 0s);
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.18));
+  }
+  @keyframes pouchItemFlyIn {
+    0% { opacity: 0; transform: translate(var(--from-x, 0px), var(--from-y, -240px)) rotate(var(--from-rot, -30deg)) scale(0.8); }
+    70% { opacity: 1; transform: translate(0, 0) rotate(calc(var(--rot, 0deg) + 4deg)) scale(1.05); }
+    100% { opacity: 1; transform: translate(0, 0) rotate(var(--rot, 0deg)) scale(1); }
+  }
+  .pouch-item-label {
+    position: absolute;
+    left: 50%;
+    bottom: -14px;
+    transform: translateX(-50%);
+    font-size: 7px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    color: rgba(0, 0, 0, 0.55);
+  }
+  .pouch-shape-bottle {
+    width: 46px;
+    height: 78px;
+    border-radius: 10px 10px 16px 16px;
+    background: linear-gradient(180deg, #d8f3ee 0%, #a9e3d8 100%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .pouch-shape-bottle::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 12px;
+    border-radius: 4px;
+    background: #4fb3a5;
+  }
+  .pouch-shape-tube {
+    width: 34px;
+    height: 82px;
+    border-radius: 8px 8px 14px 14px;
+    background: linear-gradient(180deg, #cdeee8 0%, #8fd6c8 100%);
+  }
+  .pouch-shape-tube::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 10px;
+    border-radius: 3px 3px 6px 6px;
+    background: #5fc2af;
+  }
+  .pouch-shape-cushion {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #3a3a3a 0%, #0d0d0d 70%);
+    border: 4px solid #cdae7d;
+  }
+  .pouch-shape-palette-pink {
+    width: 66px;
+    height: 52px;
+    border-radius: 8px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0 1px, transparent 1px 16.5px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.5) 0 1px, transparent 1px 13px),
+      linear-gradient(160deg, #f7d3e6 0%, #f2a9cf 100%);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+  .pouch-shape-palette-brown {
+    width: 52px;
+    height: 74px;
+    border-radius: 6px;
+    background: linear-gradient(160deg, #8a6a52 0%, #4a3527 100%);
+    border: 3px solid #d8bd93;
+  }
+  .pouch-shape-lip {
+    width: 22px;
+    height: 62px;
+    border-radius: 8px 8px 10px 10px;
+    background: linear-gradient(180deg, #f5b9c9 0%, #e8709a 100%);
+  }
+  .pouch-shape-pencil {
+    width: 62px;
+    height: 16px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #c0392b, #8e2317);
+  }
+  .pouch-shape-highlighter {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(160deg, #fff2e6 0%, #f5cdd8 100%);
+    border: 2px solid #ffffff;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.9);
+  }
 </style>
 </head>
 <body class="font-sans text-gray-900">
@@ -633,7 +781,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- 온보딩 진행 바 (완료 화면에서는 숨김) -->
         <div id="wizardProgressTrack" class="wizard-progress-track mx-1 mb-1">
-          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 16.6667%;"></div>
+          <div id="wizardProgressFill" class="wizard-progress-fill" style="width: 14.2857%;"></div>
         </div>
 
         <!-- 온보딩 1단계: 이름 (텍스트 입력, "다음" 버튼으로 진행) -->
@@ -680,27 +828,41 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 온보딩 4단계: 나이 (연령대 단일 선택, 선택 즉시 자동 진행) -->
+        <!-- 온보딩 4단계: 생년월일 (날짜 입력, "다음" 버튼으로 진행) -->
         <div id="reg-age" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-gender">← 이전</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
-            <h2 class="text-xl font-bold mb-8">나이가<br />어떻게 되나요?</h2>
+            <h2 class="text-xl font-bold mb-8">생년월일이<br />어떻게 되나요?</h2>
+            <input id="regBirthdateInput" type="date" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+          </div>
+          <div class="absolute inset-x-0 bottom-6 px-4">
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-tone" disabled>다음</button>
+          </div>
+        </div>
+
+        <!-- 온보딩 5단계: 퍼스널컬러 (단일 선택, 선택 즉시 자동 진행) -->
+        <div id="reg-tone" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="flex items-center mb-2">
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-age">← 이전</button>
+          </div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
+            <h2 class="text-xl font-bold mb-8">퍼스널컬러가<br />어떻게 되나요?</h2>
             <div class="grid grid-cols-2 gap-3 w-full max-w-xs">
-              <button type="button" data-age="10대" class="onboard-age-btn wizard-choice-btn">10대</button>
-              <button type="button" data-age="20대" class="onboard-age-btn wizard-choice-btn">20대</button>
-              <button type="button" data-age="30대" class="onboard-age-btn wizard-choice-btn">30대</button>
-              <button type="button" data-age="40대" class="onboard-age-btn wizard-choice-btn">40대</button>
-              <button type="button" data-age="50대 이상" class="onboard-age-btn wizard-choice-btn col-span-2">50대 이상</button>
+              <button type="button" data-tone="spring" class="onboard-tone-btn wizard-choice-btn">봄웜톤</button>
+              <button type="button" data-tone="summer" class="onboard-tone-btn wizard-choice-btn">여름쿨톤</button>
+              <button type="button" data-tone="autumn" class="onboard-tone-btn wizard-choice-btn">가을웜톤</button>
+              <button type="button" data-tone="winter" class="onboard-tone-btn wizard-choice-btn">겨울쿨톤</button>
+              <button type="button" data-tone="unknown" class="onboard-tone-btn wizard-choice-btn col-span-2">잘 모르겠어요</button>
             </div>
           </div>
         </div>
 
-        <!-- 온보딩 5단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
+        <!-- 온보딩 6단계: 피부타입 (단일 선택, 선택 즉시 자동 진행) -->
         <div id="reg-skintype" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
-            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-age">← 이전</button>
+            <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-tone">← 이전</button>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">피부타입이<br />어떻게 되나요?</h2>
@@ -714,7 +876,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 온보딩 6단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
+        <!-- 온보딩 7단계: 피부 고민 (다중 선택, 선택 완료 버튼으로 진행) -->
         <div id="reg-concerns" class="wizard-step hidden relative flex flex-col" style="min-height: calc(var(--app-height) - 40px);">
           <div class="flex items-center mb-2">
             <button type="button" class="wizard-back-btn text-xs text-gray-400" data-prev="reg-skintype">← 이전</button>
@@ -807,27 +969,15 @@ HTML_PAGE = """<!DOCTYPE html>
               </div>
             </div>
 
-            <!-- 인식 결과 확인 -->
-            <div id="scanResult" class="hidden border border-gray-200 bg-white rounded-2xl p-3 mt-3">
-              <div class="flex items-center gap-3 mb-3">
-                <img id="scanResultThumb" src="" alt="촬영한 화장품" class="w-14 h-14 rounded-xl object-cover shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-[10px] font-semibold text-brand-500 mb-1">인식 완료 · 맞는지 확인해주세요</p>
-                  <input id="scanResultName" type="text" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500" />
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <select id="scanResultCategory" class="flex-1 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-600 bg-white focus:outline-none focus:border-brand-500"></select>
-                <button id="confirmScanBtn" type="button" class="px-4 rounded-xl bg-brand-500 text-white text-sm font-bold">추가</button>
-              </div>
-            </div>
-
             <!-- 갖고 있는 화장품 리스트 (직접 입력) -->
             <div class="mt-3">
               <h3 class="text-sm font-semibold text-gray-700 mb-3">갖고 있는 화장품 <span id="cosmeticCountBadge" class="text-gray-400 font-normal"></span></h3>
               <div id="cosmeticRows" class="space-y-2 mb-3"></div>
               <button id="addCosmeticRowBtn" type="button" class="w-full text-center text-xs text-gray-400 underline">
                 직접 입력하기
+              </button>
+              <button id="pouchRegisterBtn" type="button" class="hidden w-full mt-3 py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">
+                등록하기
               </button>
             </div>
           </div>
@@ -1310,6 +1460,22 @@ HTML_PAGE = """<!DOCTYPE html>
         <button id="skinCameraCancelBtn" type="button" class="text-white text-sm font-semibold px-2">취소</button>
         <button id="skinCameraShutterBtn" type="button" class="w-14 h-14 rounded-full bg-white border-4 border-gray-400" aria-label="촬영"></button>
         <span class="w-10"></span>
+      </div>
+    </div>
+
+    <!-- "등록하기" 클릭 시 열리는 새 페이지: 내 파우치에 담긴 화장품들이 하나씩
+         바구니 안으로 날아들어오는 연출 -->
+    <div id="pouchBasketModal" class="hidden absolute inset-0 z-[60] flex flex-col" style="background: linear-gradient(180deg, #fff7fa 0%, #ffeef5 100%);">
+      <div class="p-4 flex items-center justify-end">
+        <button id="pouchBasketCloseBtn" type="button" aria-label="닫기" class="w-8 h-8 rounded-full bg-white/80 text-gray-500 text-base leading-none flex items-center justify-center shadow-sm">✕</button>
+      </div>
+      <div class="flex-1 flex flex-col items-center px-6 pt-2 pb-10 overflow-y-auto">
+        <h2 class="pouch-title-font text-3xl text-gray-800 mb-1">What's in my pouch</h2>
+        <p class="text-xs text-gray-400 mb-6">등록한 화장품이 파우치 속으로 담기고 있어요</p>
+        <div class="pouch-basket-stage">
+          <div class="pouch-basket"></div>
+          <div id="pouchBasketItems" class="pouch-basket-items"></div>
+        </div>
       </div>
     </div>
 
@@ -1811,10 +1977,10 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // ===== 온보딩 위저드: 화면 전환 + 진행 상태 =====
-    const WIZARD_STEP_ORDER = ['reg-name', 'reg-nickname', 'reg-gender', 'reg-age', 'reg-skintype', 'reg-concerns'];
+    const WIZARD_STEP_ORDER = ['reg-name', 'reg-nickname', 'reg-gender', 'reg-age', 'reg-tone', 'reg-skintype', 'reg-concerns'];
 
     // 온보딩에서 수집한 기본 정보 (이후 프로필/커뮤니티 화면에서 활용)
-    let userProfile = { name: '', nickname: '', gender: '', age: '' };
+    let userProfile = { name: '', nickname: '', gender: '', birthDate: '', tone: '' };
 
     function showWizardStep(stepId) {
       document.querySelectorAll('.wizard-step').forEach((el) => el.classList.toggle('hidden', el.id !== stepId));
@@ -2447,17 +2613,43 @@ HTML_PAGE = """<!DOCTYPE html>
       });
     });
 
-    // 온보딩 4단계: 연령대 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
-    document.querySelectorAll('.onboard-age-btn').forEach((btn) => {
+    // 생년월일로 만 나이 계산 (개인설정 화면의 숫자 나이 입력칸에 그대로 반영하기 위함)
+    function calculateAge(birthDateStr) {
+      const birth = new Date(`${birthDateStr}T00:00:00`);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const hasHadBirthdayThisYear =
+        today.getMonth() > birth.getMonth() ||
+        (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+      if (!hasHadBirthdayThisYear) age -= 1;
+      return age;
+    }
+
+    // 온보딩 4단계: 생년월일 입력 - 값이 있어야 "다음" 버튼 활성화, 계산한 나이를 개인설정에도 반영
+    const regBirthdateInput = document.getElementById('regBirthdateInput');
+    regBirthdateInput.max = new Date().toISOString().slice(0, 10);
+    regBirthdateInput.addEventListener('input', () => {
+      const value = regBirthdateInput.value;
+      updateWizardNextButton('reg-age', value.length > 0);
+      if (value) {
+        userProfile.birthDate = value;
+        document.getElementById('ageInput').value = calculateAge(value);
+      }
+    });
+
+    // 온보딩 5단계: 퍼스널컬러 버튼 (단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    document.querySelectorAll('.onboard-tone-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.onboard-age-btn').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.onboard-tone-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        userProfile.age = btn.dataset.age;
+        userProfile.tone = btn.dataset.tone;
+        // 개인설정 화면의 퍼스널컬러 버튼도 함께 반영
+        document.querySelectorAll('.tone-btn').forEach((b) => b.classList.toggle('active', b.dataset.tone === btn.dataset.tone));
         setTimeout(() => showWizardStep('reg-skintype'), 200);
       });
     });
 
-    // 피부 타입 버튼 토글 (온보딩 5단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
+    // 피부 타입 버튼 토글 (온보딩 6단계, 단일 선택 - 선택 즉시 다음 단계로 자동 진행)
     document.querySelectorAll('.skin-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.skin-btn').forEach((b) => b.classList.remove('active'));
@@ -2494,11 +2686,17 @@ HTML_PAGE = """<!DOCTYPE html>
     const cosmeticCategories = [
       { value: 'cleanser', label: '클렌저', icon: '🧼' },
       { value: 'toner', label: '토너', icon: '💧' },
+      { value: 'serum', label: '세럼', icon: '🧪' },
       { value: 'essence', label: '에센스', icon: '✨' },
       { value: 'lotion', label: '로션', icon: '🧴' },
       { value: 'cream', label: '크림', icon: '🫙' },
       { value: 'emulsion', label: '에멀전', icon: '🧴' },
       { value: 'sunscreen', label: '선크림', icon: '☀️' },
+      { value: 'cushion', label: '쿠션 및 파운데이션', icon: '🟤' },
+      { value: 'eye', label: '아이 메이크업', icon: '👁️' },
+      { value: 'shading', label: '쉐딩', icon: '🌗' },
+      { value: 'lip', label: '립 메이크업', icon: '💋' },
+      { value: 'highlighter', label: '하이라이터', icon: '🌟' },
     ];
     function buildCosmeticRow(productName, category) {
       const row = document.createElement('div');
@@ -2523,11 +2721,15 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 화장품이 추가/삭제될 때마다 카운트 배지 + 메인 화면 파우치 칩 목록 갱신
     const cosmeticCountBadge = document.getElementById('cosmeticCountBadge');
+    // 사진 인식으로 여러 화장품을 한꺼번에 채우는 동안에는, 리스트+등록하기 버튼을
+    // 계속 펼쳐서 보여줘야 해서 아래의 "첫 화장품 등록 시 자동 접힘"을 잠깐 막아둠
+    let suppressPouchAutoCollapse = false;
     function updateCosmeticCountBadge() {
       const count = cosmeticRows.querySelectorAll('.cosmetic-row').length;
       cosmeticCountBadge.textContent = count > 0 ? `(${count})` : '';
+      document.getElementById('pouchRegisterBtn').classList.toggle('hidden', getMyProducts().length === 0);
       // 화장품이 등록되면 촬영/입력 UI를 접고 카드 그리드로 보여줌
-      if (getMyProducts().length > 0) {
+      if (!suppressPouchAutoCollapse && getMyProducts().length > 0) {
         pouchCaptureForceOpen = false;
       }
       updatePouchSectionView();
@@ -2535,32 +2737,24 @@ HTML_PAGE = """<!DOCTYPE html>
     new MutationObserver(updateCosmeticCountBadge).observe(cosmeticRows, { childList: true });
     updateCosmeticCountBadge();
 
-    // 화장품 사진 촬영 → 인식 중 애니메이션 → 인식 결과 확인 인터랙션
-    const scanResultCategorySelect = document.getElementById('scanResultCategory');
-    scanResultCategorySelect.innerHTML = cosmeticCategories
-      .map((c) => `<option value="${c.value}">${c.label}</option>`)
-      .join('');
-
-    const mockRecognizedProducts = [
-      { name: '이니스프리 그린티 클렌징폼', category: 'cleanser' },
-      { name: '라운드랩 자작나무 수분 토너', category: 'toner' },
-      { name: '라네즈 워터뱅크 에센스', category: 'essence' },
-      { name: '설화수 자음 로션', category: 'lotion' },
-      { name: '닥터자르트 세라마이딘 크림', category: 'cream' },
-      { name: '라네즈 워터뱅크 에멀전', category: 'emulsion' },
-      { name: '아이소이 브루쿤달 선크림', category: 'sunscreen' },
-      { name: '헤라 선메이트 선크림', category: 'sunscreen' },
-      { name: '토니모리 시카 클렌징폼', category: 'cleanser' },
-      { name: '마몽드 로즈워터 토너', category: 'toner' },
+    // 화장품 사진(파우치 전체) 촬영 → 인식 중 애니메이션 → 갖고 있는 화장품 목록에
+    // 한 번에 자동 채워짐 (한 장의 사진으로 파우치 속 여러 화장품을 인식하는 컨셉)
+    const pouchScanProducts = [
+      { name: '넘버즈인 1번 진정 맑게 담은 청초토너 토너', category: 'toner' },
+      { name: '넘버즈인 1번 판토텐산 액티브업 수딩세럼', category: 'serum' },
+      { name: '넘버즈인 1번 청초 진정맑은 물막선크림', category: 'sunscreen' },
+      { name: '비디비치 블랙 퍼펙션 커버 핏 쿠션', category: 'cushion' },
+      { name: '웨이크메이크 소프트 블러링 아이팔레트 10호 레이지 핑크 블러링', category: 'eye' },
+      { name: '롬앤 베러 댄 컨투어 02 그레이 쿨', category: 'shading' },
+      { name: '롬앤 더 쥬시 래스팅 틴트 03 베어그레이프', category: 'lip' },
+      { name: '에스쁘아 더브로우', category: 'eye' },
+      { name: '글린트 하이라이터 듀이 문', category: 'highlighter' },
     ];
 
     const cosmeticPhotoInput = document.getElementById('cosmeticPhotoInput');
     const scanningState = document.getElementById('scanningState');
     const scanningThumb = document.getElementById('scanningThumb');
     const scanningBar = document.getElementById('scanningBar');
-    const scanResult = document.getElementById('scanResult');
-    const scanResultThumb = document.getElementById('scanResultThumb');
-    const scanResultName = document.getElementById('scanResultName');
 
     cosmeticPhotoInput.addEventListener('change', () => {
       const file = cosmeticPhotoInput.files[0];
@@ -2570,7 +2764,6 @@ HTML_PAGE = """<!DOCTYPE html>
       reader.onload = () => {
         const photoDataUrl = reader.result;
 
-        scanResult.classList.add('hidden');
         scanningThumb.src = photoDataUrl;
         scanningBar.style.width = '0%';
         scanningState.classList.remove('hidden');
@@ -2581,23 +2774,23 @@ HTML_PAGE = """<!DOCTYPE html>
 
         setTimeout(() => {
           scanningState.classList.add('hidden');
+          cosmeticPhotoInput.value = '';
 
-          const picked = mockRecognizedProducts[Math.floor(Math.random() * mockRecognizedProducts.length)];
-          scanResultThumb.src = photoDataUrl;
-          scanResultName.value = picked.name;
-          scanResultCategorySelect.value = picked.category;
-          scanResult.classList.remove('hidden');
+          // 인식된 화장품들로 리스트를 새로 채우는 동안 자동 접힘을 잠깐 막아서
+          // "등록하기" 버튼까지 함께 눈에 보이게 함
+          suppressPouchAutoCollapse = true;
+          pouchCaptureForceOpen = true;
+          cosmeticRows.innerHTML = '';
+          pouchScanProducts.forEach((product) => {
+            cosmeticRows.appendChild(buildCosmeticRow(product.name, product.category));
+          });
+          updatePouchSectionView();
+          setTimeout(() => {
+            suppressPouchAutoCollapse = false;
+          }, 0);
         }, 1400);
       };
       reader.readAsDataURL(file);
-    });
-
-    document.getElementById('confirmScanBtn').addEventListener('click', () => {
-      const name = scanResultName.value.trim();
-      if (!name) return;
-      cosmeticRows.appendChild(buildCosmeticRow(name, scanResultCategorySelect.value));
-      scanResult.classList.add('hidden');
-      cosmeticPhotoInput.value = '';
     });
 
     // 등록 페이지에 입력된 보유 화장품을 { name, category } 배열로 읽어옴
@@ -2609,6 +2802,92 @@ HTML_PAGE = """<!DOCTYPE html>
         }))
         .filter((product) => product.name);
     }
+
+    // ===== "등록하기" → 파우치 바구니 애니메이션 페이지 =====
+    // 파우치 사진으로 인식되는 9개 제품을 실제 패키지 형태에 가깝게 표현하기 위한 매핑
+    // (제품명이 정확히 일치하면 그 모양을, 아니면 카테고리 기본 모양을 사용)
+    const POUCH_VISUALS = {
+      '넘버즈인 1번 진정 맑게 담은 청초토너 토너': { shape: 'bottle', label: 'numbuzin' },
+      '넘버즈인 1번 판토텐산 액티브업 수딩세럼': { shape: 'bottle', label: 'numbuzin' },
+      '넘버즈인 1번 청초 진정맑은 물막선크림': { shape: 'tube', label: 'numbuzin' },
+      '비디비치 블랙 퍼펙션 커버 핏 쿠션': { shape: 'cushion', label: 'VIDIVICI' },
+      '웨이크메이크 소프트 블러링 아이팔레트 10호 레이지 핑크 블러링': { shape: 'palette-pink', label: 'wakemake' },
+      '롬앤 베러 댄 컨투어 02 그레이 쿨': { shape: 'palette-brown', label: 'romand' },
+      '롬앤 더 쥬시 래스팅 틴트 03 베어그레이프': { shape: 'lip', label: 'romand' },
+      '에스쁘아 더브로우': { shape: 'pencil', label: 'espoir' },
+      '글린트 하이라이터 듀이 문': { shape: 'highlighter', label: 'Glint' },
+    };
+    const POUCH_CATEGORY_SHAPE_FALLBACK = {
+      cleanser: 'tube', toner: 'bottle', serum: 'bottle', essence: 'bottle', lotion: 'bottle',
+      cream: 'bottle', emulsion: 'bottle', sunscreen: 'tube', cushion: 'cushion',
+      eye: 'palette-pink', shading: 'palette-brown', lip: 'lip', highlighter: 'highlighter',
+    };
+    // 바구니 안에서 각 제품이 자리잡는 위치(위에서 내려다본 배치, 최대 9개가 가득 차 보이게)
+    const POUCH_SLOTS = [
+      { top: 6, left: 8, rot: -8 },
+      { top: 0, left: 68, rot: 5 },
+      { top: 4, left: 132, rot: 11 },
+      { top: 30, left: 184, rot: -6 },
+      { top: 130, left: 12, rot: 6 },
+      { top: 112, left: 96, rot: -7 },
+      { top: 148, left: 170, rot: 9 },
+      { top: 268, left: 40, rot: -14 },
+      { top: 246, left: 150, rot: 5 },
+    ];
+    // 각 제품이 바구니 밖 어느 방향에서 날아들어오는지(연출용 시작 위치/각도)
+    const POUCH_FROM = [
+      { x: 0, y: -260, r: -30 },
+      { x: 220, y: -160, r: 40 },
+      { x: -220, y: -160, r: -50 },
+      { x: 240, y: 40, r: 30 },
+      { x: -240, y: 60, r: -35 },
+      { x: 0, y: 260, r: 25 },
+      { x: 230, y: 200, r: -40 },
+      { x: -230, y: 220, r: 45 },
+      { x: 0, y: -260, r: 20 },
+    ];
+
+    function buildPouchItemEl(product, index) {
+      const visual = POUCH_VISUALS[product.name] || {
+        shape: POUCH_CATEGORY_SHAPE_FALLBACK[product.category] || 'bottle',
+        label: product.name.split(' ')[0],
+      };
+      const slot = POUCH_SLOTS[index % POUCH_SLOTS.length];
+      const from = POUCH_FROM[index % POUCH_FROM.length];
+      const el = document.createElement('div');
+      el.className = `pouch-item pouch-shape-${visual.shape}`;
+      el.style.top = `${slot.top}px`;
+      el.style.left = `${slot.left}px`;
+      el.style.setProperty('--rot', `${slot.rot}deg`);
+      el.style.setProperty('--from-x', `${from.x}px`);
+      el.style.setProperty('--from-y', `${from.y}px`);
+      el.style.setProperty('--from-rot', `${from.r}deg`);
+      el.style.setProperty('--delay', `${index * 0.18}s`);
+      el.innerHTML = `<span class="pouch-item-label">${visual.label}</span>`;
+      return el;
+    }
+
+    function openPouchBasketModal() {
+      const myProducts = getMyProducts();
+      const products = myProducts.length > 0 ? myProducts : pouchScanProducts;
+      const itemsEl = document.getElementById('pouchBasketItems');
+      itemsEl.innerHTML = '';
+      products.slice(0, POUCH_SLOTS.length).forEach((product, index) => {
+        itemsEl.appendChild(buildPouchItemEl(product, index));
+      });
+      document.getElementById('pouchBasketModal').classList.remove('hidden');
+    }
+
+    document.getElementById('pouchRegisterBtn').addEventListener('click', () => {
+      openPouchBasketModal();
+    });
+
+    document.getElementById('pouchBasketCloseBtn').addEventListener('click', () => {
+      document.getElementById('pouchBasketModal').classList.add('hidden');
+      // 등록이 끝났으니 파우치 섹션은 접어서 등록된 화장품 카드 그리드로 보여줌
+      pouchCaptureForceOpen = false;
+      updatePouchSectionView();
+    });
 
     // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
     const importBanData = {
