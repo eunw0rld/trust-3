@@ -230,6 +230,36 @@ HTML_PAGE = """<!DOCTYPE html>
     color: #f97316;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
+  /* 커뮤니티 화면: [리뷰] / [나라별 인기템] 서브탭 (history-view-toggle-btn과 같은 톤이지만,
+     querySelectorAll('.history-view-toggle-btn')로 전역 바인딩된 기록 화면 토글 로직과
+     엮이지 않도록 별도 클래스 사용) */
+  .community-subtab-btn {
+    color: #6b7280;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .community-subtab-btn.active {
+    background: #ffffff;
+    color: #f97316;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  /* 국가 선택 바: 스크롤해도 항상 최상단에 고정되어 어떤 나라를 보고 있는지 인지되게 함 */
+  .community-country-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f9fafb;
+  }
+  .popular-item-card.rank-1 {
+    border-color: #f97316;
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.12);
+  }
+  @keyframes popularItemHighlight {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    30% { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.35); }
+  }
+  .popular-item-flash {
+    animation: popularItemHighlight 1.2s ease;
+  }
   .skin-btn {
     border: 1px solid #e5e7eb;
     color: #6b7280;
@@ -1402,42 +1432,79 @@ HTML_PAGE = """<!DOCTYPE html>
           <p class="text-sm text-gray-400 mb-4">다른 여행자들의 스킨케어 이야기를 둘러보세요</p>
         </div>
 
-        <!-- 필터 -->
-        <div class="space-y-2 mb-2">
-          <select id="communityCountryFilter" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-brand-500">
-            <option value="">전체 여행지</option>
-            <option value="이탈리아">이탈리아</option>
-            <option value="일본">일본</option>
-            <option value="태국">태국</option>
-            <option value="아랍에미리트">아랍에미리트</option>
-            <option value="프랑스">프랑스</option>
-            <option value="싱가포르">싱가포르</option>
+        <!-- 국가 선택 + [리뷰]/[나라별 인기템] 서브탭 (두 탭이 공유, 스크롤해도 항상 보이도록 고정) -->
+        <div class="community-country-bar space-y-2 pb-2">
+          <select id="communitySharedCountrySelect" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold bg-white focus:outline-none focus:border-brand-500">
+            <option value="이탈리아">🇮🇹 이탈리아</option>
+            <option value="일본">🇯🇵 일본</option>
+            <option value="프랑스">🇫🇷 프랑스</option>
+            <option value="태국">🇹🇭 태국</option>
+            <option value="한국">🇰🇷 한국</option>
+            <option value="독일">🇩🇪 독일</option>
+            <option value="미국">🇺🇸 미국</option>
+            <option value="호주">🇦🇺 호주</option>
+            <option value="그리스">🇬🇷 그리스</option>
           </select>
-          <div class="grid grid-cols-3 gap-2">
-            <select id="communityGenderFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
-              <option value="">성별 전체</option>
-              <option value="여성">여성</option>
-              <option value="남성">남성</option>
-            </select>
-            <select id="communityAgeFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
-              <option value="">나이대 전체</option>
-              <option value="20대">20대</option>
-              <option value="30대">30대</option>
-              <option value="40대">40대</option>
-              <option value="50대 이상">50대 이상</option>
-            </select>
-            <select id="communitySkinFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
-              <option value="">피부타입 전체</option>
-              <option value="지성">지성</option>
-              <option value="건성">건성</option>
-              <option value="복합성">복합성</option>
-              <option value="민감성">민감성</option>
-            </select>
+          <div class="flex bg-gray-100 rounded-full p-1">
+            <button type="button" class="community-subtab-btn active flex-1 py-2 rounded-full text-sm font-semibold" data-subtab="review">리뷰</button>
+            <button type="button" class="community-subtab-btn flex-1 py-2 rounded-full text-sm font-semibold" data-subtab="popular">나라별 인기템</button>
           </div>
         </div>
 
-        <p id="communityEmptyNote" class="hidden text-sm text-gray-400 text-center py-8">조건에 맞는 리뷰가 없어요</p>
-        <div id="communityFeed" class="space-y-3"></div>
+        <!-- [리뷰] 탭: 기존 커뮤니티 리뷰 기능 그대로 -->
+        <div id="communityReviewTab" class="space-y-3">
+          <!-- 필터 -->
+          <div class="space-y-2 mb-2">
+            <select id="communityCountryFilter" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-brand-500">
+              <option value="">전체 여행지</option>
+              <option value="이탈리아">이탈리아</option>
+              <option value="일본">일본</option>
+              <option value="태국">태국</option>
+              <option value="아랍에미리트">아랍에미리트</option>
+              <option value="프랑스">프랑스</option>
+              <option value="싱가포르">싱가포르</option>
+            </select>
+            <div class="grid grid-cols-3 gap-2">
+              <select id="communityGenderFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+                <option value="">성별 전체</option>
+                <option value="여성">여성</option>
+                <option value="남성">남성</option>
+              </select>
+              <select id="communityAgeFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+                <option value="">나이대 전체</option>
+                <option value="20대">20대</option>
+                <option value="30대">30대</option>
+                <option value="40대">40대</option>
+                <option value="50대 이상">50대 이상</option>
+              </select>
+              <select id="communitySkinFilter" class="w-full border border-gray-200 rounded-xl px-2 py-2 text-xs bg-white focus:outline-none focus:border-brand-500">
+                <option value="">피부타입 전체</option>
+                <option value="지성">지성</option>
+                <option value="건성">건성</option>
+                <option value="복합성">복합성</option>
+                <option value="민감성">민감성</option>
+              </select>
+            </div>
+          </div>
+
+          <p id="communityEmptyNote" class="hidden text-sm text-gray-400 text-center py-8">조건에 맞는 리뷰가 없어요</p>
+          <div id="communityFeed" class="space-y-3"></div>
+        </div>
+
+        <!-- [나라별 인기템] 탭: 지도+매장 → 인기 아이템 TOP3 → 매장 연결 순으로 배치 -->
+        <div id="communityPopularTab" class="hidden space-y-5">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📍 <span id="popularStoreCountryLabel">이탈리아</span>에서 갈 만한 매장</h3>
+            <div id="communityPopularMapViz" class="relative w-full rounded-2xl overflow-hidden mb-3" style="height: 220px; background: linear-gradient(180deg, #eaf6ff 0%, #cfeeff 100%);"></div>
+            <div id="communityPopularStoreList" class="space-y-2"></div>
+            <p id="communityPopularStoreEmpty" class="hidden text-sm text-gray-400 text-center py-6">아직 이 나라의 매장 정보가 없어요</p>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🏆 <span id="popularItemsCountryLabel">이탈리아</span> 인기 아이템 TOP3</h3>
+            <div id="communityPopularItemsList" class="space-y-3"></div>
+            <p id="communityPopularItemsEmpty" class="hidden text-sm text-gray-400 text-center py-8">아직 준비 중이에요</p>
+          </div>
+        </div>
       </section>
 
       <!-- ============ 6. 개인설정 페이지 ============ -->
@@ -1495,16 +1562,6 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
       </section>
 
-      <!-- ============ 8. 나라별 인기템 (placeholder) ============ -->
-      <section id="screen-country-popular" class="hidden py-6 space-y-6">
-        <button type="button" class="back-to-nav-btn text-xs text-gray-400" data-back-target="inuse">← 이전</button>
-        <div class="flex flex-col items-center justify-center text-center py-20 gap-3">
-          <span class="text-4xl">🌍</span>
-          <h2 class="text-base font-bold">나라별 인기템</h2>
-          <p class="text-sm text-gray-400">여행지별 인기 화장품 정보를 준비하고 있어요</p>
-        </div>
-      </section>
-
     </main>
 
     <!-- 여행 계획 수정 팝업: 여행지 등록 후 "수정하기" 클릭 시에만 바텀시트로 열림 (미등록 시엔 인라인 카드로 별도 노출) -->
@@ -1527,11 +1584,6 @@ HTML_PAGE = """<!DOCTYPE html>
         <button type="button" class="more-menu-item" data-target="community">
           <span class="text-lg">💬</span>
           <span class="flex-1 text-left text-sm font-semibold">커뮤니티</span>
-          <span class="text-gray-300">›</span>
-        </button>
-        <button type="button" class="more-menu-item" data-target="countryPopular">
-          <span class="text-lg">🌍</span>
-          <span class="flex-1 text-left text-sm font-semibold">나라별 인기템</span>
           <span class="text-gray-300">›</span>
         </button>
         <button type="button" class="more-menu-item" data-target="skinReport">
@@ -1676,7 +1728,6 @@ HTML_PAGE = """<!DOCTYPE html>
       aftercare: document.getElementById('screen-aftercare'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
-      countryPopular: document.getElementById('screen-country-popular'),
     };
     let onboardingComplete = false;
     let lastActiveNavTab = 'inuse';
@@ -3794,12 +3845,297 @@ HTML_PAGE = """<!DOCTYPE html>
     let communityDefaultApplied = false;
     function applyDefaultCommunityFilter() {
       document.getElementById('communityCountryFilter').value = '이탈리아';
+      document.getElementById('communitySharedCountrySelect').value = '이탈리아';
+      communitySelectedCountry = '이탈리아';
     }
 
     ['communityCountryFilter', 'communityGenderFilter', 'communityAgeFilter', 'communitySkinFilter'].forEach((id) => {
       document.getElementById(id).addEventListener('change', renderCommunityFeed);
     });
     renderCommunityFeed();
+
+    // ===== 커뮤니티: [리뷰] / [나라별 인기템] 서브탭 + 공유 국가 선택 =====
+    let communitySelectedCountry = '이탈리아';
+
+    function isCommunityPopularTabActive() {
+      return !document.getElementById('communityPopularTab').classList.contains('hidden');
+    }
+
+    // 상단 공유 국가 선택이 바뀌면: 리뷰 탭 필터도 같은 나라로 맞추고, 인기템 탭이 보이는 중이면 바로 다시 그림
+    function setCommunitySharedCountry(country) {
+      communitySelectedCountry = country;
+      document.getElementById('communityCountryFilter').value = country;
+      renderCommunityFeed();
+      document.getElementById('popularStoreCountryLabel').textContent = country;
+      document.getElementById('popularItemsCountryLabel').textContent = country;
+      if (isCommunityPopularTabActive()) {
+        renderCommunityPopularTab(country);
+      }
+    }
+
+    document.getElementById('communitySharedCountrySelect').addEventListener('change', (e) => {
+      setCommunitySharedCountry(e.target.value);
+    });
+
+    document.querySelectorAll('.community-subtab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.community-subtab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const subtab = btn.dataset.subtab;
+        document.getElementById('communityReviewTab').classList.toggle('hidden', subtab !== 'review');
+        document.getElementById('communityPopularTab').classList.toggle('hidden', subtab !== 'popular');
+        if (subtab === 'popular') {
+          renderCommunityPopularTab(communitySelectedCountry);
+        }
+      });
+    });
+
+    // 국가 → 지도/매장 데이터가 있는 도시 별칭 (storeData/weatherData의 city 키와 연결)
+    const COMMUNITY_COUNTRY_CITY_ALIAS = { 이탈리아: `밀라노`, 일본: `도쿄`, 프랑스: `파리`, 태국: `방콕`, 한국: `판교` };
+    function getCommunityCityAlias(country) {
+      return COMMUNITY_COUNTRY_CITY_ALIAS[country] || null;
+    }
+
+    // '99 data/skintrip_나라별_인기템.csv' 원본 그대로 반영 (국가별 순위 1~3위)
+    const countryPopularItems = {
+      독일: [
+        { rank: 1, name: `도펠헤르츠 콜라겐`, category: `이너뷰티(건강기능식품)`, recommendRate: 58, priceRange: `15,000~25,000원`, desc: `독일 국민 건강기능식품 브랜드. 피부 탄력을 위한 콜라겐 보충제로 여행 기념 구매 1순위` },
+        { rank: 2, name: `이지치오 핸드크림`, category: `핸드크림`, recommendRate: 41, priceRange: `8,000~12,000원`, desc: `독일 약국(Apotheke) 스테디셀러 핸드크림, 저자극이라 여행 중 건조함 케어에 인기` },
+        { rank: 3, name: `니베아 크림(캔형, 독일판)`, category: `올인원 크림`, recommendRate: 37, priceRange: `5,000~8,000원`, desc: `독일 현지 한정 큰 사이즈 캔형이 가성비로 인기, 얼굴/바디 겸용` },
+      ],
+      일본: [
+        { rank: 1, name: `비오레 UV 아쿠아리치 워터리 에센스`, category: `선크림`, recommendRate: 72, priceRange: `8,000~10,000원`, desc: `끈적임·백탁 없이 수분크림처럼 가볍게 스며드는 선크림, 현지가가 한국보다 저렴` },
+        { rank: 2, name: `하다라보 고쿠쥰 로션`, category: `스킨/토너`, recommendRate: 55, priceRange: `6,000~9,000원`, desc: `히알루론산 고보습 라인으로 건조한 비행 후 피부에 즉각적인 수분감 채워줌` },
+        { rank: 3, name: `멘소래담 워터크림`, category: `수분크림`, recommendRate: 44, priceRange: `7,000~10,000원`, desc: `저자극 산뜻한 텍스처로 여름철 끈적임 없는 마무리감 인기` },
+      ],
+      미국: [
+        { rank: 1, name: `Farmacy 클렌징밤`, category: `클렌저`, recommendRate: 63, priceRange: `25,000~32,000원`, desc: `순한 성분에 클렌징력이 좋아 이중세안 첫 단계로 유명한 제품` },
+        { rank: 2, name: `CeraVe 모이스처라이징 크림`, category: `수분크림`, recommendRate: 68, priceRange: `18,000~24,000원`, desc: `피부과 추천 세라마이드 크림, 미국 드럭스토어 부동의 스테디셀러` },
+        { rank: 3, name: `The Ordinary 나이아신아마이드 세럼`, category: `세럼/앰플`, recommendRate: 51, priceRange: `10,000~14,000원`, desc: `가성비 좋은 미백/피지 컨트롤 세럼으로 SNS에서 꾸준히 언급됨` },
+      ],
+      이탈리아: [
+        { rank: 1, name: `산타마리아 노벨라 아쿠아 디 로즈(장미수)`, category: `미스트/토너`, recommendRate: 66, priceRange: `45,000~60,000원`, desc: `피렌체 수도원에서 유래한 전통 장미수, 진정 및 수분 공급용 미스트로 인기` },
+        { rank: 2, name: `콜리스타 크림`, category: `핸드/바디크림`, recommendRate: 39, priceRange: `12,000~18,000원`, desc: `이탈리아 약국(Farmacia) 스테디셀러, 저자극 보습 크림으로 여행객 사이 입소문` },
+        { rank: 3, name: `라 로슈포제 안텔리오스 선크림(EU판)`, category: `선크림`, recommendRate: 58, priceRange: `20,000~26,000원`, desc: `유럽 자외선 기준에 맞춘 고자차단 선크림, 현지 가격이 한국 대비 저렴` },
+      ],
+      프랑스: [
+        { rank: 1, name: `루센트 루미에르 쿠션`, category: `쿠션/베이스메이크업`, recommendRate: 47, priceRange: `35,000~42,000원`, desc: `은은한 광채 마무리로 유명한 프랑스 쿠션, 건조한 기후에도 밀착력 좋다는 평` },
+        { rank: 2, name: `니베아 프랑스판 마이크로셀라 세럼`, category: `세럼/앰플`, recommendRate: 42, priceRange: `20,000~28,000원`, desc: `프랑스 약국 화장품 라인 중 저자극 보습 세럼으로 여행객에게 인기` },
+        { rank: 3, name: `라보라토와르 A-더마 시카밤`, category: `진정크림`, recommendRate: 49, priceRange: `15,000~20,000원`, desc: `민감성 피부 진정 크림으로 유럽 약국 화장품 중 스테디셀러` },
+      ],
+      태국: [
+        { rank: 1, name: `Oxecure Dark Spot Clearing Potion`, category: `미백/잡티케어`, recommendRate: 45, priceRange: `15,000~20,000원`, desc: `태국 피부과 브랜드의 잡티 케어 앰플, 강한 자외선 노출 후 케어용으로 인기` },
+        { rank: 2, name: `스네일 화이트 크림`, category: `수분/미백크림`, recommendRate: 53, priceRange: `10,000~15,000원`, desc: `달팽이점액 성분의 진정+미백 크림, 태국 드럭스토어 대표 인기템` },
+        { rank: 3, name: `미스틴 선크림`, category: `선크림`, recommendRate: 61, priceRange: `8,000~12,000원`, desc: `가볍고 산뜻한 텍스처로 고온다습한 현지 기후에 최적화된 선크림` },
+      ],
+      호주: [
+        { rank: 1, name: `고트(Goat) 오리지널 핸드크림/비누`, category: `핸드크림/비누`, recommendRate: 56, priceRange: `10,000~15,000원`, desc: `염소유 성분의 저자극 핸드크림·비누로 건조한 호주 기후에 맞춘 인기템` },
+        { rank: 2, name: `라놀린 크림`, category: `보습크림`, recommendRate: 48, priceRange: `12,000~18,000원`, desc: `양모 유래 라놀린 성분의 고보습 크림, 호주 약국 스테디셀러` },
+        { rank: 3, name: `블리스텍스 립밤`, category: `립케어`, recommendRate: 39, priceRange: `5,000~8,000원`, desc: `건조하고 강한 자외선 환경에서 입술 보호용으로 여행객들이 많이 구매` },
+      ],
+      한국: [
+        { rank: 1, name: `넘버즈인(numbuzin) 판토텐산 스킨케어 라인`, category: `세럼/앰플`, recommendRate: 62, priceRange: `18,000~25,000원`, desc: `피부 장벽 강화에 특화된 국내 인기 스킨케어 라인, 여행 후 리커버리용으로도 언급됨` },
+        { rank: 2, name: `라운드랩 자작나무 수분크림`, category: `수분크림`, recommendRate: 57, priceRange: `18,000~22,000원`, desc: `약산성 포뮬러의 고보습 크림, 국내외 여행자 모두에게 꾸준히 인기` },
+        { rank: 3, name: `아누아 어성초 77 토너`, category: `스킨/토너`, recommendRate: 54, priceRange: `15,000~20,000원`, desc: `진정 성분 위주의 토너로 트러블 케어용으로 자주 언급되는 제품` },
+      ],
+      그리스: [
+        { rank: 1, name: `KORRES Greek Yoghurt Foaming Cream Cleanser`, category: `클렌저`, recommendRate: 50, priceRange: `18,000~24,000원`, desc: `그릭 요거트 성분의 순한 폼 클렌저, 그리스 대표 브랜드 코레스의 스테디셀러` },
+        { rank: 2, name: `KORRES 와일드로즈 비타민C 세럼`, category: `세럼/앰플`, recommendRate: 46, priceRange: `30,000~38,000원`, desc: `톤업 및 잡티케어 세럼으로 강한 지중해 자외선 케어용으로 인기` },
+        { rank: 3, name: `아포이보디 올리브오일 비누`, category: `바디케어`, recommendRate: 38, priceRange: `6,000~10,000원`, desc: `그리스산 올리브오일 성분의 천연 비누, 여행 기념품으로도 인기` },
+      ],
+    };
+
+    // 인기템 카테고리(느슨한 매칭)로 매장의 취급 제품과 비교해 "어디서 살 수 있어요" 매장을 찾음.
+    // 정확히 맞는 매장이 없으면 그 나라(도시) 매장 중 가장 가까운 곳을 대신 표시
+    function normalizeMatchTokens(str) {
+      return str
+        .replace(/\([^)]*\)/g, '')
+        .split('/')
+        .map((t) => t.replace(/\s+/g, ''))
+        .filter(Boolean);
+    }
+    function matchStoreForItem(item, stores) {
+      if (!stores || stores.length === 0) return null;
+      const tokens = normalizeMatchTokens(item.category);
+      const matched = stores.find((store) =>
+        store.products.some((p) => {
+          const pNorm = p.replace(/\s+/g, '');
+          return tokens.some((t) => pNorm.includes(t) || t.includes(pNorm));
+        })
+      );
+      if (matched) return matched;
+      return stores.slice().sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))[0];
+    }
+
+    // 나라별 인기템 탭 전용 지도 인스턴스 (홈 화면 지도와 분리)
+    let communityMapInstance = null;
+    let communityCityMarkers = [];
+    let communityCurrentStores = [];
+
+    function initCommunityMapIfNeeded() {
+      if (communityMapInstance) return;
+      const el = document.getElementById('communityPopularMapViz');
+      if (!el || typeof maplibregl === 'undefined') return;
+      communityMapInstance = new maplibregl.Map({
+        container: el,
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [20, 15],
+        zoom: 1.3,
+        attributionControl: false,
+      });
+      communityMapInstance.on('load', () => {
+        try {
+          communityMapInstance.setProjection({ type: 'globe' });
+        } catch (e) {
+          console.error('커뮤니티 지도 setProjection 오류:', e);
+        }
+      });
+    }
+
+    function clearCommunityMarkers() {
+      communityCityMarkers.forEach((m) => m.remove());
+      communityCityMarkers = [];
+    }
+
+    function renderCommunityPopularStoreList(cityKey, stores) {
+      const list = document.getElementById('communityPopularStoreList');
+      const empty = document.getElementById('communityPopularStoreEmpty');
+      if (!stores || stores.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      list.innerHTML = stores.map((store, i) => `
+        <button type="button" class="community-popular-store-item w-full flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 text-left" data-index="${i}">
+          <div class="w-10 h-10 rounded-xl ${getCategoryStyle(store.category)} flex items-center justify-center text-lg shrink-0">🏬</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold truncate">${store.name}</p>
+            <p class="text-xs text-gray-400 truncate">${store.category} · ${store.products.join(', ')}</p>
+          </div>
+          <p class="text-xs text-gray-500 shrink-0">${store.distance}</p>
+        </button>
+      `).join('');
+      list.querySelectorAll('.community-popular-store-item').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const store = communityCurrentStores[Number(btn.dataset.index)];
+          if (!store) return;
+          if (communityMapInstance) {
+            communityMapInstance.flyTo({ center: [store.lng, store.lat], zoom: 15, duration: 1000, essential: true });
+            if (store.marker) store.marker.togglePopup();
+          }
+          highlightPopularItemsForStore(store.name);
+        });
+      });
+    }
+
+    // 지도 마커/리스트 클릭 시 그 매장에서 살 수 있는 인기템으로 스크롤 + 잠깐 강조
+    function highlightPopularItemsForStore(storeName) {
+      const cards = document.querySelectorAll(`#communityPopularItemsList .popular-item-card[data-store-name="${CSS.escape(storeName)}"]`);
+      if (cards.length === 0) return;
+      cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cards.forEach((card) => {
+        card.classList.remove('popular-item-flash');
+        void card.offsetWidth;
+        card.classList.add('popular-item-flash');
+      });
+    }
+
+    function renderCommunityStoreMarkers(cityKey, weather) {
+      clearCommunityMarkers();
+      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const baseStores = storeData[storeKey] || [];
+      const offsets = [
+        [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
+      ];
+      communityCurrentStores = baseStores.map((store, i) => {
+        const off = offsets[i % offsets.length];
+        return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
+      });
+      communityCurrentStores.forEach((store) => {
+        const popup = new maplibregl.Popup({ offset: 18, closeButton: false, className: 'store-popup' }).setHTML(`
+          <div style="min-width:140px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
+              <p style="font-weight:700;font-size:12px;color:#111827;">${store.name}</p>
+              <span style="font-size:10px;color:#9ca3af;white-space:nowrap;">${store.distance}</span>
+            </div>
+            <span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:9999px;background:#ffedd5;color:#c2410c;font-weight:600;">${store.category}</span>
+          </div>
+        `);
+        const el = document.createElement('div');
+        el.className = 'store-marker';
+        el.addEventListener('click', () => highlightPopularItemsForStore(store.name));
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([store.lng, store.lat])
+          .setPopup(popup)
+          .addTo(communityMapInstance);
+        store.marker = marker;
+        communityCityMarkers.push(marker);
+      });
+      renderCommunityPopularStoreList(cityKey, communityCurrentStores);
+    }
+
+    function renderCommunityPopularItems(country) {
+      const container = document.getElementById('communityPopularItemsList');
+      const empty = document.getElementById('communityPopularItemsEmpty');
+      const items = countryPopularItems[country];
+      container.innerHTML = '';
+      if (!items || items.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      items.forEach((item) => {
+        const store = matchStoreForItem(item, communityCurrentStores);
+        const card = document.createElement('div');
+        card.className = `popular-item-card bg-white border rounded-2xl p-4 ${item.rank === 1 ? 'rank-1 border-brand-500' : 'border-gray-100'}`;
+        if (store) card.dataset.storeName = store.name;
+        card.innerHTML = `
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold ${item.rank === 1 ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-500'} rounded-full w-5 h-5 flex items-center justify-center shrink-0">${item.rank}</span>
+            <p class="text-sm font-bold flex-1 min-w-0 truncate">${item.name}</p>
+            <span class="text-xs font-semibold text-brand-600 shrink-0">${item.recommendRate}% 추천</span>
+          </div>
+          <p class="text-xs text-gray-400 mb-1">${item.category} · ${item.priceRange}</p>
+          <p class="text-xs text-gray-600 leading-relaxed mb-2">${item.desc}</p>
+          ${store ? `<span class="inline-block text-[11px] font-semibold text-brand-600 bg-brand-50 rounded-full px-2.5 py-1">🛍️ ${store.name}에서 판매</span>` : ''}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 지도→매장 렌더링이 끝난 뒤에 인기템을 그려야 매장 매칭 칩이 정확해짐 (moveend 콜백에서 이어서 호출)
+    function renderCommunityPopularTab(country) {
+      document.getElementById('popularStoreCountryLabel').textContent = country;
+      document.getElementById('popularItemsCountryLabel').textContent = country;
+
+      const cityKey = getCommunityCityAlias(country);
+      const weather = cityKey ? weatherData[cityKey] : null;
+
+      if (!weather || weather.lat == null) {
+        clearCommunityMarkers();
+        communityCurrentStores = [];
+        document.getElementById('communityPopularStoreList').innerHTML = '';
+        document.getElementById('communityPopularStoreEmpty').classList.remove('hidden');
+        if (communityMapInstance) {
+          communityMapInstance.flyTo({ center: [20, 15], zoom: 1.3, duration: 800 });
+        }
+        renderCommunityPopularItems(country);
+        return;
+      }
+
+      initCommunityMapIfNeeded();
+      if (!communityMapInstance) {
+        renderCommunityPopularItems(country);
+        return;
+      }
+      requestAnimationFrame(() => communityMapInstance.resize());
+      communityMapInstance.flyTo({ center: [weather.lng, weather.lat], zoom: 12, duration: 1200, essential: true });
+      communityMapInstance.once('moveend', () => {
+        renderCommunityStoreMarkers(cityKey, weather);
+        renderCommunityPopularItems(country);
+      });
+    }
 
     // 개인설정 탭에 등록된 내 정보를 요약해서 보여줌
     // 닉네임이 있으면 닉네임으로, 없으면 이름으로 사용자를 부름
