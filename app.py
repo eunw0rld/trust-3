@@ -614,6 +614,78 @@ HTML_PAGE = """<!DOCTYPE html>
   .skin-scan-fade.skin-scan-fade-in {
     opacity: 1;
   }
+  /* 스캔 중: 마지막날 사진을 반투명하게 오가게(왕복) 해서 1일차 사진과 겹쳐 비쳐 보이게 함.
+     min/max 투명도(0.45~0.65)와 왕복 여부는 초기값 — 필요시 숫자만 조정 */
+  .skin-scan-fade.skin-scan-overlay-active {
+    animation: skinScanOverlayPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes skinScanOverlayPulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.65; }
+  }
+  /* 스캔이 끝나갈 무렵 다시 또렷하게(불투명) 정리 */
+  .skin-scan-fade.skin-scan-settle {
+    animation: none;
+    opacity: 1;
+  }
+
+  /* ===== 정교한 얼굴 스캔 모션: 격자 + 스캔 라인(잔상) + 코너 프레임 =====
+     모두 skinScanMeshOverlay 안에서 같이 켜지고 꺼짐(기존 mesh 노드/삼각망과 레이어로 겹침) */
+
+  /* 은은한 스캔 격자: 영역별로 훑는 느낌만 주는 용도라 아주 옅게(opacity) 처리 */
+  .skin-scan-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(103, 232, 249, 0.5) 0, rgba(103, 232, 249, 0.5) 1px, transparent 1px, transparent 12.5%),
+      repeating-linear-gradient(90deg, rgba(103, 232, 249, 0.5) 0, rgba(103, 232, 249, 0.5) 1px, transparent 1px, transparent 12.5%);
+    opacity: 0.18;
+    animation: skinScanGridPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes skinScanGridPulse {
+    0%, 100% { opacity: 0.12; }
+    50% { opacity: 0.26; }
+  }
+
+  /* 가로 스캔 라인: brand(주황) 글로우, 위→아래→위로 왕복. 뒤에 옅고 흐릿한 잔상 한 겹을 살짝
+     지연시켜 겹쳐두면 "trail" 느낌이 남 (트레일 전용 레이어: .skin-scan-sweep-trail) */
+  .skin-scan-sweep,
+  .skin-scan-sweep-trail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -22%;
+    height: 22%;
+    background: linear-gradient(180deg, rgba(249, 115, 22, 0) 0%, rgba(249, 115, 22, 0.7) 50%, rgba(249, 115, 22, 0) 100%);
+    animation: skinScanSweepMove 2.2s ease-in-out infinite;
+  }
+  .skin-scan-sweep {
+    filter: blur(1.5px);
+    box-shadow: 0 0 14px 4px rgba(249, 115, 22, 0.55);
+  }
+  .skin-scan-sweep-trail {
+    filter: blur(6px);
+    opacity: 0.5;
+    animation-delay: 160ms; /* 본 라인보다 살짝 늦게 따라와 잔상처럼 보임 */
+  }
+  @keyframes skinScanSweepMove {
+    0% { top: -22%; }
+    50% { top: 100%; }
+    100% { top: -22%; }
+  }
+
+  /* 카메라 초점 코너 마커: 4모서리에 ㄱ자 브래킷을 둬 "스캐닝 중" 인상을 강화 */
+  .skin-scan-corner {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #67e8f9;
+    opacity: 0.85;
+  }
+  .skin-scan-corner-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+  .skin-scan-corner-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+  .skin-scan-corner-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+  .skin-scan-corner-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
   /* 스캔 연출이 끝나고 결과 카드가 나타날 때 부드럽게 페이드인 */
   @keyframes skinFadeIn {
     from { opacity: 0; transform: translateY(4px); }
@@ -1351,14 +1423,24 @@ HTML_PAGE = """<!DOCTYPE html>
       <!-- 피부 변화 리포트 흐름: 사진 입력 → 분석 연출(신규) → 분석 결과.
            두 사진이 모두 등록되면 이 화면으로 전환해 약 5초간 스캔 연출을 재생한 뒤 결과로 넘어감 -->
       <section id="screen-skin-scan" class="hidden py-6 flex flex-col items-center justify-center" style="min-height: 60vh;">
+        <!-- overflow-hidden으로 감싸 아래 스캔 라인 등의 연출이 사진 영역 밖으로 넘치지 않게 클리핑 -->
         <div class="relative w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-lg bg-gray-100">
           <img id="skinScanDay1Image" class="skin-scan-fade absolute inset-0 w-full h-full object-cover" alt="1일차 사진" />
           <img id="skinScanDay2Image" class="skin-scan-fade absolute inset-0 w-full h-full object-cover" alt="마지막날 사진" />
+          <!-- 스캔 연출 스택: 격자 → 얼굴 mesh(노드+삼각망) → 스캔 라인(잔상 포함) 순으로 겹쳐 쌓음 -->
           <div id="skinScanMeshOverlay" class="hidden absolute inset-0 skin-scan-overlay">
+            <div class="skin-scan-grid"></div>
             <div class="skin-scan-mesh-mount"></div>
+            <div class="skin-scan-sweep-trail"></div>
+            <div class="skin-scan-sweep"></div>
+            <span class="skin-scan-corner skin-scan-corner-tl"></span>
+            <span class="skin-scan-corner skin-scan-corner-tr"></span>
+            <span class="skin-scan-corner skin-scan-corner-bl"></span>
+            <span class="skin-scan-corner skin-scan-corner-br"></span>
           </div>
         </div>
         <p class="text-sm text-gray-500 mt-6">피부를 분석하고 있어요<span class="skin-scan-dots"><span></span><span></span><span></span></span></p>
+        <p id="skinScanStatusText" class="text-xs text-brand-500 font-semibold mt-1">&nbsp;</p>
         <div class="skin-scan-progress mt-3"><div id="skinScanProgressBar" class="skin-scan-progress-bar"></div></div>
       </section>
 
@@ -2145,12 +2227,30 @@ HTML_PAGE = """<!DOCTYPE html>
     // 분석 완료된 점수 보관 (사후케어 화면에서 재계산 없이 그대로 사용): { hydration, redness, oiliness, blemishCount }
     const skinPhotoScores = { start: null, end: null };
     let skinScanTimers = []; // 분석 연출 페이지에서 예약된 모든 타이머(단계 전환용) 핸들 모음
+    let skinScanStatusIntervalId = null; // "수분 분석 중…" 등 문구 로테이션 인터벌 핸들
 
-    // 예약된 스캔 연출 타이머를 전부 취소. 뒤로가기/다른 탭 이동/사진 재등록 시 호출해
-    // 메모리 누수나 엉뚱한 시점의 화면 전환·카드 갱신을 막음
+    // 예약된 스캔 연출 타이머(+ 문구 로테이션 인터벌)를 전부 취소. 뒤로가기/다른 탭 이동/사진 재등록 시
+    // 호출해 메모리 누수나 엉뚱한 시점의 화면 전환·카드 갱신을 막음
     function clearSkinScanTimers() {
       skinScanTimers.forEach((id) => clearTimeout(id));
       skinScanTimers = [];
+      if (skinScanStatusIntervalId) {
+        clearInterval(skinScanStatusIntervalId);
+        skinScanStatusIntervalId = null;
+      }
+    }
+
+    // 스캔 중 "수분 분석 중…" 같은 짧은 문구를 0.7초 간격으로 순환 표시 (과하지 않게 항목명만 교체)
+    const SKIN_SCAN_STATUS_MESSAGES = ['수분 분석 중…', '톤 분석 중…', '유분 확인 중…', '트러블 확인 중…'];
+    const SKIN_SCAN_STATUS_INTERVAL_MS = 700;
+    function startSkinScanStatusRotation() {
+      const el = document.getElementById('skinScanStatusText');
+      let idx = 0;
+      el.textContent = SKIN_SCAN_STATUS_MESSAGES[idx];
+      skinScanStatusIntervalId = setInterval(() => {
+        idx = (idx + 1) % SKIN_SCAN_STATUS_MESSAGES.length;
+        el.textContent = SKIN_SCAN_STATUS_MESSAGES[idx];
+      }, SKIN_SCAN_STATUS_INTERVAL_MS);
     }
 
     // ===== 얼굴 랜드마크 mesh 스캔 연출 (SVG) =====
@@ -2495,15 +2595,17 @@ HTML_PAGE = """<!DOCTYPE html>
       beginSkinScan(startScores, endScores);
     }
 
-    // 사진 두 장 위에 스캔 라인 오버레이 + "분석 중" 상태를 3초간 보여준 뒤 결과 카드를 드러냄.
+    // 사진 두 장 위에 스캔 연출(반투명 오버레이 + 격자/mesh/스캔라인/코너)을 재생한 뒤 결과 카드를 드러냄.
     // 이미 결과가 표시된 상태에서 사진을 다시 등록해도 이 함수가 다시 호출되므로 스캔 연출부터 재생됨
-    // 분석 연출 페이지 타이밍 상수 (필요시 조절)
+    // 분석 연출 페이지 타이밍 상수 (필요시 조절) — 분석 로직·결과 렌더링과 무관, 연출 타이밍만 담당
     const SCAN_DURATION_MS = 5000; // 연출 페이지 진입 ~ 결과 페이지 전환까지 총 시간
-    const SCAN_DAY1_HOLD_MS = 1200; // 1일차 사진이 혼자 보이는 시간(이후 마지막날 사진이 오버레이됨)
+    const SCAN_DAY1_HOLD_MS = 1200; // 1일차 사진이 혼자 보이는 시간(이후 마지막날 사진이 반투명하게 오버레이됨)
+    const SCAN_SETTLE_MS = 600; // 결과 전환 직전, 반투명 오버레이를 다시 또렷하게 정리하는 시간
 
-    // 두 사진이 모두 등록되면 "분석 연출 페이지"로 전환해 1일차 사진 페이드인 → 마지막날 사진
-    // 크로스페이드 오버레이 → 얼굴 mesh 스캔을 재생한 뒤, 총 SCAN_DURATION_MS 후 결과 페이지로 전환.
-    // 실제 분석(analyzeSkinPhoto)은 이미 끝난 상태이므로 이 함수는 순전히 연출/타이밍만 담당.
+    // 두 사진이 모두 등록되면 "분석 연출 페이지"로 전환해 1일차 사진 페이드인 → 마지막날 사진가
+    // 반투명하게 겹쳐(비교 느낌) 오버레이 → 격자/얼굴 mesh/스캔 라인/코너 프레임 스캔 연출 →
+    // 종료 직전 또렷하게 정리 → 결과 페이지로 전환. 실제 분석(analyzeSkinPhoto)은 이미 끝난 상태이므로
+    // 이 함수는 순전히 연출/타이밍만 담당.
     function beginSkinScan(startScores, endScores) {
       clearSkinScanTimers(); // 이미 결과가 표시된 상태에서 사진을 다시 등록해도 처음부터 재생되도록 기존 타이머 정리
 
@@ -2515,8 +2617,9 @@ HTML_PAGE = """<!DOCTYPE html>
       day1El.src = skinPhotoImages.start.src;
       day2El.src = skinPhotoImages.end.src;
       day1El.classList.remove('skin-scan-fade-in');
-      day2El.classList.remove('skin-scan-fade-in');
+      day2El.classList.remove('skin-scan-fade-in', 'skin-scan-overlay-active', 'skin-scan-settle');
       meshOverlay.classList.add('hidden');
+      document.getElementById('skinScanStatusText').textContent = ' ';
       progressBar.style.setProperty('--scan-duration', `${SCAN_DURATION_MS}ms`);
       // 진행바 애니메이션을 처음부터 다시 재생하기 위해 강제로 리플로우시켜 재시작을 보장
       progressBar.style.animation = 'none';
@@ -2530,9 +2633,17 @@ HTML_PAGE = """<!DOCTYPE html>
       }, 30));
 
       skinScanTimers.push(setTimeout(() => {
-        day2El.classList.add('skin-scan-fade-in'); // 1일차 사진 위에 마지막날 사진이 크로스페이드로 오버레이
-        meshOverlay.classList.remove('hidden'); // 두 사진이 겹친 상태에서 mesh 스캔 시작
+        // 1일차 사진 위에 마지막날 사진을 반투명하게 오버레이(왕복 pulse)해 두 시점이 겹쳐 비쳐 보이게 함
+        day2El.classList.add('skin-scan-overlay-active');
+        meshOverlay.classList.remove('hidden'); // 격자 + mesh + 스캔라인 + 코너 프레임 스캔 연출 시작
+        startSkinScanStatusRotation();
       }, SCAN_DAY1_HOLD_MS));
+
+      skinScanTimers.push(setTimeout(() => {
+        // 결과로 넘어가기 직전, 반투명 왕복을 멈추고 마지막날 사진을 다시 또렷하게 정리
+        day2El.classList.remove('skin-scan-overlay-active');
+        day2El.classList.add('skin-scan-settle');
+      }, SCAN_DURATION_MS - SCAN_SETTLE_MS));
 
       skinScanTimers.push(setTimeout(() => {
         switchTab('skinReport');
