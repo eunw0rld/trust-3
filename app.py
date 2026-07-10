@@ -36,6 +36,8 @@ POUCH_IMG_EYEPALETTE = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_06.p
 POUCH_IMG_BROW = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_07.png", "image/png")
 POUCH_IMG_SERUM = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_08.png", "image/png")
 POUCH_IMG_HIGHLIGHTER = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_09.png", "image/png")
+# 등록하기 바구니 애니메이션의 배경으로 쓰는 실제 파우치 사진
+POUCH_BASKET_PHOTO_URI = _data_uri(Path(__file__).parent / "파우치 사진.png", "image/png")
 
 st.markdown(
     """
@@ -581,33 +583,18 @@ HTML_PAGE = """<!DOCTYPE html>
   .pouch-basket-stage {
     position: relative;
     width: 300px;
-    height: 440px;
+    height: 480px;
     margin: 0 auto;
   }
-  /* 핑크 와이어 바구니를 위에서 내려다본 듯한 느낌으로 표현 (그라디언트+교차 해칭+인셋 셰도우) */
+  /* 실제 파우치 사진(위에서 내려다본 모습)을 배경으로 사용 */
   .pouch-basket {
     position: absolute;
     inset: 0;
     border-radius: 40px / 46px;
-    background:
-      repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.55) 0 2px, transparent 2px 14px),
-      repeating-linear-gradient(25deg, rgba(255, 255, 255, 0.32) 0 2px, transparent 2px 14px),
-      linear-gradient(160deg, #fbb6ce 0%, #f472a0 55%, #ec5f96 100%);
-    box-shadow:
-      inset 0 18px 30px rgba(255, 255, 255, 0.55),
-      inset 0 -24px 36px rgba(190, 24, 93, 0.35),
-      0 18px 30px rgba(190, 24, 93, 0.25);
-    border: 3px solid #f9a8c9;
-  }
-  .pouch-basket::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 6%;
-    right: 6%;
-    height: 38px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+    background-image: url('__POUCH_BASKET_PHOTO__');
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 18px 30px rgba(190, 24, 93, 0.2);
   }
   .pouch-basket-items {
     position: absolute;
@@ -718,10 +705,9 @@ HTML_PAGE = """<!DOCTYPE html>
     border: 2px solid #ffffff;
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.9);
   }
-  /* 실제 제품 사진이 있는 경우 일러스트 대신 사진을 그대로 보여줌 (등록하기 바구니 애니메이션) */
+  /* 실제 제품 사진이 있는 경우 일러스트 대신 사진을 그대로, 라벨 없이 크게 보여줌 (등록하기 바구니 애니메이션).
+     너비/높이는 제품별로 buildPouchItemEl에서 인라인으로 지정 */
   .pouch-item-photo {
-    width: 62px;
-    height: 86px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2869,17 +2855,18 @@ HTML_PAGE = """<!DOCTYPE html>
       cream: 'bottle', emulsion: 'bottle', sunscreen: 'tube', cushion: 'cushion',
       eye: 'palette-pink', shading: 'palette-brown', lip: 'lip', highlighter: 'highlighter',
     };
-    // 바구니 안에서 각 제품이 자리잡는 위치(위에서 내려다본 배치, 최대 9개가 가득 차 보이게)
+    // 바구니 안에서 각 제품이 자리잡는 위치/크기 (위에서 내려다본 감각적인 플랫레이 배치,
+    // pouchScanProducts와 같은 순서: 토너/세럼/선크림/쿠션/아이팔레트/컨투어/틴트/브로우/하이라이터 기준으로 손으로 배치)
     const POUCH_SLOTS = [
-      { top: 6, left: 8, rot: -8 },
-      { top: 0, left: 68, rot: 5 },
-      { top: 4, left: 132, rot: 11 },
-      { top: 30, left: 184, rot: -6 },
-      { top: 130, left: 12, rot: 6 },
-      { top: 112, left: 96, rot: -7 },
-      { top: 148, left: 170, rot: 9 },
-      { top: 268, left: 40, rot: -14 },
-      { top: 246, left: 150, rot: 5 },
+      { top: 10, left: 20, rot: -8, w: 68, h: 130 },
+      { top: -5, left: 100, rot: 4, w: 74, h: 145 },
+      { top: 15, left: 195, rot: 10, w: 54, h: 140 },
+      { top: 240, left: 195, rot: -10, w: 92, h: 92 },
+      { top: 255, left: 15, rot: -6, w: 120, h: 85 },
+      { top: 165, left: 95, rot: 8, w: 88, h: 115 },
+      { top: 110, left: 215, rot: 22, w: 48, h: 110 },
+      { top: 130, left: 45, rot: -22, w: 34, h: 130 },
+      { top: 285, left: 105, rot: 6, w: 85, h: 85 },
     ];
     // 각 제품이 바구니 밖 어느 방향에서 날아들어오는지(연출용 시작 위치/각도)
     const POUCH_FROM = [
@@ -2902,42 +2889,58 @@ HTML_PAGE = """<!DOCTYPE html>
       const slot = POUCH_SLOTS[index % POUCH_SLOTS.length];
       const from = POUCH_FROM[index % POUCH_FROM.length];
       const el = document.createElement('div');
-      // 실제 제품 사진이 매핑되어 있으면 일러스트 모양 대신 사진을 그대로 사용
+      // 실제 제품 사진이 매핑되어 있으면 일러스트 모양 대신 사진을 그대로, 이름 라벨 없이 크게 보여줌
       el.className = visual.img ? 'pouch-item pouch-item-photo' : `pouch-item pouch-shape-${visual.shape}`;
       el.style.top = `${slot.top}px`;
       el.style.left = `${slot.left}px`;
+      if (visual.img) {
+        el.style.width = `${slot.w}px`;
+        el.style.height = `${slot.h}px`;
+      }
       el.style.setProperty('--rot', `${slot.rot}deg`);
       el.style.setProperty('--from-x', `${from.x}px`);
       el.style.setProperty('--from-y', `${from.y}px`);
       el.style.setProperty('--from-rot', `${from.r}deg`);
       el.style.setProperty('--delay', `${index * 0.18}s`);
       el.innerHTML = visual.img
-        ? `<img src="${visual.img}" alt="${product.name}" /><span class="pouch-item-label">${visual.label}</span>`
+        ? `<img src="${visual.img}" alt="${product.name}" />`
         : `<span class="pouch-item-label">${visual.label}</span>`;
       return el;
     }
+
+    let pouchBasketAutoCloseTimer = null;
 
     function openPouchBasketModal() {
       const myProducts = getMyProducts();
       const products = myProducts.length > 0 ? myProducts : pouchScanProducts;
       const itemsEl = document.getElementById('pouchBasketItems');
       itemsEl.innerHTML = '';
-      products.slice(0, POUCH_SLOTS.length).forEach((product, index) => {
+      const shown = products.slice(0, POUCH_SLOTS.length);
+      shown.forEach((product, index) => {
         itemsEl.appendChild(buildPouchItemEl(product, index));
       });
       document.getElementById('pouchBasketModal').classList.remove('hidden');
+
+      // 마지막 제품이 바구니에 담기는 연출이 끝나면 잠깐 보여준 뒤 바로 홈 화면으로 복귀
+      const flyInTotalMs = (shown.length - 1) * 180 + 650;
+      clearTimeout(pouchBasketAutoCloseTimer);
+      pouchBasketAutoCloseTimer = setTimeout(closePouchBasketModal, flyInTotalMs + 600);
+    }
+
+    function closePouchBasketModal() {
+      clearTimeout(pouchBasketAutoCloseTimer);
+      document.getElementById('pouchBasketModal').classList.add('hidden');
+      // 등록이 끝났으니 파우치 섹션은 접어서 등록된 화장품 카드 그리드로 보여주고, 바로 홈 화면으로 복귀
+      pouchCaptureForceOpen = false;
+      updatePouchSectionView();
+      switchTab('inuse');
     }
 
     document.getElementById('pouchRegisterBtn').addEventListener('click', () => {
       openPouchBasketModal();
     });
 
-    document.getElementById('pouchBasketCloseBtn').addEventListener('click', () => {
-      document.getElementById('pouchBasketModal').classList.add('hidden');
-      // 등록이 끝났으니 파우치 섹션은 접어서 등록된 화장품 카드 그리드로 보여줌
-      pouchCaptureForceOpen = false;
-      updatePouchSectionView();
-    });
+    document.getElementById('pouchBasketCloseBtn').addEventListener('click', closePouchBasketModal);
 
     // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
     const importBanData = {
@@ -4131,6 +4134,7 @@ HTML_PAGE = (
     .replace("__POUCH_IMG_TINT__", POUCH_IMG_TINT)
     .replace("__POUCH_IMG_BROW__", POUCH_IMG_BROW)
     .replace("__POUCH_IMG_HIGHLIGHTER__", POUCH_IMG_HIGHLIGHTER)
+    .replace("__POUCH_BASKET_PHOTO__", POUCH_BASKET_PHOTO_URI)
 )
 
 components.html(HTML_PAGE, height=852, scrolling=True)
