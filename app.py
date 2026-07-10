@@ -36,8 +36,6 @@ POUCH_IMG_EYEPALETTE = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_06.p
 POUCH_IMG_BROW = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_07.png", "image/png")
 POUCH_IMG_SERUM = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_08.png", "image/png")
 POUCH_IMG_HIGHLIGHTER = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_09.png", "image/png")
-# 등록하기 바구니 애니메이션의 배경으로 쓰는 실제 파우치 사진
-POUCH_BASKET_PHOTO_URI = _data_uri(Path(__file__).parent / "파우치 사진.png", "image/png")
 
 st.markdown(
     """
@@ -582,23 +580,35 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .pouch-basket-stage {
     position: relative;
-    width: 300px;
+    width: 345px;
     height: 480px;
     margin: 0 auto;
   }
-  /* 실제 파우치 사진(위에서 내려다본 모습)을 배경으로 사용 */
+  /* 실제 사진 대신 핑크 벨벳 파우치 + 체크(깅엄) 안감을 CSS로 표현
+     (사진 에셋은 배경 제거가 깨져 회색 격자가 그대로 보이는 문제가 있어 제외) */
   .pouch-basket {
     position: absolute;
     inset: 0;
     border-radius: 40px / 46px;
-    background-image: url('__POUCH_BASKET_PHOTO__');
-    background-size: cover;
-    background-position: center;
-    box-shadow: 0 18px 30px rgba(190, 24, 93, 0.2);
+    background: linear-gradient(160deg, #f7a8c8 0%, #ef82ab 100%);
+    box-shadow: 0 18px 30px rgba(190, 24, 93, 0.22);
+  }
+  .pouch-basket::before {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border-radius: 26px / 30px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0 7px, transparent 7px 26px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.8) 0 7px, transparent 7px 26px),
+      #f6b0cc;
+    box-shadow:
+      inset 0 4px 12px rgba(190, 24, 93, 0.3),
+      inset 0 -2px 6px rgba(255, 255, 255, 0.5);
   }
   .pouch-basket-items {
     position: absolute;
-    inset: 16px 12px 12px 12px;
+    inset: 16px;
     z-index: 2;
   }
   .pouch-item {
@@ -1154,14 +1164,13 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 실제 카메라 촬영 화면(getUserMedia)이 열림.
-               카메라 권한이 없거나 지원하지 않는 환경에서는 숨겨진 file input(capture="user")으로 자동 대체됨 -->
+          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 기기의 사진 파일 선택창(file input)이 열림 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
               <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-28 flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
                 <img id="skinPhotoStartPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
                 <div id="skinPhotoStartPlaceholder" class="flex flex-col items-center gap-1">
-                  <span class="text-xl">📷</span>
+                  <span class="text-xl">🖼️</span>
                   <span class="text-xs">1일차 사진</span>
                 </div>
                 <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
@@ -1169,14 +1178,14 @@ HTML_PAGE = """<!DOCTYPE html>
                   <div class="skin-scan-line"></div>
                 </div>
               </button>
-              <input id="skinPhotoStartInput" type="file" accept="image/*" capture="user" class="hidden" />
+              <input id="skinPhotoStartInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
             <div>
               <button type="button" id="skinPhotoEndBox" class="relative overflow-hidden block w-full border-2 border-brand-500 rounded-xl h-28 flex flex-col items-center justify-center text-brand-500 gap-1 cursor-pointer">
                 <img id="skinPhotoEndPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
                 <div id="skinPhotoEndPlaceholder" class="flex flex-col items-center gap-1">
-                  <span class="text-xl">📷</span>
+                  <span class="text-xl">🖼️</span>
                   <span class="text-xs">마지막날 사진</span>
                 </div>
                 <!-- 분석 스캔 연출: 두 사진이 모두 등록된 직후 3초간만 표시 -->
@@ -1184,11 +1193,11 @@ HTML_PAGE = """<!DOCTYPE html>
                   <div class="skin-scan-line"></div>
                 </div>
               </button>
-              <input id="skinPhotoEndInput" type="file" accept="image/*" capture="user" class="hidden" />
+              <input id="skinPhotoEndInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
             </div>
           </div>
-          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요</p>
+          <p id="skinPhotoHint" class="text-xs text-gray-400 mt-1">→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요</p>
         </div>
 
         <!-- 항목별 변화 -->
@@ -1271,8 +1280,8 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 종합 요약 -->
-        <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4">
+        <!-- 종합 요약: 사진이 모두 등록되어 분석이 끝나기 전에는 숨김 (항목별 카드와 함께 노출) -->
+        <div id="skinReportSummaryBox" class="hidden bg-brand-50 border border-brand-100 rounded-2xl p-4">
           <p id="skinReportSummary" class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
         </div>
 
@@ -1316,6 +1325,15 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
           <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">※ 참고용 추천이며 실제 피부 고민은 전문가 상담을 권장해요.</p>
+        </div>
+
+        <!-- 배달의뷰티 서비스 종료 안내 팝업: 사후케어 화면에 들어올 때마다 노출 -->
+        <div id="deliveryBeautyEndModal" class="hidden absolute inset-0 z-50 bg-black/40 px-6 flex items-center justify-center">
+          <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
+            <p class="text-base font-bold mb-3">배달의뷰티 서비스 종료 안내</p>
+            <p class="text-sm text-gray-500 leading-relaxed mb-5">그동안 배달의뷰티를 이용해 주셔서 진심으로 감사드립니다.<br /><br />배달의뷰티 서비스는 종료되었으며, 앞으로는 2개 플랫폼에서 다양한 뷰티 상품을 계속 만나보실 수 있습니다. 감사합니다.</p>
+            <button id="deliveryBeautyEndCloseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">확인했어요</button>
+          </div>
         </div>
 
       </section>
@@ -1470,16 +1488,6 @@ HTML_PAGE = """<!DOCTYPE html>
           <span class="flex-1 text-left text-sm font-semibold">프로필 설정</span>
           <span class="text-gray-300">›</span>
         </button>
-      </div>
-    </div>
-
-    <!-- 피부 변화 리포트: 실제 카메라 촬영 화면 (getUserMedia 라이브 프리뷰 + 셔터) -->
-    <div id="skinCameraModal" class="hidden absolute inset-0 z-[60] bg-black flex flex-col">
-      <video id="skinCameraVideo" autoplay playsinline muted class="flex-1 w-full object-cover"></video>
-      <div class="p-5 flex items-center justify-between bg-black">
-        <button id="skinCameraCancelBtn" type="button" class="text-white text-sm font-semibold px-2">취소</button>
-        <button id="skinCameraShutterBtn" type="button" class="w-14 h-14 rounded-full bg-white border-4 border-gray-400" aria-label="촬영"></button>
-        <span class="w-10"></span>
       </div>
     </div>
 
@@ -2222,7 +2230,7 @@ HTML_PAGE = """<!DOCTYPE html>
       } else if (count === 1) {
         hintEl.textContent = '나머지 한 장을 더 등록해 주세요';
       } else {
-        hintEl.textContent = '→ 카메라 아이콘을 누르면 촬영 후 AI가 두 사진을 비교해 분석해드려요';
+        hintEl.textContent = '→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요';
       }
     }
 
@@ -2248,52 +2256,13 @@ HTML_PAGE = """<!DOCTYPE html>
       loadSkinPhoto('end', e.target.files[0]);
     });
 
-    // ===== 실제 카메라 촬영 (getUserMedia 라이브 프리뷰 + 셔터) =====
-    // 카메라 아이콘 박스를 탭하면 이 모달이 열려 실시간 카메라 화면을 보여줌.
-    // getUserMedia를 지원하지 않거나(구형 브라우저) 권한이 거부된 경우에는
-    // 숨겨진 file input(capture="user")을 대신 열어 OS 카메라/갤러리로 자연스럽게 대체됨
-    let skinCameraStream = null;
-    let skinCameraTargetKind = null; // 현재 촬영 대상: 'start' | 'end'
-
-    async function openSkinCamera(kind) {
-      skinCameraTargetKind = kind;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
-        return;
-      }
-      try {
-        skinCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        document.getElementById('skinCameraVideo').srcObject = skinCameraStream;
-        document.getElementById('skinCameraModal').classList.remove('hidden');
-      } catch (err) {
-        console.error('카메라 접근 실패, 파일 선택으로 대체합니다:', err);
-        document.getElementById(kind === 'start' ? 'skinPhotoStartInput' : 'skinPhotoEndInput').click();
-      }
-    }
-
-    function closeSkinCamera() {
-      if (skinCameraStream) {
-        skinCameraStream.getTracks().forEach((track) => track.stop());
-        skinCameraStream = null;
-      }
-      document.getElementById('skinCameraModal').classList.add('hidden');
-    }
-
-    // 셔터 탭: 현재 비디오 프레임을 캔버스에 그려 이미지로 캡처 → 기존 미리보기/분석 파이프라인으로 전달
-    function captureSkinPhoto() {
-      const video = document.getElementById('skinCameraVideo');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || SKIN_ANALYSIS_SIZE;
-      canvas.height = video.videoHeight || SKIN_ANALYSIS_SIZE;
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      applySkinPhoto(skinCameraTargetKind, canvas.toDataURL('image/png'));
-      closeSkinCamera();
-    }
-
-    document.getElementById('skinPhotoStartBox').addEventListener('click', () => openSkinCamera('start'));
-    document.getElementById('skinPhotoEndBox').addEventListener('click', () => openSkinCamera('end'));
-    document.getElementById('skinCameraShutterBtn').addEventListener('click', captureSkinPhoto);
-    document.getElementById('skinCameraCancelBtn').addEventListener('click', closeSkinCamera);
+    // 사진 박스 탭 → 숨겨진 file input을 열어 기기에 저장된 사진을 첨부
+    document.getElementById('skinPhotoStartBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoStartInput').click();
+    });
+    document.getElementById('skinPhotoEndBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoEndInput').click();
+    });
 
     // 배지(개선됨/주의 필요/변화 없음) 색상 ↔ Tailwind 클래스 매핑
     const skinBadgeColorClasses = {
@@ -2360,6 +2329,9 @@ HTML_PAGE = """<!DOCTYPE html>
       const cardsEl = document.getElementById('skinChangeCards');
       cardsEl.classList.add('hidden');
       cardsEl.classList.remove('skin-fade-in');
+      const summaryBoxEl = document.getElementById('skinReportSummaryBox');
+      summaryBoxEl.classList.add('hidden');
+      summaryBoxEl.classList.remove('skin-fade-in');
       document.getElementById('skinChangeScanningState').classList.remove('hidden');
       document.getElementById('skinPhotoStartScanOverlay').classList.remove('hidden');
       document.getElementById('skinPhotoEndScanOverlay').classList.remove('hidden');
@@ -2371,6 +2343,9 @@ HTML_PAGE = """<!DOCTYPE html>
         renderSkinChangeCards(startScores, endScores);
         cardsEl.classList.remove('hidden');
         cardsEl.classList.add('skin-fade-in');
+        // 종합 요약도 항목별 카드와 같은 타이밍에 함께 드러냄 (사진 등록 전에는 노출되지 않도록)
+        summaryBoxEl.classList.remove('hidden');
+        summaryBoxEl.classList.add('skin-fade-in');
         skinScanTimeoutId = null;
       }, 3000);
     }
@@ -2511,6 +2486,43 @@ HTML_PAGE = """<!DOCTYPE html>
       irritant: '자극성·민감성 트러블',
     };
 
+    // 트러블은 없지만 사진 분석 점수상 "그래도 케어하면 좋은" 항목이 있을 때 추천할 제품.
+    // 수분/유분은 분석 항목과 그대로 매칭하고, 톤·홍조는 가장 가까운 "미백/톤 케어" 카테고리로 매핑.
+    // (제공된 목록 중 카테고리별 대표 1개만 사용, 픽서·헤어 카테고리는 대응되는 분석 지표가 없어 제외)
+    const CARE_TIP_PRODUCTS = {
+      hydration: {
+        brand: '아비브(ABIB)',
+        name: '약산성 pH 시트 마스크 핏 - 부활초 핏',
+        benefit: '약산성 시트에 부활초 성분을 더해 수분과 진정을 함께 채워주는 마스크',
+        query: '아비브 약산성 pH 시트 마스크 핏 부활초 핏',
+      },
+      tone: {
+        brand: '구달(goodal)',
+        name: '청귤 비타C 잡티케어 세럼마스크 알파',
+        benefit: '비타민C 성분으로 칙칙해진 톤을 환하게 정돈해주는 세럼 마스크',
+        query: '구달 청귤 비타C 잡티케어 세럼마스크 알파',
+      },
+      oiliness: {
+        brand: '토리든(TORRIDEN)',
+        name: '패드 밸런스풀',
+        benefit: '유수분 밸런스를 맞춰 번들거림을 가라앉혀주는 저자극 패드',
+        query: '토리든 패드 밸런스풀',
+      },
+    };
+
+    // 트러블이 없을 때, 마지막날 점수 기준으로 "그래도 케어하면 좋은" 항목을 하나 고름 (없으면 null)
+    // 기준선(65/30/40)보다 부족한 정도(margin)가 가장 큰 항목을 우선 추천
+    function pickCareTipCategory(end) {
+      const candidates = [
+        { key: 'hydration', margin: 65 - end.hydration },
+        { key: 'tone', margin: end.redness - 30 },
+        { key: 'oiliness', margin: end.oiliness - 40 },
+      ].filter((c) => c.margin > 0);
+      if (candidates.length === 0) return null;
+      candidates.sort((a, b) => b.margin - a.margin);
+      return candidates[0].key;
+    }
+
     // 구매 링크 생성기: 특정 상품 페이지가 아닌 검색 결과 URL이라 품절·개편에도 안 깨짐
     function makeBuyLinks(query) {
       const q = encodeURIComponent(query);
@@ -2522,6 +2534,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // "내 피부 사후관리하기" 화면: 트러블 유무에 따라 내용을 채움 (트러블 있을 때만 유형 판정 + 제품 추천)
     function renderAftercare() {
+      // 배달의뷰티 서비스 종료 안내 팝업: 이 화면에 들어올 때마다 노출
+      document.getElementById('deliveryBeautyEndModal').classList.remove('hidden');
+
       const start = skinPhotoScores.start;
       const end = skinPhotoScores.end;
       const needsSection = document.getElementById('aftercareNeedsSection');
@@ -2538,11 +2553,26 @@ HTML_PAGE = """<!DOCTYPE html>
       }
 
       if (end.blemishCount === 0) {
-        // 트러블 없음: 제품 추천 없이 안내만 표시 (수분/홍조/유분 기반 대체 추천 없음)
+        // 트러블 없음: 케어가 "필요한" 건 아니므로 aftercareNeedsSection은 계속 숨김.
+        // 다만 수분/톤·홍조/유분 중 아쉬운 항목이 있으면 선택적으로 제품 하나를 추천
         needsSection.classList.add('hidden');
-        productSection.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        emptyState.innerHTML = '이번 여행에서는 눈에 띄는 트러블이 발견되지 않았어요.<br />지금 루틴을 잘 유지해 주세요 👍';
+        const careTipKey = pickCareTipCategory(end);
+        if (careTipKey) {
+          emptyState.classList.remove('hidden');
+          emptyState.textContent = '잘 관리하고 있어요! 혹시 그래도 여행 중 부족한 부분을 케어하고 싶으면 아래와 같은 제품을 추천드려요';
+          productSection.classList.remove('hidden');
+          const tip = CARE_TIP_PRODUCTS[careTipKey];
+          document.getElementById('aftercareProductBrand').textContent = tip.brand;
+          document.getElementById('aftercareProductName').textContent = tip.name;
+          document.getElementById('aftercareProductBenefit').textContent = tip.benefit;
+          const tipLinks = makeBuyLinks(tip.query);
+          document.getElementById('aftercareOliveyoungLink').href = tipLinks.oliveyoung;
+          document.getElementById('aftercareCoupangLink').href = tipLinks.coupang;
+        } else {
+          emptyState.classList.remove('hidden');
+          emptyState.innerHTML = '이번 여행에서는 눈에 띄는 트러블이 발견되지 않았어요.<br />지금 루틴을 잘 유지해 주세요 👍';
+          productSection.classList.add('hidden');
+        }
         return;
       }
 
@@ -2588,6 +2618,11 @@ HTML_PAGE = """<!DOCTYPE html>
     // 공용 .back-to-nav-btn과 달리 이 화면은 전용 핸들러로 skinReport 탭에 직접 복귀시킴)
     document.getElementById('aftercareBackBtn').addEventListener('click', () => {
       switchTab('skinReport');
+    });
+
+    // 배달의뷰티 서비스 종료 안내 팝업 닫기
+    document.getElementById('deliveryBeautyEndCloseBtn').addEventListener('click', () => {
+      document.getElementById('deliveryBeautyEndModal').classList.add('hidden');
     });
 
     function updateWizardNextButton(stepId, enabled) {
@@ -2855,18 +2890,19 @@ HTML_PAGE = """<!DOCTYPE html>
       cream: 'bottle', emulsion: 'bottle', sunscreen: 'tube', cushion: 'cushion',
       eye: 'palette-pink', shading: 'palette-brown', lip: 'lip', highlighter: 'highlighter',
     };
-    // 바구니 안에서 각 제품이 자리잡는 위치/크기 (위에서 내려다본 감각적인 플랫레이 배치,
-    // pouchScanProducts와 같은 순서: 토너/세럼/선크림/쿠션/아이팔레트/컨투어/틴트/브로우/하이라이터 기준으로 손으로 배치)
+    // 바구니 안에서 각 제품이 자리잡는 위치/크기 - 사용자가 첨부한 "파우치 담긴 버전" 참고
+    // 이미지의 실제 배치를 좌표로 옮겨서 최대한 동일하게 재현 (위치/크기/간격 모두 참고 사진 기준).
+    // pouchScanProducts와 같은 순서: 토너/세럼/선크림/쿠션/아이팔레트/컨투어/틴트/브로우/하이라이터
     const POUCH_SLOTS = [
-      { top: 10, left: 20, rot: -8, w: 68, h: 130 },
-      { top: -5, left: 100, rot: 4, w: 74, h: 145 },
-      { top: 15, left: 195, rot: 10, w: 54, h: 140 },
-      { top: 240, left: 195, rot: -10, w: 92, h: 92 },
-      { top: 255, left: 15, rot: -6, w: 120, h: 85 },
-      { top: 165, left: 95, rot: 8, w: 88, h: 115 },
-      { top: 110, left: 215, rot: 22, w: 48, h: 110 },
-      { top: 130, left: 45, rot: -22, w: 34, h: 130 },
-      { top: 285, left: 105, rot: 6, w: 85, h: 85 },
+      { top: 153, left: 82, rot: -4, w: 55, h: 105 },
+      { top: 254, left: 185, rot: 4, w: 50, h: 84 },
+      { top: 149, left: 260, rot: -5, w: 42, h: 101 },
+      { top: 82, left: 82, rot: -12, w: 84, h: 86 },
+      { top: 256, left: 82, rot: -3, w: 97, h: 78 },
+      { top: 82, left: 223, rot: 3, w: 78, h: 86 },
+      { top: 164, left: 227, rot: 6, w: 32, h: 92 },
+      { top: 158, left: 134, rot: -8, w: 19, h: 95 },
+      { top: 107, left: 168, rot: 2, w: 50, h: 50 },
     ];
     // 각 제품이 바구니 밖 어느 방향에서 날아들어오는지(연출용 시작 위치/각도)
     const POUCH_FROM = [
@@ -4134,7 +4170,6 @@ HTML_PAGE = (
     .replace("__POUCH_IMG_TINT__", POUCH_IMG_TINT)
     .replace("__POUCH_IMG_BROW__", POUCH_IMG_BROW)
     .replace("__POUCH_IMG_HIGHLIGHTER__", POUCH_IMG_HIGHLIGHTER)
-    .replace("__POUCH_BASKET_PHOTO__", POUCH_BASKET_PHOTO_URI)
 )
 
 components.html(HTML_PAGE, height=852, scrolling=True)
