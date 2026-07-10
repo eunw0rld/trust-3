@@ -1260,8 +1260,8 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- 종합 요약 -->
-        <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4">
+        <!-- 종합 요약: 사진이 모두 등록되어 분석이 끝나기 전에는 숨김 (항목별 카드와 함께 노출) -->
+        <div id="skinReportSummaryBox" class="hidden bg-brand-50 border border-brand-100 rounded-2xl p-4">
           <p id="skinReportSummary" class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
         </div>
 
@@ -1305,6 +1305,15 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
           <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">※ 참고용 추천이며 실제 피부 고민은 전문가 상담을 권장해요.</p>
+        </div>
+
+        <!-- 배달의뷰티 서비스 종료 안내 팝업: 사후케어 화면에 들어올 때마다 노출 -->
+        <div id="deliveryBeautyEndModal" class="hidden absolute inset-0 z-50 bg-black/40 px-6 flex items-center justify-center">
+          <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
+            <p class="text-base font-bold mb-3">배달의뷰티 서비스 종료 안내</p>
+            <p class="text-sm text-gray-500 leading-relaxed mb-5">그동안 배달의뷰티를 이용해 주셔서 진심으로 감사드립니다.<br /><br />배달의뷰티 서비스는 종료되었으며, 앞으로는 2개 플랫폼에서 다양한 뷰티 상품을 계속 만나보실 수 있습니다. 감사합니다.</p>
+            <button id="deliveryBeautyEndCloseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">확인했어요</button>
+          </div>
         </div>
 
       </section>
@@ -2327,6 +2336,9 @@ HTML_PAGE = """<!DOCTYPE html>
       const cardsEl = document.getElementById('skinChangeCards');
       cardsEl.classList.add('hidden');
       cardsEl.classList.remove('skin-fade-in');
+      const summaryBoxEl = document.getElementById('skinReportSummaryBox');
+      summaryBoxEl.classList.add('hidden');
+      summaryBoxEl.classList.remove('skin-fade-in');
       document.getElementById('skinChangeScanningState').classList.remove('hidden');
       document.getElementById('skinPhotoStartScanOverlay').classList.remove('hidden');
       document.getElementById('skinPhotoEndScanOverlay').classList.remove('hidden');
@@ -2338,6 +2350,9 @@ HTML_PAGE = """<!DOCTYPE html>
         renderSkinChangeCards(startScores, endScores);
         cardsEl.classList.remove('hidden');
         cardsEl.classList.add('skin-fade-in');
+        // 종합 요약도 항목별 카드와 같은 타이밍에 함께 드러냄 (사진 등록 전에는 노출되지 않도록)
+        summaryBoxEl.classList.remove('hidden');
+        summaryBoxEl.classList.add('skin-fade-in');
         skinScanTimeoutId = null;
       }, 3000);
     }
@@ -2489,6 +2504,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // "내 피부 사후관리하기" 화면: 트러블 유무에 따라 내용을 채움 (트러블 있을 때만 유형 판정 + 제품 추천)
     function renderAftercare() {
+      // 배달의뷰티 서비스 종료 안내 팝업: 이 화면에 들어올 때마다 노출
+      document.getElementById('deliveryBeautyEndModal').classList.remove('hidden');
+
       const start = skinPhotoScores.start;
       const end = skinPhotoScores.end;
       const needsSection = document.getElementById('aftercareNeedsSection');
@@ -2555,6 +2573,11 @@ HTML_PAGE = """<!DOCTYPE html>
     // 공용 .back-to-nav-btn과 달리 이 화면은 전용 핸들러로 skinReport 탭에 직접 복귀시킴)
     document.getElementById('aftercareBackBtn').addEventListener('click', () => {
       switchTab('skinReport');
+    });
+
+    // 배달의뷰티 서비스 종료 안내 팝업 닫기
+    document.getElementById('deliveryBeautyEndCloseBtn').addEventListener('click', () => {
+      document.getElementById('deliveryBeautyEndModal').classList.add('hidden');
     });
 
     function updateWizardNextButton(stepId, enabled) {
