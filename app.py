@@ -1115,7 +1115,47 @@ HTML_PAGE = """<!DOCTYPE html>
           <p id="skinReportSummary" class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
         </div>
 
-        <button type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
+        <p id="aftercareMissingPhotosWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">먼저 1일차·마지막날 사진을 등록해 주세요</p>
+        <button id="goToAftercareBtn" type="button" class="w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
+
+      </section>
+
+      <!-- 피부 변화 리포트 하위 화면: 트러블 유무·유형에 따른 사후케어 제품 추천 -->
+      <section id="screen-aftercare" class="hidden py-6 space-y-6">
+
+        <button id="aftercareBackBtn" type="button" class="text-xs text-gray-400">← 이전</button>
+
+        <h2 class="text-lg font-bold leading-snug">여행은 즐거웠으나<br />내 피부는 힘들었어요 😭</h2>
+
+        <!-- 케어 필요 항목: 트러블이 있을 때만 노출 -->
+        <div id="aftercareNeedsSection" class="hidden border border-gray-200 rounded-2xl p-5">
+          <p class="text-xs font-semibold text-gray-400 mb-2">케어가 필요해요</p>
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold">🦠 <span id="aftercareTypeLabel">트러블</span></p>
+            <span id="aftercareCountLine" class="text-xs text-gray-500"></span>
+          </div>
+          <p id="aftercareReasonText" class="text-xs text-gray-500 leading-relaxed"></p>
+        </div>
+
+        <!-- 트러블 없음 안내: 트러블이 없거나 분석 결과가 아직 없을 때 노출 -->
+        <div id="aftercareEmptyState" class="hidden text-center text-sm text-gray-500 leading-relaxed bg-brand-50 border border-brand-100 rounded-2xl p-6"></div>
+
+        <!-- 제품 추천: 트러블이 있을 때만 노출 -->
+        <div id="aftercareProductSection" class="hidden">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">추천 제품</h3>
+          <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+            <div>
+              <p id="aftercareProductBrand" class="text-xs font-semibold text-brand-600"></p>
+              <p id="aftercareProductName" class="text-base font-bold text-gray-900"></p>
+            </div>
+            <p id="aftercareProductBenefit" class="text-xs text-gray-500 leading-relaxed"></p>
+            <div class="grid grid-cols-2 gap-2">
+              <a id="aftercareOliveyoungLink" href="#" target="_blank" rel="noopener" class="text-center text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl py-2.5">올리브영에서 보기</a>
+              <a id="aftercareCoupangLink" href="#" target="_blank" rel="noopener" class="text-center text-xs font-semibold text-white bg-brand-500 rounded-xl py-2.5">쿠팡에서 보기</a>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">※ 참고용 추천이며 실제 피부 고민은 전문가 상담을 권장해요.</p>
+        </div>
 
       </section>
 
@@ -1383,6 +1423,7 @@ HTML_PAGE = """<!DOCTYPE html>
       inuse: document.getElementById('screen-inuse'),
       history: document.getElementById('screen-history'),
       skinReport: document.getElementById('screen-afteruse'),
+      aftercare: document.getElementById('screen-aftercare'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
       countryPopular: document.getElementById('screen-country-popular'),
@@ -1657,6 +1698,8 @@ HTML_PAGE = """<!DOCTYPE html>
           initMapIfNeeded();
         } else if (tabName === 'skinReport') {
           renderSkinReport();
+        } else if (tabName === 'aftercare') {
+          renderAftercare();
         } else if (tabName === 'settings') {
           renderProfileSummary();
         } else if (tabName === 'community') {
@@ -1814,6 +1857,8 @@ HTML_PAGE = """<!DOCTYPE html>
 
     const SKIN_ANALYSIS_SIZE = 96; // 분석용 캔버스 한 변 크기(px). 클수록 정교하지만 느려짐
     const skinPhotoImages = { start: null, end: null }; // 업로드/촬영된 두 장의 <img> 엘리먼트 보관
+    // 분석 완료된 점수 보관 (사후케어 화면에서 재계산 없이 그대로 사용): { hydration, redness, oiliness, blemishCount }
+    const skinPhotoScores = { start: null, end: null };
     let skinScanTimeoutId = null; // 스캔 연출 타이머 핸들 (사진 재등록 시 중복 실행 방지용)
 
     // 0~100 사이로 값을 잘라내는 유틸
@@ -2099,6 +2144,9 @@ HTML_PAGE = """<!DOCTYPE html>
     function runSkinPhotoAnalysis() {
       const startScores = analyzeSkinPhoto(skinPhotoImages.start);
       const endScores = analyzeSkinPhoto(skinPhotoImages.end);
+      // 사후케어 화면(#screen-aftercare)에서 그대로 쓸 수 있도록 반올림해 보관 (blemish → blemishCount로 이름만 맞춤)
+      skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: Math.round(startScores.blemish) };
+      skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.round(endScores.blemish) };
       beginSkinScan(startScores, endScores);
     }
 
@@ -2218,6 +2266,129 @@ HTML_PAGE = """<!DOCTYPE html>
     }
     ['hydration', 'redness', 'oiliness', 'blemish'].forEach((key) => {
       document.getElementById(`${key}ToggleBtn`).addEventListener('click', () => toggleSkinDetail(key));
+    });
+
+    // ===== "내 피부 사후관리하기": 트러블 유형 자동 판정 + 제품 추천 =====
+
+    // 트러블 유형 판정: 붉은기 우선 → 건조 → 기본 염증성
+    // 임계값은 초기값이며, 실제 데이터 보고 조정 가능
+    function classifyBlemishType(start, end) {
+      const rednessRise = end.redness - start.redness; // 홍조 증가폭
+      const hydrationDrop = start.hydration - end.hydration; // 수분 감소폭
+
+      // 1) 자극성/민감성: 붉은기가 높거나 뚜렷이 증가 → 화끈거림·붉어짐
+      if (end.redness >= 45 || rednessRise >= 10) return 'irritant';
+      // 2) 건조성: 수분이 낮거나 뚜렷이 감소 → 건조로 인한 트러블
+      if (end.hydration <= 45 || hydrationDrop >= 10) return 'dry';
+      // 3) 그 외: 염증성(뾰루지·여드름·화농성) 기본값
+      return 'inflammatory';
+    }
+
+    // 트러블 유형별 추천 제품
+    const BLEMISH_PRODUCTS = {
+      dry: { // 건조 트러블
+        brand: '메디힐(MEDIHEAL)',
+        name: '티트리 에센셜 마스크',
+        benefit: '티트리 성분으로 진정하며 수분을 채워 건조로 예민해진 트러블 피부를 달래는 시트 마스크',
+        query: '메디힐 티트리 에센셜 마스크',
+      },
+      inflammatory: { // 염증성 트러블(뾰루지·여드름·화농성)
+        brand: '파티온(PADION)',
+        name: '노스카나인 트러블 세럼 마스크팩',
+        benefit: '트러블·화이트헤드 집중 케어 성분을 담아 염증성 트러블을 진정시키는 세럼 마스크팩',
+        query: '파티온 노스카나인 트러블 세럼 마스크팩',
+      },
+      irritant: { // 자극성/민감성 트러블(자극·환절기·마스크 등으로 화끈거리고 붉어짐)
+        brand: '아비브(ABIB)',
+        name: '약산성 pH 시트 마스크 어성초 핏',
+        benefit: '어성초 성분의 약산성 시트로 자극·환절기·마스크 마찰로 화끈거리고 붉어진 피부를 진정',
+        query: '아비브 약산성 pH 시트 마스크 어성초 핏',
+      },
+    };
+
+    const BLEMISH_TYPE_LABEL = {
+      dry: '건조 트러블',
+      inflammatory: '염증성 트러블',
+      irritant: '자극성·민감성 트러블',
+    };
+
+    // 구매 링크 생성기: 특정 상품 페이지가 아닌 검색 결과 URL이라 품절·개편에도 안 깨짐
+    function makeBuyLinks(query) {
+      const q = encodeURIComponent(query);
+      return {
+        oliveyoung: `https://www.oliveyoung.co.kr/store/search/getSearchMain.do?query=${q}`,
+        coupang: `https://www.coupang.com/np/search?q=${q}`,
+      };
+    }
+
+    // "내 피부 사후관리하기" 화면: 트러블 유무에 따라 내용을 채움 (트러블 있을 때만 유형 판정 + 제품 추천)
+    function renderAftercare() {
+      const start = skinPhotoScores.start;
+      const end = skinPhotoScores.end;
+      const needsSection = document.getElementById('aftercareNeedsSection');
+      const productSection = document.getElementById('aftercareProductSection');
+      const emptyState = document.getElementById('aftercareEmptyState');
+
+      if (!start || !end) {
+        // 버튼 클릭 시 이미 막지만, 방어적으로 한 번 더 체크
+        needsSection.classList.add('hidden');
+        productSection.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        emptyState.textContent = '먼저 1일차·마지막날 사진을 등록해 주세요.';
+        return;
+      }
+
+      if (end.blemishCount === 0) {
+        // 트러블 없음: 제품 추천 없이 안내만 표시 (수분/홍조/유분 기반 대체 추천 없음)
+        needsSection.classList.add('hidden');
+        productSection.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        emptyState.innerHTML = '이번 여행에서는 눈에 띄는 트러블이 발견되지 않았어요.<br />지금 루틴을 잘 유지해 주세요 👍';
+        return;
+      }
+
+      // 트러블 있음: 유형 판정 후 케어 필요 항목 + 제품 1개 노출
+      emptyState.classList.add('hidden');
+      needsSection.classList.remove('hidden');
+      productSection.classList.remove('hidden');
+
+      const type = classifyBlemishType(start, end);
+      document.getElementById('aftercareTypeLabel').textContent = BLEMISH_TYPE_LABEL[type];
+      document.getElementById('aftercareCountLine').textContent = `1일차 ${start.blemishCount}건 → 마지막날 ${end.blemishCount}건`;
+
+      let reason;
+      if (type === 'irritant') {
+        reason = '붉은기가 늘어 자극성·민감성 트러블로 보여요.';
+      } else if (type === 'dry') {
+        reason = '수분이 부족해 건조 트러블로 보여요.';
+      } else {
+        reason = '뚜렷한 홍조·건조 변화 없이 트러블만 도드라져 염증성 트러블로 보여요.';
+      }
+      document.getElementById('aftercareReasonText').textContent = reason;
+
+      const product = BLEMISH_PRODUCTS[type];
+      document.getElementById('aftercareProductBrand').textContent = product.brand;
+      document.getElementById('aftercareProductName').textContent = product.name;
+      document.getElementById('aftercareProductBenefit').textContent = product.benefit;
+      const links = makeBuyLinks(product.query);
+      document.getElementById('aftercareOliveyoungLink').href = links.oliveyoung;
+      document.getElementById('aftercareCoupangLink').href = links.coupang;
+    }
+
+    // "내 피부 사후관리하기" 버튼: 분석 결과가 없으면 이동하지 않고 안내만 표시
+    document.getElementById('goToAftercareBtn').addEventListener('click', () => {
+      if (!skinPhotoScores.start || !skinPhotoScores.end) {
+        showWarning('aftercareMissingPhotosWarning', '먼저 1일차·마지막날 사진을 등록해 주세요');
+        return;
+      }
+      hideWarning('aftercareMissingPhotosWarning');
+      switchTab('aftercare');
+    });
+
+    // 사후케어 화면의 뒤로가기: 하단 네비 탭이 아니므로 항상 피부 변화 리포트로 복귀 (lastActiveNavTab을 쓰는
+    // 공용 .back-to-nav-btn과 달리 이 화면은 전용 핸들러로 skinReport 탭에 직접 복귀시킴)
+    document.getElementById('aftercareBackBtn').addEventListener('click', () => {
+      switchTab('skinReport');
     });
 
     function updateWizardNextButton(stepId, enabled) {
