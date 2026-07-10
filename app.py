@@ -36,8 +36,6 @@ POUCH_IMG_EYEPALETTE = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_06.p
 POUCH_IMG_BROW = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_07.png", "image/png")
 POUCH_IMG_SERUM = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_08.png", "image/png")
 POUCH_IMG_HIGHLIGHTER = _data_uri(_POUCH_DIR / "KakaoTalk_20260710_092633825_09.png", "image/png")
-# 등록하기 바구니 애니메이션의 배경으로 쓰는 실제 파우치 사진
-POUCH_BASKET_PHOTO_URI = _data_uri(Path(__file__).parent / "파우치 사진.png", "image/png")
 
 st.markdown(
     """
@@ -635,23 +633,35 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .pouch-basket-stage {
     position: relative;
-    width: 300px;
+    width: 345px;
     height: 480px;
     margin: 0 auto;
   }
-  /* 실제 파우치 사진(위에서 내려다본 모습)을 배경으로 사용 */
+  /* 실제 사진 대신 핑크 벨벳 파우치 + 체크(깅엄) 안감을 CSS로 표현
+     (사진 에셋은 배경 제거가 깨져 회색 격자가 그대로 보이는 문제가 있어 제외) */
   .pouch-basket {
     position: absolute;
     inset: 0;
     border-radius: 40px / 46px;
-    background-image: url('__POUCH_BASKET_PHOTO__');
-    background-size: cover;
-    background-position: center;
-    box-shadow: 0 18px 30px rgba(190, 24, 93, 0.2);
+    background: linear-gradient(160deg, #f7a8c8 0%, #ef82ab 100%);
+    box-shadow: 0 18px 30px rgba(190, 24, 93, 0.22);
+  }
+  .pouch-basket::before {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border-radius: 26px / 30px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0 7px, transparent 7px 26px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.8) 0 7px, transparent 7px 26px),
+      #f6b0cc;
+    box-shadow:
+      inset 0 4px 12px rgba(190, 24, 93, 0.3),
+      inset 0 -2px 6px rgba(255, 255, 255, 0.5);
   }
   .pouch-basket-items {
     position: absolute;
-    inset: 16px 12px 12px 12px;
+    inset: 16px;
     z-index: 2;
   }
   .pouch-item {
@@ -757,6 +767,30 @@ HTML_PAGE = """<!DOCTYPE html>
     background: linear-gradient(160deg, #fff2e6 0%, #f5cdd8 100%);
     border: 2px solid #ffffff;
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.9);
+  }
+  /* 내 파우치: 등록된 화장품 카드를 세로 그리드 대신 가로 캐러셀로 스와이프 */
+  #pouchProductGrid.pouch-carousel {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 12px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #pouchProductGrid.pouch-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  #pouchProductGrid.pouch-carousel > .pouch-card {
+    flex: 0 0 124px;
+    width: 124px;
+    scroll-snap-align: start;
+  }
+  #pouchProductGrid.pouch-carousel > .pouch-card p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* 실제 제품 사진이 있는 경우 일러스트 대신 사진을 그대로, 라벨 없이 크게 보여줌 (등록하기 바구니 애니메이션).
      너비/높이는 제품별로 buildPouchItemEl에서 인라인으로 지정 */
@@ -1027,7 +1061,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <p id="pouchSectionSubtitle" class="text-sm text-gray-400 mb-4">사진 한 장이면 화장품 이름과 종류를 자동으로 인식해드려요</p>
 
           <!-- 등록된 화장품 카드 그리드 (1개 이상 등록되면 노출) -->
-          <div id="pouchProductGrid" class="hidden grid grid-cols-2 gap-2"></div>
+          <div id="pouchProductGrid" class="hidden pouch-carousel"></div>
 
           <!-- 촬영/직접입력 UI (비어있을 때 기본 노출, "+ 추가" 클릭 시 다시 노출) -->
           <div id="pouchCaptureUI">
@@ -2999,18 +3033,19 @@ HTML_PAGE = """<!DOCTYPE html>
       cream: 'bottle', emulsion: 'bottle', sunscreen: 'tube', cushion: 'cushion',
       eye: 'palette-pink', shading: 'palette-brown', lip: 'lip', highlighter: 'highlighter',
     };
-    // 바구니 안에서 각 제품이 자리잡는 위치/크기 (위에서 내려다본 감각적인 플랫레이 배치,
-    // pouchScanProducts와 같은 순서: 토너/세럼/선크림/쿠션/아이팔레트/컨투어/틴트/브로우/하이라이터 기준으로 손으로 배치)
+    // 바구니 안에서 각 제품이 자리잡는 위치/크기 - 사용자가 첨부한 "파우치 담긴 버전" 참고
+    // 이미지의 실제 배치를 좌표로 옮겨서 최대한 동일하게 재현 (위치/크기/간격 모두 참고 사진 기준).
+    // pouchScanProducts와 같은 순서: 토너/세럼/선크림/쿠션/아이팔레트/컨투어/틴트/브로우/하이라이터
     const POUCH_SLOTS = [
-      { top: 10, left: 20, rot: -8, w: 68, h: 130 },
-      { top: -5, left: 100, rot: 4, w: 74, h: 145 },
-      { top: 15, left: 195, rot: 10, w: 54, h: 140 },
-      { top: 240, left: 195, rot: -10, w: 92, h: 92 },
-      { top: 255, left: 15, rot: -6, w: 120, h: 85 },
-      { top: 165, left: 95, rot: 8, w: 88, h: 115 },
-      { top: 110, left: 215, rot: 22, w: 48, h: 110 },
-      { top: 130, left: 45, rot: -22, w: 34, h: 130 },
-      { top: 285, left: 105, rot: 6, w: 85, h: 85 },
+      { top: 153, left: 82, rot: -4, w: 55, h: 105 },
+      { top: 254, left: 185, rot: 4, w: 50, h: 84 },
+      { top: 149, left: 260, rot: -5, w: 42, h: 101 },
+      { top: 82, left: 82, rot: -12, w: 84, h: 86 },
+      { top: 256, left: 82, rot: -3, w: 97, h: 78 },
+      { top: 82, left: 223, rot: 3, w: 78, h: 86 },
+      { top: 164, left: 227, rot: 6, w: 32, h: 92 },
+      { top: 158, left: 134, rot: -8, w: 19, h: 95 },
+      { top: 107, left: 168, rot: 2, w: 50, h: 50 },
     ];
     // 각 제품이 바구니 밖 어느 방향에서 날아들어오는지(연출용 시작 위치/각도)
     const POUCH_FROM = [
@@ -3345,7 +3380,7 @@ HTML_PAGE = """<!DOCTYPE html>
     function buildProductCard(product) {
       const category = cosmeticCategories.find((c) => c.value === product.category);
       const card = document.createElement('div');
-      card.className = 'bg-white border border-gray-100 rounded-2xl p-3';
+      card.className = 'pouch-card bg-white border border-gray-100 rounded-2xl p-3';
       card.innerHTML = `
         <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2">${category ? category.icon : '🧴'}</div>
         <p class="text-sm font-semibold truncate">${product.name}</p>
@@ -4278,7 +4313,6 @@ HTML_PAGE = (
     .replace("__POUCH_IMG_TINT__", POUCH_IMG_TINT)
     .replace("__POUCH_IMG_BROW__", POUCH_IMG_BROW)
     .replace("__POUCH_IMG_HIGHLIGHTER__", POUCH_IMG_HIGHLIGHTER)
-    .replace("__POUCH_BASKET_PHOTO__", POUCH_BASKET_PHOTO_URI)
 )
 
 components.html(HTML_PAGE, height=852, scrolling=True)
