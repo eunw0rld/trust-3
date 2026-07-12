@@ -2222,7 +2222,7 @@ HTML_PAGE = """<!DOCTYPE html>
     // 외부 API/라이브러리 없이 순수 JS + Canvas로 계산하는 "근사 스크리닝"입니다.
     // 실제 피부과적 진단이 아니라, 두 사진의 픽셀 패턴을 비교해 변화 추이만 보여주는 목적입니다.
 
-    const SKIN_ANALYSIS_SIZE = 96; // 분석용 캔버스 한 변 크기(px). 클수록 정교하지만 느려짐
+    const SKIN_ANALYSIS_SIZE = 128; // 분석용 캔버스 한 변 크기(px). 클수록 정교하지만 느려짐
     const skinPhotoImages = { start: null, end: null }; // 업로드/촬영된 두 장의 <img> 엘리먼트 보관
     // 분석 완료된 점수 보관 (사후케어 화면에서 재계산 없이 그대로 사용): { hydration, redness, oiliness, blemishCount }
     const skinPhotoScores = { start: null, end: null };
@@ -2330,32 +2330,137 @@ HTML_PAGE = """<!DOCTYPE html>
       return ctx.getImageData(0, 0, SKIN_ANALYSIS_SIZE, SKIN_ANALYSIS_SIZE);
     }
 
-    // 격자 블록(8x8px) 단위로 "주변 평균보다 붉고 어두운" 블록을 표시한 뒤,
-    // 인접한 블록끼리 4방향 flood fill로 묶어 트러블 반점(blob) 개수를 근사 카운트
-    // ※ avgRedness/avgBrightness는 같은 이미지 내부의 평균값이므로, 여기서는 lightingFactor를
-    //   따로 곱하지 않고 블록 값과 같은 단위(원본 픽셀값)로 그대로 비교해야 함
-    function countBlemishBlobs(data, width, height, avgRedness, avgBrightness) {
+    // ===== 피부(얼굴) 영역만 골라내는 마스킹 =====
+    // 사진 전체(배경·머리카락·의류 등)를 그대로 분석하면 피부가 아닌 픽셀이 통계를 오염시켜
+    // 두 사진 사이의 실제 변화가 잘 드러나지 않는다. 그래서
+    // 1) 널리 쓰이는 RGB 기반 규칙으로 "피부색 후보" 픽셀을 골라내고
+    // 2) 그중 가장 큰 연결 영역(=얼굴로 추정)만 남겨 이후 모든 지표 계산에 사용한다.
+    function isSkinColorPixel(r, g, b) {
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      return (
+        r > 95 && g > 40 && b > 20 &&
+        maxC - minC > 15 &&
+        Math.abs(r - g) > 15 &&
+        r > g && r > b
+      );
+    }
+
+    // 피부색 후보 픽셀 중 가장 큰 연결 성분만 1로 표시한 마스크를 반환.
+    // 후보 영역이 너무 작으면(오탐 가능성이 높은 경우) 전체 이미지를 그대로 분석하는 것으로 폴백
+    function extractFaceSkinMask(data, width, height) {
+      const pixelCount = width * height;
+      const candidate = new Uint8Array(pixelCount);
+      for (let i = 0; i < pixelCount; i++) {
+        const o = i * 4;
+        if (isSkinColorPixel(data[o], data[o + 1], data[o + 2])) candidate[i] = 1;
+      }
+
+      const floodFill = (startIdx, visited, onVisit) => {
+        const stack = [startIdx];
+        visited[startIdx] = 1;
+        let size = 0;
+        while (stack.length) {
+          const cur = stack.pop();
+          size++;
+          if (onVisit) onVisit(cur);
+          const cx = cur % width;
+          if (cx > 0 && candidate[cur - 1] && !visited[cur - 1]) { visited[cur - 1] = 1; stack.push(cur - 1); }
+          if (cx < width - 1 && candidate[cur + 1] && !visited[cur + 1]) { visited[cur + 1] = 1; stack.push(cur + 1); }
+          if (cur - width >= 0 && candidate[cur - width] && !visited[cur - width]) { visited[cur - width] = 1; stack.push(cur - width); }
+          if (cur + width < pixelCount && candidate[cur + width] && !visited[cur + width]) { visited[cur + width] = 1; stack.push(cur + width); }
+        }
+        return size;
+      };
+
+      const visited = new Uint8Array(pixelCount);
+      let bestStart = -1;
+      let bestSize = 0;
+      for (let start = 0; start < pixelCount; start++) {
+        if (!candidate[start] || visited[start]) continue;
+        const size = floodFill(start, visited);
+        if (size > bestSize) { bestSize = size; bestStart = start; }
+      }
+
+      const mask = new Uint8Array(pixelCount);
+      if (bestStart < 0 || bestSize < pixelCount * 0.03) {
+        mask.fill(1); // 얼굴로 추정되는 영역을 찾지 못하면 전체 이미지를 그대로 분석(폴백)
+        return { mask, bounds: { minX: 0, maxX: width - 1, minY: 0, maxY: height - 1 } };
+      }
+      let minX = width, maxX = 0, minY = height, maxY = 0;
+      floodFill(bestStart, new Uint8Array(pixelCount), (idx) => {
+        mask[idx] = 1;
+        const x = idx % width, y = Math.floor(idx / width);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      });
+      // 마스크 자체(엄격한 피부색 규칙)와 별도로 얼굴 영역의 대략적인 사각 범위(bounds)도 함께 반환.
+      // 유분(반사광) 픽셀은 밝고 채도가 낮아 정작 "피부색" 규칙(|r-g|>15)에는 걸리지 않는 경우가 많아,
+      // T존/유분 계산은 이 bounds를 기준으로 하고 엄격한 마스크에 얽매이지 않아야 함
+      return { mask, bounds: { minX, maxX, minY, maxY } };
+    }
+
+    // 격자 블록(8x8px) 단위로 "자기 주변(반경 3블록) 평균보다 붉고 어두운" 블록을 표시한 뒤,
+    // 인접한 블록끼리 4방향 flood fill로 묶어 트러블 반점(blob) 개수를 근사 카운트.
+    // 얼굴 전체 평균과 비교하지 않고 "국소 이웃" 평균과 비교하는 이유: 콧대 그림자·턱선 음영처럼
+    // 얼굴 전체에 걸쳐 완만하게 밝기/붉은기가 변하는 부분은 국소 평균도 함께 따라 움직여 오탐되지
+    // 않는 반면, 진짜 반점처럼 주변과 뚜렷이 동떨어진 국소 이상만 걸러낼 수 있음
+    function countBlemishBlobs(data, width, height, skinMask) {
       const blockSize = 8;
       const cols = Math.floor(width / blockSize);
       const rows = Math.floor(height / blockSize);
-      const flagged = new Array(cols * rows).fill(false);
+      const blockRedness = new Float32Array(cols * rows);
+      const blockBrightness = new Float32Array(cols * rows);
+      const blockValid = new Uint8Array(cols * rows);
 
       for (let by = 0; by < rows; by++) {
         for (let bx = 0; bx < cols; bx++) {
           let rSum = 0, gSum = 0, bSum = 0, n = 0;
           for (let y = by * blockSize; y < by * blockSize + blockSize; y++) {
             for (let x = bx * blockSize; x < bx * blockSize + blockSize; x++) {
-              const o = (y * width + x) * 4;
+              const idx = y * width + x;
+              if (!skinMask[idx]) continue; // 배경/머리카락 등 피부가 아닌 픽셀은 집계에서 제외
+              const o = idx * 4;
               rSum += data[o]; gSum += data[o + 1]; bSum += data[o + 2];
               n++;
             }
           }
+          if (n < (blockSize * blockSize) / 2) continue; // 블록 절반 이상이 피부가 아니면 신뢰하지 않고 건너뜀
           const r = rSum / n, g = gSum / n, b = bSum / n;
-          const blockRedness = r - (g + b) / 2;
-          const blockBrightness = (r + g + b) / 3;
+          const bi = by * cols + bx;
+          blockRedness[bi] = r - (g + b) / 2;
+          blockBrightness[bi] = (r + g + b) / 3;
+          blockValid[bi] = 1;
+        }
+      }
+
+      const neighborRadius = 3; // 반경 3블록(약 24px) 이내의 유효 블록들을 "국소 이웃"으로 삼음
+      const flagged = new Array(cols * rows).fill(false);
+      for (let by = 0; by < rows; by++) {
+        for (let bx = 0; bx < cols; bx++) {
+          const bi = by * cols + bx;
+          if (!blockValid[bi]) continue;
+          let neighborRedSum = 0, neighborBrightSum = 0, neighborCount = 0;
+          for (let dy = -neighborRadius; dy <= neighborRadius; dy++) {
+            for (let dx = -neighborRadius; dx <= neighborRadius; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              const nx = bx + dx, ny = by + dy;
+              if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+              const ni = ny * cols + nx;
+              if (!blockValid[ni]) continue;
+              neighborRedSum += blockRedness[ni];
+              neighborBrightSum += blockBrightness[ni];
+              neighborCount++;
+            }
+          }
+          if (neighborCount < 6) continue; // 얼굴 가장자리 등 주변 정보가 너무 적으면 판정하지 않음
+          const localAvgRedness = neighborRedSum / neighborCount;
+          const localAvgBrightness = neighborBrightSum / neighborCount;
           // 주변보다 붉은기가 뚜렷이 높으면서 밝기는 오히려 낮은(홍조성 반점) 블록만 이상 블록으로 표시
-          if (blockRedness > avgRedness + 14 && blockBrightness < avgBrightness - 4) {
-            flagged[by * cols + bx] = true;
+          if (blockRedness[bi] > localAvgRedness + 9 && blockBrightness[bi] < localAvgBrightness - 3) {
+            flagged[bi] = true;
           }
         }
       }
@@ -2384,54 +2489,85 @@ HTML_PAGE = """<!DOCTYPE html>
     function analyzeSkinPhoto(imgEl) {
       const { data, width, height } = drawImageToAnalysisCanvas(imgEl);
       const pixelCount = width * height;
+      // 배경/머리카락/의류 등을 제외한 얼굴(피부) 영역만 이후 수분·톤/홍조·트러블 지표 계산에 사용
+      const { mask: skinMask, bounds } = extractFaceSkinMask(data, width, height);
+
+      // 유분(T존) 측정 대상 영역: 얼굴로 추정된 사각 범위(bounds) 안에서 이마+콧대를 근사한
+      // 상단·중앙 영역 (실제 얼굴 landmark가 없으므로 얼굴 bounds 대비 위치 비율로 근사).
+      // ※ 반사광(번들거림) 픽셀은 밝고 채도가 낮아 정작 엄격한 "피부색" 규칙(|r-g|>15)에는
+      //   걸리지 않는 경우가 많으므로, 여기서는 skinMask가 아니라 이 bounds만 기준으로 삼는다
+      const faceWidth = Math.max(bounds.maxX - bounds.minX, 1);
+      const faceHeight = Math.max(bounds.maxY - bounds.minY, 1);
+      const tZoneTop = bounds.minY + faceHeight * 0.08;
+      const tZoneBottom = bounds.minY + faceHeight * 0.55;
+      const tZoneLeft = bounds.minX + faceWidth * 0.2;
+      const tZoneRight = bounds.minX + faceWidth * 0.8;
 
       let brightnessSum = 0;
-      let rednessSum = 0;
+      let rNormSum = 0;
+      let skinPixelCount = 0;
       let oilyPixelCount = 0;
+      let tZonePixelCount = 0;
       const brightness = new Float32Array(pixelCount);
 
-      for (let i = 0; i < pixelCount; i++) {
-        const o = i * 4;
-        const r = data[o], g = data[o + 1], b = data[o + 2];
-        const bright = (r + g + b) / 3;
-        brightness[i] = bright;
-        brightnessSum += bright;
-        // 톤·홍조 지표: R이 G·B 평균보다 얼마나 높은지 (양수일수록 붉은기가 강함)
-        rednessSum += r - (g + b) / 2;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = y * width + x;
+          const o = i * 4;
+          const r = data[o], g = data[o + 1], b = data[o + 2];
+          const bright = (r + g + b) / 3;
+          brightness[i] = bright; // 경계 그레디언트 계산을 위해 마스크 여부와 무관하게 전체를 채워둠
 
-        // 유분 지표: 밝고(반사광) 채도가 낮은(번들거리는) 픽셀 비율
-        const maxC = Math.max(r, g, b);
-        const minC = Math.min(r, g, b);
-        const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
-        if (bright > 190 && saturation < 0.18) oilyPixelCount++;
+          if (x >= tZoneLeft && x <= tZoneRight && y >= tZoneTop && y <= tZoneBottom) {
+            tZonePixelCount++;
+            // 유분 지표: 밝고(반사광) 채도가 낮은(번들거리는) 픽셀 비율
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
+            if (bright > 190 && saturation < 0.18) oilyPixelCount++;
+          }
+
+          if (!skinMask[i]) continue; // 수분·톤/홍조·트러블 통계는 피부(얼굴) 영역만 집계
+          skinPixelCount++;
+          brightnessSum += bright;
+          // 톤·홍조 지표: R 채널의 상대 비중(r-chromaticity, r/(r+g+b)).
+          // 밝기(노출)가 달라져도 채널 "비율"은 거의 변하지 않아, 사진마다 밝기가 다른
+          // 두 장을 비교할 때도 광원 보정 없이 안정적으로 붉은기만 비교할 수 있음
+          const channelSum = r + g + b;
+          if (channelSum > 0) rNormSum += r / channelSum;
+        }
       }
 
-      const avgBrightness = brightnessSum / pixelCount;
-      const avgRedness = rednessSum / pixelCount;
-      // 조명(전체 밝기) 편차를 보정하기 위한 정규화 비율 (기준 밝기 128 대비)
+      const avgBrightness = brightnessSum / Math.max(skinPixelCount, 1);
+      const avgRNorm = rNormSum / Math.max(skinPixelCount, 1);
+      // 조명(전체 밝기) 편차를 보정하기 위한 정규화 비율 (기준 밝기 128 대비) — 수분(질감) 지표에만 사용
       const lightingFactor = clampSkinScore(128 / Math.max(avgBrightness, 1), 0.6, 1.6);
 
       // 수분(hydration): 인접 픽셀 간 밝기 변화(엣지 밀도)로 표면 질감을 근사.
-      // 요철·각질이 많을수록 엣지가 많아져 매끈함(수분감) 점수는 낮아짐
+      // 요철·각질이 많을수록 엣지가 많아져 매끈함(수분감) 점수는 낮아짐.
+      // 얼굴 윤곽선(피부↔배경/머리카락 경계)이 만드는 가짜 엣지가 섞이지 않도록,
+      // 자기 자신과 4방향 이웃이 모두 피부 영역인 픽셀만 집계 대상으로 삼음
       let edgeSum = 0;
       let edgeSamples = 0;
       for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
           const idx = y * width + x;
+          if (!skinMask[idx] || !skinMask[idx - 1] || !skinMask[idx + 1] || !skinMask[idx - width] || !skinMask[idx + width]) continue;
           const dx = brightness[idx + 1] - brightness[idx - 1];
           const dy = brightness[idx + width] - brightness[idx - width];
           edgeSum += Math.sqrt(dx * dx + dy * dy);
           edgeSamples++;
         }
       }
-      const avgEdge = (edgeSum / edgeSamples) * lightingFactor;
+      const avgEdge = edgeSamples > 0 ? (edgeSum / edgeSamples) * lightingFactor : 0;
       const hydration = clampSkinScore(100 - avgEdge * 3.2, 0, 100); // 경험적 스케일링 상수
 
-      // 대부분의 피부는 원래 R값이 G·B보다 높으므로(자연스러운 살빛), 배율을 과하게 주면
-      // 거의 모든 사진이 100점에 붙어버려 비교가 무의미해짐 → 완만한 배율로 조정
-      const redness = clampSkinScore(avgRedness * lightingFactor * 1.6, 0, 100);
-      const oiliness = clampSkinScore((oilyPixelCount / pixelCount) * 260, 0, 100);
-      const blemish = countBlemishBlobs(data, width, height, avgRedness, avgBrightness);
+      // 톤·홍조 점수: r-chromaticity 기준 baseline(0.36, 중립 살빛 하한 근처)보다 얼마나 붉은 쪽으로
+      // 치우쳤는지를 0~100으로 스케일링. (이전에는 원본 R 우세치에 조명 보정 배율을 곱했는데, 사진이
+      // 조금만 어두워도 배율이 겹쳐 거의 모든 사진이 100점에 붙어버려 비교가 무의미했음)
+      const redness = clampSkinScore((avgRNorm - 0.36) * 400, 0, 100);
+      const oiliness = clampSkinScore((oilyPixelCount / Math.max(tZonePixelCount, 1)) * 150, 0, 100);
+      const blemish = countBlemishBlobs(data, width, height, skinMask);
 
       return { hydration, redness, oiliness, blemish };
     }
@@ -2574,6 +2710,37 @@ HTML_PAGE = """<!DOCTYPE html>
       if (delta === 0) return { label: '변화 없음', color: 'gray' };
       if (delta > 0) return { label: `${delta}건 증가`, color: 'red' };
       return { label: `${Math.abs(delta)}건 감소`, color: 'green' };
+    }
+
+    // 여러 항목명을 자연스러운 한국어 나열로 합침 (예: ['수분','유분'] → "수분·유분")
+    function joinKoreanList(labels) {
+      return labels.join('·');
+    }
+
+    // 수분/톤·홍조/유분/트러블 4가지 항목의 배지 판정 결과를 종합해 최종 "종합 요약" 문구를 생성.
+    // 개별 카드 설명은 항목별로 따로 있으므로, 여기서는 4개 항목을 한 번에 놓고 본 전체 총평만 담당함
+    function buildSkinReportSummary(hydrationBadge, rednessBadge, oilinessBadge, blemishBadge) {
+      const improved = [];
+      const worsened = [];
+      if (hydrationBadge.label === '개선됨') improved.push('수분');
+      else if (hydrationBadge.label === '주의 필요') worsened.push('수분');
+      if (rednessBadge.label === '개선됨') improved.push('톤·홍조');
+      else if (rednessBadge.label === '주의 필요') worsened.push('톤·홍조');
+      if (oilinessBadge.label === '개선됨') improved.push('유분');
+      else if (oilinessBadge.label === '주의 필요') worsened.push('유분');
+      if (blemishBadge.color === 'green') improved.push('트러블');
+      else if (blemishBadge.color === 'red') worsened.push('트러블');
+
+      if (improved.length === 0 && worsened.length === 0) {
+        return '수분·톤/홍조·유분·트러블 4가지 항목 모두 1일차와 큰 차이 없이 안정적인 상태를 유지했어요.';
+      }
+      if (worsened.length === 0) {
+        return `${joinKoreanList(improved)} 항목이 좋아지며 전반적으로 피부 컨디션이 개선됐어요. 지금 하고 있는 관리 루틴을 여행 후에도 계속 이어가 보세요.`;
+      }
+      if (improved.length === 0) {
+        return `${joinKoreanList(worsened)} 항목에서 다소 신경 쓰이는 변화가 감지됐어요. 자외선 차단과 보습 위주로 관리해보면 좋을 것 같아요.`;
+      }
+      return `${joinKoreanList(improved)} 항목은 좋아졌지만 ${joinKoreanList(worsened)} 항목은 아직 신경 쓰이는 변화가 있어요. 좋아진 루틴은 유지하면서 나머지 항목 위주로 관리해보세요.`;
     }
 
     function formatPercentDelta(start, end) {
@@ -2724,22 +2891,8 @@ HTML_PAGE = """<!DOCTYPE html>
           ? '트러블이 줄어들어 피부가 안정된 것으로 보여요.'
           : '트러블 개수는 1일차와 같아요.';
 
-      // 종합 요약: 홍조·트러블 악화 여부에 따라 조언 문구를 조건 분기
-      const worsenedRedness = rednessBadge.label === '주의 필요';
-      const worsenedBlemish = blemishDelta > 0;
-      const improvedHydration = hydrationBadge.label === '개선됨';
-      let summary;
-      if (worsenedRedness && worsenedBlemish) {
-        summary = '여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.';
-      } else if (worsenedRedness) {
-        summary = '홍조가 도드라진 편이에요. 자외선 차단제를 자주 덧발라 톤을 관리해보세요.';
-      } else if (worsenedBlemish) {
-        summary = '트러블이 새로 생겼어요. 자기 전 세안과 보습을 조금 더 신경 써보세요.';
-      } else if (improvedHydration) {
-        summary = '전반적으로 피부가 편안해졌어요. 지금의 수분 관리 루틴을 계속 유지해보세요.';
-      } else {
-        summary = '전체적으로 여행 전과 비슷한 상태를 유지했어요.';
-      }
+      // 종합 요약: 수분·톤/홍조·유분·트러블 4개 항목의 배지 판정을 모두 종합해 최종 총평 생성
+      const summary = buildSkinReportSummary(hydrationBadge, rednessBadge, oilinessBadge, blemishBadge);
       document.getElementById('skinReportSummary').textContent = summary;
     }
 
