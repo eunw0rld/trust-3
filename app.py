@@ -509,6 +509,58 @@ HTML_PAGE = """<!DOCTYPE html>
     0%   { opacity: 0.7; transform: scale(0.85); }
     100% { opacity: 0; transform: scale(1.15); }
   }
+  /* 여행 기록 상세: 하단 정보를 콜라주 위에 겹치는 드래그 가능한 바텀시트로 */
+  .archive-sheet-dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    z-index: 2;
+    transition: background 0.3s ease;
+  }
+  .archive-sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--app-height) - 100px);
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+  }
+  /* 스탬프 연출이 끝나기 전까지는 트랜지션 없이 화면 밖에 완전히 숨겨둠 */
+  .archive-sheet.hidden-below {
+    transform: translateY(100%);
+  }
+  .archive-sheet-handle-wrap {
+    padding: 10px 0 6px;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  .archive-sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: #e5e7eb;
+  }
+  .archive-sheet-peek-header {
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  .archive-sheet-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 24px 40px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
   /* 국기 이모지 흔들림 */
   .flag-wave {
     display: inline-block;
@@ -7534,6 +7586,103 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       `;
     }
 
+    // ===== 여행 기록 상세 바텀시트: peek(위치 정보만) <-> expanded(일기/순간들까지 전부) =====
+    const ARCHIVE_SHEET_PEEK_PX = 128; // peek 상태에서 시트 위로 보이는 높이(핸들 + 위치 정보)
+    let archiveSheetExpanded = false;
+    let archiveSheetDragging = false;
+
+    function getArchiveSheetEl() {
+      return document.getElementById('archiveSheet');
+    }
+
+    function setArchiveSheetTranslate(px, animate) {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      sheet.style.transition = animate ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none';
+      sheet.style.transform = `translateY(${px}px)`;
+      const dim = document.getElementById('archiveSheetDim');
+      const collapsedPx = Math.max(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, 1);
+      const progress = 1 - Math.min(Math.max(px / collapsedPx, 0), 1); // 0=peek, 1=expanded
+      if (dim) dim.style.background = `rgba(0, 0, 0, ${(progress * 0.35).toFixed(2)})`;
+    }
+
+    // 스탬프 연출이 끝난 직후: 화면 밖에 숨어있던 시트를 peek 위치로 슬라이드업
+    function revealArchiveSheet() {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      sheet.classList.remove('hidden-below');
+      archiveSheetExpanded = false;
+      setArchiveSheetTranslate(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, true);
+    }
+
+    function collapseArchiveSheet(animate) {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      archiveSheetExpanded = false;
+      setArchiveSheetTranslate(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, animate);
+    }
+
+    function expandArchiveSheet(animate) {
+      archiveSheetExpanded = true;
+      setArchiveSheetTranslate(0, animate);
+    }
+
+    // 핸들/peek 헤더를 드래그하거나(위/아래) 탭하면 펼침·접힘 토글. 펼쳐진 상태에서
+    // 내용(archiveSheetContent)은 별도로 자연 스크롤됨(이 드래그 로직과 무관)
+    function wireArchiveSheetDrag() {
+      const sheet = getArchiveSheetEl();
+      const handle = document.getElementById('archiveSheetHandleWrap');
+      const peekHeader = document.querySelector('#archiveCanvas .archive-sheet-peek-header');
+      if (!sheet || !handle) return;
+      let dragStartY = 0;
+      let dragStartTranslate = 0;
+      let moved = false;
+
+      const onPointerDown = (e) => {
+        archiveSheetDragging = true;
+        moved = false;
+        dragStartY = e.clientY;
+        dragStartTranslate = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        if (archiveSheetExpanded) dragStartTranslate = 0;
+        sheet.style.transition = 'none';
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      };
+      const onPointerMove = (e) => {
+        if (!archiveSheetDragging) return;
+        const deltaY = e.clientY - dragStartY;
+        if (Math.abs(deltaY) > 4) moved = true;
+        const collapsedPx = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        const next = Math.min(Math.max(dragStartTranslate + deltaY, 0), collapsedPx);
+        setArchiveSheetTranslate(next, false);
+      };
+      const onPointerUp = () => {
+        if (!archiveSheetDragging) return;
+        archiveSheetDragging = false;
+        if (!moved) {
+          // 드래그 없이 탭만 했으면 현재 상태의 반대로 토글
+          if (archiveSheetExpanded) collapseArchiveSheet(true); else expandArchiveSheet(true);
+          return;
+        }
+        const collapsedPx = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        const currentMatch = /translateY\(([-\d.]+)px\)/.exec(sheet.style.transform);
+        const currentPx = currentMatch ? parseFloat(currentMatch[1]) : collapsedPx;
+        if (currentPx < collapsedPx / 2) expandArchiveSheet(true); else collapseArchiveSheet(true);
+      };
+
+      [handle, peekHeader].forEach((el) => {
+        if (!el) return;
+        el.addEventListener('pointerdown', onPointerDown);
+        el.addEventListener('pointermove', onPointerMove);
+        el.addEventListener('pointerup', onPointerUp);
+        el.addEventListener('pointercancel', onPointerUp);
+      });
+
+      // 접힌 상태에서 위로 스크롤(휠/트랙패드)하면 펼치기
+      sheet.addEventListener('wheel', (e) => {
+        if (!archiveSheetExpanded && e.deltaY < 0) expandArchiveSheet(true);
+      }, { passive: true });
+    }
+
     function openArchiveDetail(item) {
       const modal = document.getElementById('archiveModal');
       const canvas = document.getElementById('archiveCanvas');
@@ -7541,6 +7690,8 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
       clearArchiveStampTimers();
       clearArchiveLoadingTimer();
+      archiveSheetExpanded = false;
+      archiveSheetDragging = false;
 
       // stack(콜라주 에셋)이 있는 모든 달은 풀 콜라주 화면, 없으면 준비중 안내
       if (item.stack) {
@@ -7556,6 +7707,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
           canvas.querySelector(':scope > div')?.classList.add('archive-collage-fade-in');
           requestAnimationFrame(() => runStampSequence());
           wireArchiveTapTargets();
+          wireArchiveSheetDrag();
         }, 500);
       } else {
         document.getElementById('archiveHeaderTitle').textContent = `${item.flag} ${item.country} · ${item.city}`;
@@ -7614,16 +7766,25 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       `;
     }
 
-    // 순차적으로 .stamp-el 에 stamped 클래스를 붙여 도장 애니메이션 실행
+    // 순차적으로 .stamp-el 에 stamped 클래스를 붙여 도장 애니메이션 실행.
+    // 스탬프 개수(N)와 무관하게 전체 연출이 대략 1.5초에 끝나도록 간격을 동적으로 배분하고,
+    // 다 끝나면 바텀시트를 peek 상태로 올림
     function runStampSequence() {
       const els = Array.from(document.querySelectorAll('#archiveCanvas .stamp-el'));
+      const totalMs = 1500;
+      const stampAnimMs = 450;
+      const baseDelay = 80;
+      const step = els.length > 1 ? (totalMs - baseDelay - stampAnimMs) / (els.length - 1) : 0;
       els.forEach((el, i) => {
-        const delay = 250 + i * 320; // 첫 요소 후 약 0.32초 간격으로 하나씩
+        const delay = baseDelay + i * step;
         const t = setTimeout(() => {
           el.classList.add('stamped');
         }, delay);
         archiveStampTimers.push(t);
       });
+      const revealDelay = els.length > 0 ? baseDelay + (els.length - 1) * step + stampAnimMs : 200;
+      const revealTimer = setTimeout(() => revealArchiveSheet(), revealDelay);
+      archiveStampTimers.push(revealTimer);
     }
 
     // ===== 여행 상세(범용): 상단 검은 영역(월 제목 + 확대 콜라주 + 뱃지) =====
@@ -7683,8 +7844,8 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       `).join('');
 
       return `
-        <div class="absolute inset-0 overflow-y-auto" style="-webkit-overflow-scrolling:touch;background:#0d0d0f;">
-          <!-- ===== 상단 검은 영역 ===== -->
+        <div class="absolute inset-0" style="background:#0d0d0f;overflow:hidden;">
+          <!-- ===== 상단 검은 영역: 고정 배경처럼 두고, 바텀시트가 그 위로 겹쳐 올라옴 ===== -->
           <div style="position:relative;background:#0d0d0f;padding:104px ${sidePad}px 22px;">
             <!-- 월 제목 + 흔들리는 국기 / 날짜 -->
             <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;">
@@ -7715,27 +7876,32 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
             </div>
           </div>
 
-          <!-- ===== 하단 흰 영역: 위치(국가/일정) → 일기 → 이번 여행의 순간들 ===== -->
-          <div style="background:#fff;border-radius:26px 26px 0 0;margin-top:-18px;position:relative;
-                      padding:24px 24px 40px;min-height:200px;">
-            <!-- 1) 위치 정보 (국가/일정) -->
-            <div style="display:flex;align-items:center;gap:8px;">
+          <!-- 시트가 펼쳐질수록 콜라주 위에 어두워지는 딤 처리 -->
+          <div id="archiveSheetDim" class="archive-sheet-dim"></div>
+
+          <!-- ===== 바텀시트: peek(위치 정보만) <-> 드래그/탭/스크롤로 확장(일기 + 이번 여행의 순간들) ===== -->
+          <div id="archiveSheet" class="archive-sheet hidden-below">
+            <div id="archiveSheetHandleWrap" class="archive-sheet-handle-wrap">
+              <div class="archive-sheet-handle"></div>
+            </div>
+            <div class="archive-sheet-peek-header" style="display:flex;align-items:center;gap:8px;padding:0 24px 16px;">
               <span style="font-size:16px;">📍</span>
               <div>
                 <p style="font-size:16px;font-weight:800;color:#111827;margin:0;letter-spacing:-0.3px;">${item.city}, ${item.country}</p>
                 <p style="font-size:12px;color:#9ca3af;margin:2px 0 0;">${item.start} ~ ${item.end} · ${status.label || '여행'}</p>
               </div>
             </div>
+            <div id="archiveSheetContent" class="archive-sheet-content">
+              <!-- 여행 일기 (화장품 구매 후기) -->
+              <div style="background:#f9fafb;border-radius:16px;padding:16px 18px;">
+                <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:0 0 8px;">🛍️ 여행 일기 · 이번 여행의 득템</p>
+                <p style="font-size:14px;line-height:1.7;color:#374151;margin:0;">${diary}</p>
+              </div>
 
-            <!-- 2) 여행 일기 (화장품 구매 후기) -->
-            <div style="margin-top:18px;background:#f9fafb;border-radius:16px;padding:16px 18px;">
-              <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:0 0 8px;">🛍️ 여행 일기 · 이번 여행의 득템</p>
-              <p style="font-size:14px;line-height:1.7;color:#374151;margin:0;">${diary}</p>
+              <!-- 이번 여행의 순간들 -->
+              <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:24px 0 4px;">이번 여행의 순간들</p>
+              ${scheduleItems}
             </div>
-
-            <!-- 3) 이번 여행의 순간들 -->
-            <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:24px 0 4px;">이번 여행의 순간들</p>
-            ${scheduleItems}
           </div>
         </div>
       `;
