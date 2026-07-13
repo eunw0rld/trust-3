@@ -1871,16 +1871,51 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <button id="afterUseToSettingsBtn" type="button" class="back-to-nav-btn text-xs text-gray-400">← 이전</button>
 
-        <div class="border border-gray-200 rounded-2xl p-5">
+        <!-- 사진 등록 페이지 전용: 여권(패스포트) 컨셉 헤더 + 출국(1일차)·입국(마지막날) 도장 카드.
+             두 사진이 모두 등록되기 전까지만 노출. 리포트 화면(skinReportPageLayout)은 완전히 분리되어
+             그대로 유지되므로 이 영역의 변경은 리포트 표시에 영향을 주지 않음 -->
+        <div id="skinRegisterPageLayout">
+          <div class="rounded-2xl p-5 mb-3 bg-emerald-950">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-[10px] font-bold tracking-widest text-emerald-300">SKIN CONDITION PASSPORT</p>
+              <span class="text-emerald-300 text-lg inline-block" style="transform: rotate(-45deg);">✈</span>
+            </div>
+            <h2 class="text-lg font-bold text-white mb-1">피부 변화 리포트</h2>
+            <p id="skinPassportSubtitle" class="text-xs text-emerald-100/80"></p>
+          </div>
+
+          <div id="skinPhotoRegisterLayout" class="space-y-2 mb-2">
+            <button type="button" id="skinPhotoStartRegBox" class="relative overflow-hidden w-full min-h-[160px] border border-gray-200 rounded-2xl py-8 flex flex-col items-center justify-center gap-2 cursor-pointer bg-white">
+              <!-- 사진이 등록되면 카드 전체를 채우는 미리보기로 표시(center-crop은 object-cover가 처리).
+                   글자가 사진 위에서도 잘 보이도록 어두운 스크림을 함께 깔고 아이콘은 숨김 -->
+              <img id="skinPhotoStartRegPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="1일차 피부 사진" />
+              <div id="skinPhotoStartRegScrim" class="hidden absolute inset-0 bg-black/50"></div>
+              <span class="absolute top-3 right-3 z-10 text-[10px] font-bold text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 bg-white/85">DEP</span>
+              <div id="skinPhotoStartRegIcon" class="w-16 h-16 rounded-full border-2 border-brand-500 flex items-center justify-center text-2xl text-brand-500" style="transform: rotate(-45deg);">✈</div>
+              <p id="skinPhotoStartRegTitle" class="text-base font-bold text-gray-900">출국 · 1일차</p>
+              <p id="skinPhotoStartRegHint" class="text-xs text-gray-400">탭해서 사진 등록하기</p>
+            </button>
+            <div class="flex justify-center text-gray-300">↓</div>
+            <button type="button" id="skinPhotoEndRegBox" class="relative overflow-hidden w-full min-h-[160px] border border-blue-200 rounded-2xl py-8 flex flex-col items-center justify-center gap-2 cursor-pointer bg-blue-50">
+              <img id="skinPhotoEndRegPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="마지막날 피부 사진" />
+              <div id="skinPhotoEndRegScrim" class="hidden absolute inset-0 bg-black/50"></div>
+              <span class="absolute top-3 right-3 z-10 text-[10px] font-bold text-blue-500 border border-blue-200 rounded px-1.5 py-0.5 bg-white/85">ARR</span>
+              <div id="skinPhotoEndRegIcon" class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center text-2xl text-blue-500" style="transform: rotate(135deg);">✈</div>
+              <p id="skinPhotoEndRegTitle" class="text-base font-bold text-gray-900">입국 · 마지막날</p>
+              <p id="skinPhotoEndRegHint" class="text-xs text-gray-400">탭해서 사진 등록하기</p>
+            </button>
+          </div>
+          <p id="skinPhotoRegisterHint" class="text-xs text-gray-400 mt-1">출국·입국 도장을 찍으면 <span class="font-semibold text-gray-600">피부 여정 심사</span>가 시작돼요</p>
+        </div>
+
+        <!-- 리포트 화면(피부 변화 리포트): 두 사진이 모두 등록된 뒤에만 노출. 기존 그대로 변경 없음 -->
+        <div id="skinReportPageLayout" class="hidden border border-gray-200 rounded-2xl p-5">
           <div class="flex items-center justify-between mb-1">
             <p id="skinReportDayLabel" class="text-xs text-gray-400"></p>
             <span id="skinReportDestinationChip" class="text-[10px] font-bold text-brand-500 border border-brand-100 rounded-full px-2 py-0.5"></span>
           </div>
           <h2 class="text-base font-bold mb-4">피부 변화 리포트</h2>
 
-          <!-- 1일차 vs 마지막날 사진 비교: 탭하면 기기의 사진 파일 선택창(file input)이 열림.
-               사진 등록 전에는 업로드 칸을 크게(뷰포트 높이 비례) 키워 빈 화면을 채움.
-               사진이 등록되면 정사각형으로 축소되고(applySkinPhoto), 탭하면 라이트박스로 확대됨 -->
           <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
               <button type="button" id="skinPhotoStartBox" class="relative overflow-hidden block w-full border-2 border-dashed border-gray-200 rounded-xl h-[38vh] flex flex-col items-center justify-center text-gray-400 gap-1 cursor-pointer">
@@ -1889,6 +1924,9 @@ HTML_PAGE = """<!DOCTYPE html>
                   <span class="text-xl">🖼️</span>
                   <span class="text-xs">1일차 사진</span>
                 </div>
+                <!-- 사진이 이미 등록된 뒤에도 이 버튼을 누르면 파일 선택창이 다시 열려 사진을 교체할 수 있음.
+                     탭하면 상위 버튼(라이트박스 확대)으로 클릭이 전달되지 않도록 별도 핸들러에서 stopPropagation 처리 -->
+                <span id="skinPhotoStartRetakeBtn" class="hidden absolute bottom-1.5 right-1.5 z-10 text-[11px] font-semibold text-white bg-black/50 rounded-full px-2.5 py-1">다시 선택</span>
               </button>
               <input id="skinPhotoStartInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportStartDate" class="text-xs text-gray-400 text-center mt-2"></p>
@@ -1900,6 +1938,7 @@ HTML_PAGE = """<!DOCTYPE html>
                   <span class="text-xl">🖼️</span>
                   <span class="text-xs">마지막날 사진</span>
                 </div>
+                <span id="skinPhotoEndRetakeBtn" class="hidden absolute bottom-1.5 right-1.5 z-10 text-[11px] font-semibold text-white bg-black/50 rounded-full px-2.5 py-1">다시 선택</span>
               </button>
               <input id="skinPhotoEndInput" type="file" accept="image/*" class="hidden" />
               <p id="skinReportEndDate" class="text-xs text-gray-400 text-center mt-2"></p>
@@ -1986,9 +2025,13 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 종합 요약: 사진이 모두 등록되어 분석이 끝나기 전에는 숨김 (항목별 카드와 함께 노출) -->
         <div id="skinReportSummaryBox" class="hidden bg-brand-50 border border-brand-100 rounded-2xl p-4">
           <p id="skinReportSummary" class="text-sm text-brand-700 leading-relaxed">여행 중 자외선 노출이 늘면서 홍조와 트러블이 조금 생겼어요. 자외선 차단제를 2~3시간마다 다시 발라주면 다음 여행에서 더 편안한 피부를 유지할 수 있을 거예요.</p>
+          <p class="text-[11px] text-brand-400 mt-2 leading-relaxed">※ 사진 기반 근사 분석 결과로, 의학적 진단이 아닌 참고용 정보예요. 정확한 진단은 피부과 상담을 권장해요.</p>
         </div>
 
         <p id="aftercareMissingPhotosWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">먼저 1일차·마지막날 사진을 등록해 주세요</p>
+        <!-- 리포트 저장하기: 항목별 변화·종합 요약이 준비된 뒤(두 사진 등록 후)에만 노출.
+             기존 "내 피부 사후관리하기" 버튼과 동일한 스타일(색상·모서리·크기) 유지 -->
+        <button id="saveSkinReportBtn" type="button" class="hidden w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">리포트 저장하기</button>
         <button id="goToAftercareBtn" type="button" class="hidden w-full py-3.5 rounded-xl bg-brand-500 text-white text-sm font-bold">내 피부 사후관리하기</button>
 
         <!-- 사진 확대 라이트박스: 결과 페이지의 1일차/마지막날 사진을 탭하면 원본 비율로 크게 표시 -->
@@ -2064,8 +2107,53 @@ HTML_PAGE = """<!DOCTYPE html>
         <div id="deliveryBeautyEndModal" class="hidden absolute inset-0 z-50 bg-black/40 px-6 flex items-center justify-center">
           <div class="bg-white rounded-2xl p-5 w-full max-w-xs">
             <p class="text-base font-bold mb-3">배달의뷰티 서비스 종료 안내</p>
-            <p class="text-sm text-gray-500 leading-relaxed mb-5">그동안 배달의뷰티를 이용해 주셔서 진심으로 감사드립니다.<br /><br />배달의뷰티 서비스는 종료되었으며, 앞으로는 2개 플랫폼에서 다양한 뷰티 상품을 계속 만나보실 수 있습니다. 감사합니다.</p>
+            <p class="text-sm text-gray-500 leading-relaxed mb-5">그동안 배달의뷰티를 아껴주신 모든 분들께 진심으로 감사드립니다.<br /><br />배달의뷰티 서비스는 종료되었지만, 여러분의 뷰티 라이프는 계속됩니다. 앞으로는 2개의 플랫폼에서 더욱 다양한 뷰티 상품으로 찾아뵙겠습니다.<br />감사합니다.</p>
             <button id="deliveryBeautyEndCloseBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">확인했어요</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 피부 변화 리포트 하위 화면: "리포트 저장하기"로 저장해둔 리포트 목록.
+           하단 네비 탭이 아니므로 뒤로가기는 항상 피부 변화 리포트 화면으로 복귀 (aftercare와 동일 패턴) -->
+      <section id="screen-saved-reports" class="hidden py-6 space-y-6">
+
+        <button id="savedReportsBackBtn" type="button" class="text-xs text-gray-400">← 이전</button>
+
+        <div>
+          <h2 class="text-base font-bold mb-1">저장된 피부 리포트</h2>
+          <p class="text-sm text-gray-400">저장해둔 여행별 피부 변화 리포트를 다시 볼 수 있어요</p>
+        </div>
+
+        <!-- 저장된 리포트가 하나도 없을 때 안내 -->
+        <p id="savedReportsEmptyNote" class="hidden text-sm text-gray-400 text-center py-10">아직 저장된 리포트가 없어요</p>
+
+        <!-- 저장된 리포트 목록: 각 행 = [여행지 | 날짜 | 리포트 조회하기] -->
+        <div id="savedReportsList" class="space-y-3"></div>
+
+        <!-- 리포트 조회 팝업(모달): 배경 탭 또는 X 버튼으로 닫힘 -->
+        <div id="savedReportViewModal" class="hidden absolute inset-0 z-50 bg-black/40 px-6 flex items-center justify-center">
+          <div class="bg-white rounded-2xl p-5 w-full max-w-xs max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-3">
+              <p id="savedReportViewTitle" class="text-sm font-bold"></p>
+              <button id="savedReportViewCloseBtn" type="button" class="text-gray-400 text-lg leading-none" aria-label="닫기">✕</button>
+            </div>
+            <p id="savedReportViewDateRange" class="text-xs text-gray-400 mb-4"></p>
+            <!-- 저장 당시 등록했던 1일차·마지막날 사진 (예전에 사진 없이 저장된 리포트는 이 영역을 숨김) -->
+            <div id="savedReportViewPhotos" class="hidden grid grid-cols-2 gap-2 mb-4">
+              <div>
+                <img id="savedReportViewStartPhoto" class="w-full aspect-square object-cover rounded-xl" alt="1일차 사진" />
+                <p class="text-[11px] text-gray-400 text-center mt-1">1일차</p>
+              </div>
+              <div>
+                <img id="savedReportViewEndPhoto" class="w-full aspect-square object-cover rounded-xl" alt="마지막날 사진" />
+                <p class="text-[11px] text-gray-400 text-center mt-1">마지막날</p>
+              </div>
+            </div>
+            <div id="savedReportViewItems" class="space-y-2 mb-4"></div>
+            <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4">
+              <p id="savedReportViewSummary" class="text-sm text-brand-700 leading-relaxed"></p>
+            </div>
           </div>
         </div>
 
@@ -2404,7 +2492,11 @@ HTML_PAGE = """<!DOCTYPE html>
     });
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('load', scheduleResize);
-    setTimeout(scheduleResize, 300); // Tailwind CDN(JIT) 스타일 주입 이후 재계산
+    // Tailwind CDN(JIT)이 이 페이지 전체(용량이 매우 큼)를 스캔해서 스타일을 주입하는 데
+    // 300ms보다 오래 걸리면, 그 사이에 계산된 iframe 높이가 실제 레이아웃보다 작게 고정돼
+    // 화면 하단 버튼(예: 웰컴 화면 "시작하기")이 iframe 클릭 가능 영역 밖으로 밀려나는
+    // 문제가 생길 수 있어 여러 지연 시간으로 반복 재계산함
+    [300, 800, 1500, 3000, 5000].forEach((delay) => setTimeout(scheduleResize, delay));
     scheduleResize();
 
     // 화면이 바뀔 때마다 살짝 페이드인되도록 애니메이션 클래스를 다시 걸어줌
@@ -2416,16 +2508,40 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 웰컴 화면 "시작하기" -> 앱 진입 (온보딩 위저드 1단계부터 시작)
     function enterApp() {
-      document.getElementById('screen-welcome').classList.add('hidden');
-      const app = document.getElementById('appContainer');
-      app.classList.remove('hidden');
       try {
+        const welcome = document.getElementById('screen-welcome');
+        const app = document.getElementById('appContainer');
+        if (!welcome || !app) {
+          console.error('enterApp: 화면 요소를 찾을 수 없음', { welcome: !!welcome, app: !!app });
+          return;
+        }
+        welcome.classList.add('hidden');
+        app.classList.remove('hidden');
         playScreenTransition(app);
       } catch (e) {
         console.error('enterApp 전환 중 오류:', e);
       }
     }
-    document.getElementById('welcomeStartBtn').addEventListener('click', enterApp);
+    // 일부 모바일 브라우저는 컴포넌트가 srcdoc iframe 안에 있을 때 iframe에 처음
+    // 탭하는 동작이 포커스 이동으로만 소모되고 click 이벤트가 발생하지 않는 경우가
+    // 있어(:active 프레스 효과는 보이지만 다음 화면으로 안 넘어가는 증상과 일치),
+    // touchend에도 동일하게 걸어 click이 먹지 않는 경우를 보완함
+    (function bindWelcomeStart() {
+      const btn = document.getElementById('welcomeStartBtn');
+      if (!btn) {
+        console.error('welcomeStartBtn을 찾을 수 없음');
+        return;
+      }
+      let handled = false;
+      function handleStart() {
+        if (handled) return;
+        handled = true;
+        enterApp();
+        setTimeout(() => { handled = false; }, 600);
+      }
+      btn.addEventListener('click', handleStart);
+      btn.addEventListener('touchend', handleStart);
+    })();
 
     // 하단 메뉴바 전환 (메인/기록/부가서비스)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
@@ -2450,6 +2566,7 @@ HTML_PAGE = """<!DOCTYPE html>
       skinReport: document.getElementById('screen-afteruse'),
       skinScan: document.getElementById('screen-skin-scan'),
       aftercare: document.getElementById('screen-aftercare'),
+      savedReports: document.getElementById('screen-saved-reports'),
       community: document.getElementById('screen-community'),
       settings: document.getElementById('screen-settings'),
     };
@@ -2648,12 +2765,15 @@ HTML_PAGE = """<!DOCTYPE html>
     // 도시 확대가 끝나면 storeData의 매장들을 도시 중심 근처 mock 좌표에 주황색 원형 마커로 표시
     function renderCityStoreMarkers(cityKey, weather) {
       clearCityMarkers();
-      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const storeKey = weather.cityKey || (weather.en ? weather.en.toLowerCase() : '');
       const baseStores = storeData[storeKey] || [];
       const offsets = [
         [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
       ];
       currentCityStores = baseStores.map((store, i) => {
+        // 구글 맵 기준 실제 좌표가 있는 매장(예: 로마 세포라)은 그대로 쓰고,
+        // 없는 mock 매장만 여행지 중심 좌표에서 살짝 흩어지게 배치
+        if (store.lat != null && store.lng != null) return { ...store };
         const off = offsets[i % offsets.length];
         return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
       });
@@ -2676,14 +2796,14 @@ HTML_PAGE = """<!DOCTYPE html>
         store.marker = marker;
         cityMarkers.push(marker);
       });
-      renderMapStoreList(cityKey, currentCityStores);
+      renderMapStoreList(weather.cityLabel || cityKey, currentCityStores);
     }
 
     // 지도 아래 매장 리스트 카드: 클릭 시 지도가 해당 매장 마커로 다시 flyTo
     // 타이틀/부제는 고정 문구를 유지하고, 위치 정보만 작은 라벨로 표시
-    function renderMapStoreList(cityKey, stores) {
+    function renderMapStoreList(displayLabel, stores) {
       const locationLabel = document.getElementById('mapStoreLocationLabel');
-      locationLabel.textContent = `📍 ${cityKey}`;
+      locationLabel.textContent = `📍 ${displayLabel}`;
       locationLabel.classList.remove('hidden');
       const list = document.getElementById('mapStoreList');
       if (stores.length === 0) {
@@ -2735,6 +2855,8 @@ HTML_PAGE = """<!DOCTYPE html>
           renderSkinReport();
         } else if (tabName === 'aftercare') {
           renderAftercare();
+        } else if (tabName === 'savedReports') {
+          renderSavedSkinReportsList();
         } else if (tabName === 'settings') {
           renderProfileSummary();
         } else if (tabName === 'community') {
@@ -2895,6 +3017,8 @@ HTML_PAGE = """<!DOCTYPE html>
       document.getElementById('skinReportDestinationChip').textContent = `${flag} ${destination || '여행지'}`;
       document.getElementById('skinReportStartDate').textContent = start || '-';
       document.getElementById('skinReportEndDate').textContent = end || '-';
+      // 사진 등록 페이지(여권 컨셉 헤더)의 부제 문구도 같은 데이터로 함께 채움
+      document.getElementById('skinPassportSubtitle').textContent = `여행 ${totalDays}일차 · 마지막날 / 출입국 기록`;
     }
 
     // ===== 피부 변화 리포트: 사진 업로드/촬영 → Canvas 픽셀 분석 → 항목별 카드 자동 갱신 =====
@@ -2902,6 +3026,79 @@ HTML_PAGE = """<!DOCTYPE html>
     // 실제 피부과적 진단이 아니라, 두 사진의 픽셀 패턴을 비교해 변화 추이만 보여주는 목적입니다.
 
     const SKIN_ANALYSIS_SIZE = 128; // 분석용 캔버스 한 변 크기(px). 클수록 정교하지만 느려짐
+
+    // ===== 피부타입별 분석 기준값 설정 =====
+    // 아래 값은 모두 "초기 경험값"입니다. 실제 사진으로 결과를 보면서 이 객체 안의 숫자만
+    // 조정하면 되도록 모든 타입별 기준값을 여기 한 곳에 모아둡니다(로직 코드는 건드릴 필요 없음).
+    // - hydration.optimalMin/optimalMax: 이 범위 "안"에 있을 때 가장 좋은 상태로 판정(무조건 높다고 좋은 게 아님)
+    //
+    // blemish(트러블 감지)는 "누가 봐도 명백한, 치료가 필요할 수준"만 잡도록 매우 엄격하게 설계됨.
+    // 아래 4개 조건을 모두(AND) 만족해야만 트러블 1건으로 카운트:
+    //   1) minBlobBlocks   — 크기: 이 개수(8px 블록 기준) 이상 뭉쳐야 "명백히 큰 병변"으로 인정
+    //   2) rednessMargin / brightnessMargin — 색상 대비: 국소 이웃보다 얼마나 더 붉고/어두워야 하는지
+    //   3) maxAspectRatio  — 형태: 뭉친 영역의 가로/세로 비율이 이 배수를 넘으면 "띠 모양"(그림자·주름·홍조 번짐)으로
+    //                        보고 제외 — 진짜 병변은 둥글게 뭉친 형태, 그림자는 길게 늘어진 형태이기 때문
+    //   4) minAbsoluteRedness / minSaturation — 채도·강도: 국소 대비뿐 아니라 그 블록 자체가 "확실한 염증성
+    //                        붉은색"이어야 함(그림자는 R·G·B가 고르게 어두워질 뿐 붉은기·채도 자체는 낮음)
+    const SKIN_TYPE_PROFILES = {
+      dry: { // 건성: 유분·수분 모두 부족 → 수분 하한을 낮게 잡아 "조금만 올라도" 개선으로 인정
+        hydration: { optimalMin: 15, optimalMax: 45 },
+        blemish: {
+          minBlobBlocks: 6, rednessMargin: 4, brightnessMargin: -10,
+          maxAspectRatio: 2.0, minAbsoluteRedness: 60, minSaturation: 0.30,
+        },
+      },
+      normal: { // 중성: 유분·수분 균형 → 표준 범위(트러블 감지 기준값의 기본 베이스라인).
+                // ※ 아래 값은 실사용자가 제공한 기준 사진(볼에 난 뚜렷한 빨간 뾰루지 1개)에 맞춰
+                //   보정한 값 — 그 병변이 "정확히 1건"으로 잡히는 최소 기준선. 실제 병변은 볼록하게
+                //   솟아 빛을 받아 오히려 주변보다 살짝 밝게 나올 수 있어(brightnessMargin이 음수인
+                //   이유) "무조건 더 어두워야 한다"는 가정을 버리고 밝기 조건은 느슨하게 둠
+        hydration: { optimalMin: 20, optimalMax: 55 },
+        blemish: {
+          minBlobBlocks: 6, rednessMargin: 4, brightnessMargin: -10,
+          maxAspectRatio: 2.0, minAbsoluteRedness: 60, minSaturation: 0.30,
+        },
+      },
+      oily: { // 지성: 유분 과다가 핵심 문제라 수분은 보통~높게 유지되면 충분 → 상한을 넉넉히.
+              // 모공·피지·트러블이 잘 도드라지는 타입이라 트러블 감지는 가장 엄격하게(과잉 감지 방지 최우선).
+              // ※ minBlobBlocks·rednessMargin은 기준 사진의 병변이 계속 잡히도록 dry/normal과 동일하게
+              //   두고, 채도 기준만 살짝 더 엄격하게 두어 지성 특유의 잦은 오탐만 추가로 걸러냄
+        hydration: { optimalMin: 15, optimalMax: 60 },
+        blemish: {
+          minBlobBlocks: 6, rednessMargin: 4, brightnessMargin: -10,
+          maxAspectRatio: 1.8, minAbsoluteRedness: 62, minSaturation: 0.33,
+        },
+      },
+      combination: { // 복합성: T존은 지성, 볼은 건성 → 볼(cheek) 수치를 함께 반영해 판단(judgeHydrationBySkinType에서 평균 사용).
+                      // T존 유분·트러블 경향이 있어 기본보다는 살짝 엄격하게, 지성만큼 극단적이진 않게
+        hydration: { optimalMin: 18, optimalMax: 50 },
+        blemish: {
+          minBlobBlocks: 6, rednessMargin: 4, brightnessMargin: -10,
+          maxAspectRatio: 1.9, minAbsoluteRedness: 61, minSaturation: 0.32,
+        },
+      },
+      dehydrated: { // 수부지(수분부족지성): 유분은 많아도 수분이 부족한 타입 → 하한을 상대적으로 높게 잡아
+                    // "겉은 번들거려도 속수분이 낮으면" 바로 경고가 뜨도록 함(개선 1의 핵심 케이스).
+                    // 지성처럼 유분·트러블이 잘 생기는 타입이라 트러블 감지는 가장 엄격한 축에 둠
+        hydration: { optimalMin: 25, optimalMax: 55 },
+        blemish: {
+          minBlobBlocks: 6, rednessMargin: 4, brightnessMargin: -10,
+          maxAspectRatio: 1.8, minAbsoluteRedness: 62, minSaturation: 0.33,
+        },
+      },
+    };
+    const DEFAULT_SKIN_TYPE = 'normal'; // 피부타입 미선택/알 수 없는 값일 때 기본으로 사용
+
+    // 블록 단위 노이즈 제거(모폴로지 유사 효과): 이웃 블록끼리 값을 섞어(3x3 박스 블러) 모공·잡티·
+    // 미세 질감처럼 "한두 블록만 튀는" 노이즈를 뭉갠다. 진짜 큰 병변은 여러 블록에 걸쳐 이미 붉고
+    // 어두우므로 블러 후에도 살아남지만, 국소 잡음은 주변 값에 섞여 옅어져 걸러진다.
+    const BLEMISH_BLUR_PASSES = 2; // 블러 반복 횟수(클수록 더 많이 뭉개짐 → 더 보수적)
+
+    // 선택된 피부타입에 맞는 기준값 묶음을 반환(없으면 DEFAULT_SKIN_TYPE 기준으로 폴백)
+    function getSkinTypeProfile(skinType) {
+      return SKIN_TYPE_PROFILES[skinType] || SKIN_TYPE_PROFILES[DEFAULT_SKIN_TYPE];
+    }
+
     const skinPhotoImages = { start: null, end: null }; // 업로드/촬영된 두 장의 <img> 엘리먼트 보관
     // 분석 완료된 점수 보관 (사후케어 화면에서 재계산 없이 그대로 사용): { hydration, redness, oiliness, blemishCount }
     const skinPhotoScores = { start: null, end: null };
@@ -3081,17 +3278,57 @@ HTML_PAGE = """<!DOCTYPE html>
       return { mask, bounds: { minX, maxX, minY, maxY } };
     }
 
-    // 격자 블록(8x8px) 단위로 "자기 주변(반경 3블록) 평균보다 붉고 어두운" 블록을 표시한 뒤,
-    // 인접한 블록끼리 4방향 flood fill로 묶어 트러블 반점(blob) 개수를 근사 카운트.
-    // 얼굴 전체 평균과 비교하지 않고 "국소 이웃" 평균과 비교하는 이유: 콧대 그림자·턱선 음영처럼
-    // 얼굴 전체에 걸쳐 완만하게 밝기/붉은기가 변하는 부분은 국소 평균도 함께 따라 움직여 오탐되지
-    // 않는 반면, 진짜 반점처럼 주변과 뚜렷이 동떨어진 국소 이상만 걸러낼 수 있음
-    function countBlemishBlobs(data, width, height, skinMask) {
-      const blockSize = 8;
+    // 블록 값 배열(redness 또는 brightness)에 3x3 박스 블러를 N회 적용해 반환.
+    // 모공·잡티처럼 한두 블록만 튀는 노이즈를 이웃 값과 섞어 뭉개는 전처리(노이즈 제거) 단계
+    function blurBlockGrid(values, valid, cols, rows, passes) {
+      let current = values;
+      for (let pass = 0; pass < passes; pass++) {
+        const next = new Float32Array(current.length);
+        for (let by = 0; by < rows; by++) {
+          for (let bx = 0; bx < cols; bx++) {
+            const bi = by * cols + bx;
+            if (!valid[bi]) continue;
+            let sum = current[bi], count = 1;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                const nx = bx + dx, ny = by + dy;
+                if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+                const ni = ny * cols + nx;
+                if (!valid[ni]) continue;
+                sum += current[ni];
+                count++;
+              }
+            }
+            next[bi] = sum / count;
+          }
+        }
+        current = next;
+      }
+      return current;
+    }
+
+    // 격자 블록(8x8px) 단위로 "누가 봐도 명백한, 치료가 필요할 수준"의 트러블만 매우 엄격하게 카운트.
+    // 아래 4개 조건을 모두(AND) 만족하는 블록만 후보로 남기고, 이어서 인접한 블록끼리 4방향
+    // flood fill로 묶어 병변 1개 단위(blob)를 구성한다.
+    //   1) 크기(minBlobBlocks): 뭉친 블록 수가 이 값 이상이어야 "명백히 큰 병변"으로 인정
+    //   2) 색상 대비(rednessMargin/brightnessMargin): 국소 이웃보다 뚜렷이 붉고 어두워야 함
+    //   3) 형태(maxAspectRatio): 뭉친 영역의 가로/세로 비율이 이 배수를 넘으면 그림자·주름처럼
+    //      "띠 모양"으로 퍼진 영역으로 보고 제외(진짜 병변은 둥글게 뭉친 형태)
+    //   4) 채도·강도(minAbsoluteRedness/minSaturation): 국소 대비뿐 아니라 그 블록 자체가 절대적으로도
+    //      "확실한 염증성 붉은색"이어야 함(그림자는 R·G·B가 고르게 어두워질 뿐 붉은기·채도는 낮음)
+    // 판정 전, 블록 단위로 블러(blurBlockGrid)를 먼저 적용해 모공·잡티 수준의 노이즈를 제거한다.
+    // blemishProfile(SKIN_TYPE_PROFILES[...].blemish)로 위 5개 기준값을 피부타입별로 조정.
+    function countBlemishBlobs(data, width, height, skinMask, blemishProfile) {
+      // 블록 크기 4px(기존 8px에서 축소): 작은 병변 하나가 근처의 넓은 미온성 홍조/조명 영역과
+      // 4방향 인접으로 맞닿아 하나의 길쭉한 덩어리로 합쳐지는 것을 막기 위해 더 촘촘한 격자를 사용.
+      // 국소 이웃 반경(neighborRadius)도 6블록(=24px)으로 늘려 기존과 동일한 물리적 이웃 범위를 유지.
+      const blockSize = 4;
       const cols = Math.floor(width / blockSize);
       const rows = Math.floor(height / blockSize);
-      const blockRedness = new Float32Array(cols * rows);
-      const blockBrightness = new Float32Array(cols * rows);
+      const rawRedness = new Float32Array(cols * rows);
+      const rawBrightness = new Float32Array(cols * rows);
+      const blockSaturation = new Float32Array(cols * rows);
       const blockValid = new Uint8Array(cols * rows);
 
       for (let by = 0; by < rows; by++) {
@@ -3109,18 +3346,27 @@ HTML_PAGE = """<!DOCTYPE html>
           if (n < (blockSize * blockSize) / 2) continue; // 블록 절반 이상이 피부가 아니면 신뢰하지 않고 건너뜀
           const r = rSum / n, g = gSum / n, b = bSum / n;
           const bi = by * cols + bx;
-          blockRedness[bi] = r - (g + b) / 2;
-          blockBrightness[bi] = (r + g + b) / 3;
+          rawRedness[bi] = r - (g + b) / 2;
+          rawBrightness[bi] = (r + g + b) / 3;
+          const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+          blockSaturation[bi] = maxC > 0 ? (maxC - minC) / maxC : 0; // 채도는 노이즈 제거 목적이 아니라 판정 기준이므로 블러하지 않음
           blockValid[bi] = 1;
         }
       }
 
-      const neighborRadius = 3; // 반경 3블록(약 24px) 이내의 유효 블록들을 "국소 이웃"으로 삼음
+      // 노이즈 제거: 모공·잡티·미세 질감 수준의 블록 단위 노이즈를 이웃과 섞어 뭉갬
+      const blockRedness = blurBlockGrid(rawRedness, blockValid, cols, rows, BLEMISH_BLUR_PASSES);
+      const blockBrightness = blurBlockGrid(rawBrightness, blockValid, cols, rows, BLEMISH_BLUR_PASSES);
+
+      const neighborRadius = 6; // 반경 6블록(4px 기준 약 24px) 이내의 유효 블록들을 "국소 이웃"으로 삼음
       const flagged = new Array(cols * rows).fill(false);
       for (let by = 0; by < rows; by++) {
         for (let bx = 0; bx < cols; bx++) {
           const bi = by * cols + bx;
           if (!blockValid[bi]) continue;
+          // 조건 4(채도·강도): 절대적으로도 확실한 염증성 붉은색이 아니면 이 블록은 더 볼 것도 없이 제외
+          if (blockRedness[bi] < blemishProfile.minAbsoluteRedness || blockSaturation[bi] < blemishProfile.minSaturation) continue;
+
           let neighborRedSum = 0, neighborBrightSum = 0, neighborCount = 0;
           for (let dy = -neighborRadius; dy <= neighborRadius; dy++) {
             for (let dx = -neighborRadius; dx <= neighborRadius; dx++) {
@@ -3137,8 +3383,9 @@ HTML_PAGE = """<!DOCTYPE html>
           if (neighborCount < 6) continue; // 얼굴 가장자리 등 주변 정보가 너무 적으면 판정하지 않음
           const localAvgRedness = neighborRedSum / neighborCount;
           const localAvgBrightness = neighborBrightSum / neighborCount;
-          // 주변보다 붉은기가 뚜렷이 높으면서 밝기는 오히려 낮은(홍조성 반점) 블록만 이상 블록으로 표시
-          if (blockRedness[bi] > localAvgRedness + 9 && blockBrightness[bi] < localAvgBrightness - 3) {
+          // 조건 2(색상 대비): 주변보다 붉은기가 뚜렷이 높으면서 밝기는 오히려 낮은 블록만 후보로 표시
+          if (blockRedness[bi] > localAvgRedness + blemishProfile.rednessMargin
+            && blockBrightness[bi] < localAvgBrightness - blemishProfile.brightnessMargin) {
             flagged[bi] = true;
           }
         }
@@ -3148,24 +3395,41 @@ HTML_PAGE = """<!DOCTYPE html>
       let blobCount = 0;
       for (let idx = 0; idx < flagged.length; idx++) {
         if (!flagged[idx] || visited[idx]) continue;
-        blobCount++;
         const stack = [idx];
+        const region = [];
+        let minBx = cols, maxBx = 0, minBy = rows, maxBy = 0;
         while (stack.length) {
           const cur = stack.pop();
           if (visited[cur] || !flagged[cur]) continue;
           visited[cur] = true;
+          region.push(cur);
           const cx = cur % cols, cy = Math.floor(cur / cols);
+          if (cx < minBx) minBx = cx;
+          if (cx > maxBx) maxBx = cx;
+          if (cy < minBy) minBy = cy;
+          if (cy > maxBy) maxBy = cy;
           if (cx > 0) stack.push(cur - 1);
           if (cx < cols - 1) stack.push(cur + 1);
           if (cy > 0) stack.push(cur - cols);
           if (cy < rows - 1) stack.push(cur + cols);
         }
+        // 조건 1(크기): 뭉친 블록 수가 minBlobBlocks 미만이면(작은 점) 제외
+        if (region.length < blemishProfile.minBlobBlocks) continue;
+        // 조건 3(형태): 뭉친 영역의 바운딩박스 가로/세로 비율이 너무 길쭉하면(그림자·주름) 제외
+        const regionWidth = maxBx - minBx + 1;
+        const regionHeight = maxBy - minBy + 1;
+        const aspectRatio = Math.max(regionWidth, regionHeight) / Math.max(Math.min(regionWidth, regionHeight), 1);
+        if (aspectRatio > blemishProfile.maxAspectRatio) continue;
+
+        blobCount++;
       }
       return clampSkinScore(blobCount, 0, 12);
     }
 
-    // 사진 한 장을 분석해 수분/톤·홍조/유분 점수(0~100)와 트러블 반점 개수를 반환
-    function analyzeSkinPhoto(imgEl) {
+    // 사진 한 장을 분석해 수분/톤·홍조/유분 점수(0~100)와 트러블 반점 개수를 반환.
+    // skinType(피부타입)은 트러블 감지 민감도(countBlemishBlobs)를 타입별로 다르게 적용하는 데 사용
+    function analyzeSkinPhoto(imgEl, skinType) {
+      const blemishProfile = getSkinTypeProfile(skinType).blemish;
       const { data, width, height } = drawImageToAnalysisCanvas(imgEl);
       const pixelCount = width * height;
       // 배경/머리카락/의류 등을 제외한 얼굴(피부) 영역만 이후 수분·톤/홍조·트러블 지표 계산에 사용
@@ -3182,11 +3446,25 @@ HTML_PAGE = """<!DOCTYPE html>
       const tZoneLeft = bounds.minX + faceWidth * 0.2;
       const tZoneRight = bounds.minX + faceWidth * 0.8;
 
+      // 볼(cheeks) 측정 대상 영역: T존 아래쪽, 좌우 양볼 부분을 근사(코·입 주변 중앙은 제외).
+      // 피부타입별 유분 판정(judgeOilinessBySkinType)에서 "T존은 번들거려도 볼은 촉촉/건조한지"를
+      // 함께 봐야 하는 복합성·수부지 규칙에 사용
+      const cheekTop = bounds.minY + faceHeight * 0.45;
+      const cheekBottom = bounds.minY + faceHeight * 0.75;
+      const cheekLeftMin = bounds.minX + faceWidth * 0.05;
+      const cheekLeftMax = bounds.minX + faceWidth * 0.32;
+      const cheekRightMin = bounds.minX + faceWidth * 0.68;
+      const cheekRightMax = bounds.minX + faceWidth * 0.95;
+      const isInCheekZone = (x, y) => y >= cheekTop && y <= cheekBottom
+        && ((x >= cheekLeftMin && x <= cheekLeftMax) || (x >= cheekRightMin && x <= cheekRightMax));
+
       let brightnessSum = 0;
       let rNormSum = 0;
       let skinPixelCount = 0;
       let oilyPixelCount = 0;
       let tZonePixelCount = 0;
+      let cheekOilyPixelCount = 0;
+      let cheekPixelCount = 0;
       const brightness = new Float32Array(pixelCount);
 
       for (let y = 0; y < height; y++) {
@@ -3197,13 +3475,19 @@ HTML_PAGE = """<!DOCTYPE html>
           const bright = (r + g + b) / 3;
           brightness[i] = bright; // 경계 그레디언트 계산을 위해 마스크 여부와 무관하게 전체를 채워둠
 
+          // 유분 지표: 밝고(반사광) 채도가 낮은(번들거리는) 픽셀 비율 — T존·볼 각각 집계
+          const maxC = Math.max(r, g, b);
+          const minC = Math.min(r, g, b);
+          const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
+          const isOilyPixel = bright > 190 && saturation < 0.18;
+
           if (x >= tZoneLeft && x <= tZoneRight && y >= tZoneTop && y <= tZoneBottom) {
             tZonePixelCount++;
-            // 유분 지표: 밝고(반사광) 채도가 낮은(번들거리는) 픽셀 비율
-            const maxC = Math.max(r, g, b);
-            const minC = Math.min(r, g, b);
-            const saturation = maxC === 0 ? 0 : (maxC - minC) / maxC;
-            if (bright > 190 && saturation < 0.18) oilyPixelCount++;
+            if (isOilyPixel) oilyPixelCount++;
+          }
+          if (isInCheekZone(x, y)) {
+            cheekPixelCount++;
+            if (isOilyPixel) cheekOilyPixelCount++;
           }
 
           if (!skinMask[i]) continue; // 수분·톤/홍조·트러블 통계는 피부(얼굴) 영역만 집계
@@ -3225,30 +3509,41 @@ HTML_PAGE = """<!DOCTYPE html>
       // 수분(hydration): 인접 픽셀 간 밝기 변화(엣지 밀도)로 표면 질감을 근사.
       // 요철·각질이 많을수록 엣지가 많아져 매끈함(수분감) 점수는 낮아짐.
       // 얼굴 윤곽선(피부↔배경/머리카락 경계)이 만드는 가짜 엣지가 섞이지 않도록,
-      // 자기 자신과 4방향 이웃이 모두 피부 영역인 픽셀만 집계 대상으로 삼음
+      // 자기 자신과 4방향 이웃이 모두 피부 영역인 픽셀만 집계 대상으로 삼음.
+      // 같은 루프에서 볼 영역만의 엣지 밀도도 함께 집계해 "볼 건조도"(cheekHydration)를 구함
       let edgeSum = 0;
       let edgeSamples = 0;
+      let cheekEdgeSum = 0;
+      let cheekEdgeSamples = 0;
       for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
           const idx = y * width + x;
           if (!skinMask[idx] || !skinMask[idx - 1] || !skinMask[idx + 1] || !skinMask[idx - width] || !skinMask[idx + width]) continue;
           const dx = brightness[idx + 1] - brightness[idx - 1];
           const dy = brightness[idx + width] - brightness[idx - width];
-          edgeSum += Math.sqrt(dx * dx + dy * dy);
+          const edge = Math.sqrt(dx * dx + dy * dy);
+          edgeSum += edge;
           edgeSamples++;
+          if (isInCheekZone(x, y)) {
+            cheekEdgeSum += edge;
+            cheekEdgeSamples++;
+          }
         }
       }
       const avgEdge = edgeSamples > 0 ? (edgeSum / edgeSamples) * lightingFactor : 0;
       const hydration = clampSkinScore(100 - avgEdge * 3.2, 0, 100); // 경험적 스케일링 상수
+      const cheekAvgEdge = cheekEdgeSamples > 0 ? (cheekEdgeSum / cheekEdgeSamples) * lightingFactor : 0;
+      const cheekHydration = clampSkinScore(100 - cheekAvgEdge * 3.2, 0, 100);
 
       // 톤·홍조 점수: r-chromaticity 기준 baseline(0.36, 중립 살빛 하한 근처)보다 얼마나 붉은 쪽으로
       // 치우쳤는지를 0~100으로 스케일링. (이전에는 원본 R 우세치에 조명 보정 배율을 곱했는데, 사진이
       // 조금만 어두워도 배율이 겹쳐 거의 모든 사진이 100점에 붙어버려 비교가 무의미했음)
       const redness = clampSkinScore((avgRNorm - 0.36) * 400, 0, 100);
       const oiliness = clampSkinScore((oilyPixelCount / Math.max(tZonePixelCount, 1)) * 150, 0, 100);
-      const blemish = countBlemishBlobs(data, width, height, skinMask);
+      const cheekOiliness = clampSkinScore((cheekOilyPixelCount / Math.max(cheekPixelCount, 1)) * 150, 0, 100);
+      const blemish = countBlemishBlobs(data, width, height, skinMask, blemishProfile);
 
-      return { hydration, redness, oiliness, blemish };
+      return { hydration, redness, oiliness, blemish, cheekOiliness, cheekHydration };
     }
 
     // dataURL(카메라 캡처 또는 파일 선택 결과)을 미리보기에 채우고, 양쪽 사진이 모두 채워지면 자동 분석 실행
@@ -3259,12 +3554,16 @@ HTML_PAGE = """<!DOCTYPE html>
         const boxEl = document.getElementById(kind === 'start' ? 'skinPhotoStartBox' : 'skinPhotoEndBox');
         const previewEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPreview' : 'skinPhotoEndPreview');
         const placeholderEl = document.getElementById(kind === 'start' ? 'skinPhotoStartPlaceholder' : 'skinPhotoEndPlaceholder');
+        const retakeBtnEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRetakeBtn' : 'skinPhotoEndRetakeBtn');
         previewEl.src = dataUrl;
         previewEl.classList.remove('hidden');
         placeholderEl.classList.add('hidden');
+        retakeBtnEl.classList.remove('hidden'); // 사진 등록 후에는 "다시 선택" 버튼을 노출해 재등록 가능하게 함
         // 사진이 등록되면 등록 전의 세로로 긴 칸(h-[38vh]) 대신 정사각형으로 표시(center-crop은 object-cover가 처리)
         boxEl.classList.remove('h-[38vh]');
         boxEl.classList.add('aspect-square');
+        updateSkinPhotoRegCardState(kind);
+        updateSkinPhotoLayoutPhase();
         updateSkinPhotoHint();
         updateSkinChangeEmptyState();
         updateSkinChangeSectionVisibility();
@@ -3273,6 +3572,37 @@ HTML_PAGE = """<!DOCTYPE html>
         }
       };
       img.src = dataUrl;
+    }
+
+    // 사진 등록 페이지(출국·입국 도장 카드)의 각 카드 상태를 등록 여부에 따라 갱신.
+    // 사진이 등록되면 아이콘 대신 실제 사진을 카드 전체에 채워 보여주고(center-crop),
+    // 제목·안내 문구는 사진 위에서도 잘 보이도록 어두운 스크림 + 흰 글자로 전환
+    function updateSkinPhotoRegCardState(kind) {
+      const hintEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRegHint' : 'skinPhotoEndRegHint');
+      const titleEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRegTitle' : 'skinPhotoEndRegTitle');
+      const iconEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRegIcon' : 'skinPhotoEndRegIcon');
+      const previewEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRegPreview' : 'skinPhotoEndRegPreview');
+      const scrimEl = document.getElementById(kind === 'start' ? 'skinPhotoStartRegScrim' : 'skinPhotoEndRegScrim');
+      const hasPhoto = !!skinPhotoImages[kind];
+
+      hintEl.textContent = hasPhoto ? '등록 완료 · 다시 탭하면 변경' : '탭해서 사진 등록하기';
+      iconEl.classList.toggle('hidden', hasPhoto);
+      previewEl.classList.toggle('hidden', !hasPhoto);
+      scrimEl.classList.toggle('hidden', !hasPhoto);
+      if (hasPhoto) previewEl.src = skinPhotoImages[kind].src;
+
+      titleEl.classList.toggle('text-gray-900', !hasPhoto);
+      titleEl.classList.toggle('text-white', hasPhoto);
+      hintEl.classList.toggle('text-gray-400', !hasPhoto);
+      hintEl.classList.toggle('text-white/90', hasPhoto);
+    }
+
+    // 두 사진이 모두 등록되기 전에는 "사진 등록 페이지"(여권 헤더 + 출국·입국 도장 카드)를,
+    // 모두 등록된 뒤에는 "리포트" 화면(기존 그대로)을 노출 — 서로 배타적으로 전환
+    function updateSkinPhotoLayoutPhase() {
+      const bothRegistered = !!(skinPhotoImages.start && skinPhotoImages.end);
+      document.getElementById('skinRegisterPageLayout').classList.toggle('hidden', bothRegistered);
+      document.getElementById('skinReportPageLayout').classList.toggle('hidden', !bothRegistered);
     }
 
     // (폴백 경로) 파일 선택창에서 고른 파일을 읽어 applySkinPhoto로 전달
@@ -3284,6 +3614,7 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     function updateSkinPhotoHint() {
+      // 리포트 화면(skinReportPageLayout) 안내 문구 — 두 사진이 모두 등록됐을 때만 노출되므로 그대로 유지
       const hintEl = document.getElementById('skinPhotoHint');
       const count = (skinPhotoImages.start ? 1 : 0) + (skinPhotoImages.end ? 1 : 0);
       if (count >= 2) {
@@ -3292,6 +3623,14 @@ HTML_PAGE = """<!DOCTYPE html>
         hintEl.textContent = '나머지 한 장을 더 등록해 주세요';
       } else {
         hintEl.textContent = '→ 사진을 첨부하면 AI가 두 사진을 비교해 분석해드려요';
+      }
+
+      // 사진 등록 페이지(여권 헤더 + 출국·입국 도장 카드) 하단 안내 문구
+      const registerHintEl = document.getElementById('skinPhotoRegisterHint');
+      if (count === 1) {
+        registerHintEl.textContent = '나머지 한 장을 더 등록해 주세요';
+      } else {
+        registerHintEl.innerHTML = '출국·입국 도장을 찍으면 <span class="font-semibold text-gray-600">피부 여정 심사</span>가 시작돼요';
       }
     }
 
@@ -3310,10 +3649,12 @@ HTML_PAGE = """<!DOCTYPE html>
       emptyEl.innerHTML = '1일차 사진과 마지막날 사진을 등록하면<br />항목별 분석 결과가 여기에 표시됩니다.';
     }
 
-    // "항목별 변화" 제목과 "내 피부 사후관리하기" 버튼은 두 사진이 모두 등록되기 전에는 DOM에서 숨김
+    // "항목별 변화" 제목, "리포트 저장하기"·"내 피부 사후관리하기" 버튼은 두 사진이 모두
+    // 등록되기 전에는 DOM에서 숨김
     function updateSkinChangeSectionVisibility() {
       const bothRegistered = !!(skinPhotoImages.start && skinPhotoImages.end);
       document.getElementById('skinChangeSectionTitle').classList.toggle('hidden', !bothRegistered);
+      document.getElementById('saveSkinReportBtn').classList.toggle('hidden', !bothRegistered);
       document.getElementById('goToAftercareBtn').classList.toggle('hidden', !bothRegistered);
     }
 
@@ -3322,6 +3663,15 @@ HTML_PAGE = """<!DOCTYPE html>
     });
     document.getElementById('skinPhotoEndInput').addEventListener('change', (e) => {
       loadSkinPhoto('end', e.target.files[0]);
+    });
+
+    // 사진 등록 페이지(출국·입국 도장 카드) 탭: 등록 전/후 관계없이 항상 파일 선택창을 염
+    // (다시 탭하면 사진을 바로 교체할 수 있음 — 별도의 "다시 선택" 버튼이 필요 없는 단순한 등록 전용 화면)
+    document.getElementById('skinPhotoStartRegBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoStartInput').click();
+    });
+    document.getElementById('skinPhotoEndRegBox').addEventListener('click', () => {
+      document.getElementById('skinPhotoEndInput').click();
     });
 
     // 사진 박스 탭: 아직 등록 전이면 파일 선택창을, 이미 등록된 사진이 있으면 라이트박스(확대)를 염
@@ -3338,6 +3688,17 @@ HTML_PAGE = """<!DOCTYPE html>
       } else {
         document.getElementById('skinPhotoEndInput').click();
       }
+    });
+
+    // "다시 선택" 버튼: 이미 등록된 사진이어도 파일 선택창을 다시 열어 교체할 수 있게 함.
+    // 상위 사진 박스 버튼(라이트박스 확대)으로 클릭이 전달되지 않도록 stopPropagation 처리
+    document.getElementById('skinPhotoStartRetakeBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('skinPhotoStartInput').click();
+    });
+    document.getElementById('skinPhotoEndRetakeBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('skinPhotoEndInput').click();
     });
 
     // 결과 페이지 사진 확대 라이트박스: 원본 비율 그대로(object-contain) 크게 표시
@@ -3391,6 +3752,136 @@ HTML_PAGE = """<!DOCTYPE html>
       return { label: `${Math.abs(delta)}건 감소`, color: 'green' };
     }
 
+    // 온보딩 1단계에서 선택한 피부타입을 그대로 읽어옴('.skin-btn.active'의 data-skin 값).
+    // 이미 정해진 값을 그대로 신뢰하며, 사진을 보고 재판정하지 않음
+    function getSelectedSkinType() {
+      const btn = document.querySelector('.skin-btn.active');
+      return btn ? btn.dataset.skin : null; // 'dry' | 'normal' | 'oily' | 'combination' | 'dehydrated' | null(미선택)
+    }
+
+    // ===== 유분(T존·볼) 판정: 피부타입을 "절대 기준"으로 삼아 해석 =====
+    // 유분은 "오르면 무조건 나쁨"이 아니라 피부타입별 목표 범위에 가까워졌는지로 판단해야 함.
+    // 예) 건성은 유분이 늘어야 개선, 지성은 줄어야 개선. 복합성·수부지는 T존과 볼을 따로 봐야
+    // (T존만 좋아지고 볼이 건조해지면 오히려 관리가 필요한 상태) 두 부위를 함께 참고해 판정한다.
+    function judgeOilinessBySkinType(skinType, s, e) {
+      const THRESHOLD = 5; // 이 범위 이내 변화는 "변화 없음"으로 간주
+      const noChange = (delta) => Math.abs(delta) <= THRESHOLD;
+      const tzoneDelta = e.oiliness - s.oiliness; // T존 유분 변화(+면 번들거림 증가)
+      const cheekHydrationDelta = e.cheekHydration - s.cheekHydration; // -면 볼이 더 건조해짐(과교정 신호)
+
+      if (skinType === 'dry') {
+        // 건성: 유분 부족이 문제 → 유분이 올라야 개선, 그대로거나 더 줄면 악화
+        if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: '유분감은 1일차와 큰 차이가 없어요. 건성 피부는 유분이 조금 더 올라오면 훨씬 편안해질 거예요.' };
+        if (tzoneDelta > 0) return { status: '개선', color: 'green', desc: '유분과 윤기가 살아나 건성 피부 특유의 푸석함이 줄어든 것으로 보여요.' };
+        return { status: '악화', color: 'red', desc: '유분이 더 줄어 건조함이 심해진 것으로 보여요. 고보습 크림과 오일류 제품을 더 챙겨보세요.' };
+      }
+
+      if (skinType === 'oily') {
+        // 지성: 유분 과다가 문제 → T존 유분이 내려가면 개선. 단, 볼까지 매트/건조해지는 과교정은 주의
+        if (tzoneDelta < -THRESHOLD) {
+          if (cheekHydrationDelta < -THRESHOLD) {
+            return { status: '주의', color: 'amber', desc: 'T존 번들거림은 줄었지만 볼까지 건조해진 과교정 신호가 보여요. 유수분 밸런스 제품으로 조절해보세요.' };
+          }
+          return { status: '개선', color: 'green', desc: 'T존 번들거림이 가라앉아 지성 피부의 유분이 안정된 것으로 보여요.' };
+        }
+        if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: 'T존 유분은 1일차와 큰 차이가 없어요.' };
+        return { status: '악화', color: 'red', desc: 'T존 번들거림이 늘었어요. 피지 흡수 시트나 매트 선크림을 사용해 유분을 관리해보세요.' };
+      }
+
+      if (skinType === 'normal') {
+        // 중성: 이미 균형 잡힌 상태 → 유지가 목표, 큰 변화 자체가 오히려 악화 신호
+        if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: '유분 밸런스가 1일차와 비슷하게 잘 유지됐어요.' };
+        return { status: '악화', color: 'red', desc: '유분 밸런스가 여행 전보다 크게 흔들렸어요. 평소 스킨케어 루틴으로 되돌아가 보세요.' };
+      }
+
+      if (skinType === 'combination') {
+        // 복합성: T존과 볼을 따로 판단 — T존이 좋아져도 볼이 건조해지면 전체적으론 악화로 봄
+        if (cheekHydrationDelta < -THRESHOLD) {
+          return { status: '악화', color: 'red', desc: 'T존은 안정됐지만 볼이 건조해진 것으로 보여요. 복합성 피부는 볼 위주로 수분크림을 더 챙겨보세요.' };
+        }
+        if (tzoneDelta < -THRESHOLD) return { status: '개선', color: 'green', desc: 'T존 번들거림이 줄고 볼은 촉촉함을 유지해 유분 밸런스가 좋아졌어요.' };
+        if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: 'T존·볼 유분 모두 1일차와 큰 차이가 없어요.' };
+        return { status: '악화', color: 'red', desc: 'T존 번들거림이 늘었어요. T존 위주로 피지 관리를 해보세요.' };
+      }
+
+      if (skinType === 'dehydrated') {
+        // 수부지: 겉은 번들거려도 속은 수분 부족 → T존 유분만 보지 말고 볼 수분도 함께 확인
+        if (tzoneDelta < -THRESHOLD && cheekHydrationDelta < -THRESHOLD) {
+          return { status: '주의', color: 'amber', desc: 'T존은 안정됐지만 볼까지 당길 만큼 건조해졌어요. 유분보다 수분 보충이 더 필요해 보여요.' };
+        }
+        if (tzoneDelta < -THRESHOLD) return { status: '개선', color: 'green', desc: 'T존 번들거림은 가라앉고 볼 수분은 유지돼 속당김 없이 편안해진 것으로 보여요.' };
+        if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: 'T존 유분은 1일차와 큰 차이가 없어요.' };
+        return { status: '악화', color: 'red', desc: 'T존 번들거림이 늘었어요. 수분을 먼저 채운 뒤 가벼운 유분 제품으로 마무리해보세요.' };
+      }
+
+      // 피부타입이 선택되지 않은 경우(온보딩을 건너뛴 예외 상황)의 폴백: 단순 증감으로만 판단
+      if (noChange(tzoneDelta)) return { status: '유지', color: 'gray', desc: 'T존 유분은 1일차와 큰 차이가 없어요.' };
+      if (tzoneDelta > 0) return { status: '악화', color: 'red', desc: 'T존 반사광이 늘어 유분이 증가한 것으로 보여요.' };
+      return { status: '개선', color: 'green', desc: 'T존 번들거림이 줄어 유분이 안정된 것으로 보여요.' };
+    }
+
+    // 값이 [min, max] 적정 범위의 어느 쪽에 있는지와 범위 밖이라면 얼마나 벗어났는지(gap)를 반환
+    function classifyHydrationZone(value, min, max) {
+      if (value < min) return { zone: 'low', gap: min - value };
+      if (value > max) return { zone: 'high', gap: value - max };
+      return { zone: 'optimal', gap: 0 };
+    }
+
+    // ===== 수분 판정: "높을수록 좋음"이 아니라 피부타입별 "적정 범위"에 가까울수록 좋음 =====
+    // 너무 건조해도, 너무 과수분(끈적임에 가까운 상태)이어도 좋지 않다는 전제로 판정.
+    // 복합성은 T존/볼 부위 편차가 특징이므로 전체 얼굴 수치와 볼(cheek) 수치의 평균으로 판단.
+    // 수부지는 "유분↑ + 수분↓" 조합을 별도로 감지해 수분 보충을 핵심 안내로 강조(개선 1의 핵심 케이스)
+    function judgeHydrationBySkinType(skinType, s, e) {
+      const profile = getSkinTypeProfile(skinType).hydration;
+      const GAP_THRESHOLD = 3; // 적정 범위 밖에서의 거리(gap) 변화가 이 이내면 "변화 없음"으로 간주
+
+      // 복합성: 전체 얼굴 수치만으로는 "T존 지성·볼 건성"의 부위별 편차를 반영할 수 없으므로
+      // 얼굴 전체 수치와 볼(cheek) 수치의 평균을 대표값으로 사용(부위별 샘플링 평균)
+      const pickValue = (v) => (skinType === 'combination' ? (v.hydration + v.cheekHydration) / 2 : v.hydration);
+      const startVal = pickValue(s);
+      const endVal = pickValue(e);
+
+      // 수부지 전용: 유분은 늘고 수분은 뚜렷이 줄어드는 "수분 부족형" 조합을 최우선으로 감지
+      if (skinType === 'dehydrated') {
+        const oilinessUp = (e.oiliness - s.oiliness) > GAP_THRESHOLD;
+        const hydrationDown = (endVal - startVal) < -GAP_THRESHOLD;
+        if (oilinessUp && hydrationDown) {
+          return {
+            status: '주의',
+            color: 'amber',
+            desc: '유분은 늘고 수분은 줄어드는 "수분 부족형" 신호가 보여요. 유분 케어보다 수분 보충(수분크림·수분 미스트)을 먼저 챙겨보세요.',
+          };
+        }
+      }
+
+      const startZone = classifyHydrationZone(startVal, profile.optimalMin, profile.optimalMax);
+      const endZone = classifyHydrationZone(endVal, profile.optimalMin, profile.optimalMax);
+
+      if (endZone.zone === 'optimal') {
+        if (startZone.zone === 'optimal') {
+          return { status: '유지', color: 'gray', desc: '수분감이 적정 범위 안에서 안정적으로 유지되고 있어요.' };
+        }
+        return { status: '개선', color: 'green', desc: '수분감이 적정 범위 안으로 들어와 훨씬 편안해진 상태예요.' };
+      }
+
+      // 적정 범위 밖: 방향(건조/과수분)에 따라 문구를 다르게 하고, 범위에 더 가까워졌는지(개선)
+      // 더 멀어졌는지(악화)를 gap(범위와의 거리) 변화로 판단
+      const direction = endZone.zone === 'low' ? '건조' : '과수분';
+      const tip = endZone.zone === 'low' ? '보습 케어(수분크림·팩)를 늘려보세요.' : '가벼운 제형으로 바꾸고 유수분 밸런스를 맞춰보세요.';
+
+      if (startZone.zone !== endZone.zone) {
+        // 반대쪽(건조↔과수분)으로 범위를 넘나든 경우는 gap 비교가 무의미하므로 악화로 간주
+        return { status: '악화', color: 'red', desc: `${direction} 쪽으로 상태가 바뀌었어요. ${tip}` };
+      }
+      if (endZone.gap < startZone.gap - GAP_THRESHOLD) {
+        return { status: '개선', color: 'green', desc: `아직 적정 범위는 아니지만 ${direction} 상태에서 벗어나며 좋아지고 있어요.` };
+      }
+      if (endZone.gap > startZone.gap + GAP_THRESHOLD) {
+        return { status: '악화', color: 'red', desc: `${direction} 상태가 더 심해졌어요. ${tip}` };
+      }
+      return { status: '주의', color: 'amber', desc: `${direction} 상태가 계속되고 있어요. ${tip}` };
+    }
+
     // 여러 항목명을 자연스러운 한국어 나열로 합침 (예: ['수분','유분'] → "수분·유분")
     function joinKoreanList(labels) {
       return labels.join('·');
@@ -3402,11 +3893,11 @@ HTML_PAGE = """<!DOCTYPE html>
       const improved = [];
       const worsened = [];
       if (hydrationBadge.label === '개선됨') improved.push('수분');
-      else if (hydrationBadge.label === '주의 필요') worsened.push('수분');
+      else if (hydrationBadge.label === '주의 필요' || hydrationBadge.label === '악화') worsened.push('수분');
       if (rednessBadge.label === '개선됨') improved.push('톤·홍조');
       else if (rednessBadge.label === '주의 필요') worsened.push('톤·홍조');
       if (oilinessBadge.label === '개선됨') improved.push('유분');
-      else if (oilinessBadge.label === '주의 필요') worsened.push('유분');
+      else if (oilinessBadge.label === '주의 필요' || oilinessBadge.label === '악화') worsened.push('유분');
       if (blemishBadge.color === 'green') improved.push('트러블');
       else if (blemishBadge.color === 'red') worsened.push('트러블');
 
@@ -3433,8 +3924,10 @@ HTML_PAGE = """<!DOCTYPE html>
     // 결과를 바로 보여주지 않고 beginSkinScan()으로 넘겨 스캔 연출(3초) 뒤에 표시함 —
     // 즉, 3초 동안 무거운 연산을 도는 게 아니라 순전히 연출용 지연임
     function runSkinPhotoAnalysis() {
-      const startScores = analyzeSkinPhoto(skinPhotoImages.start);
-      const endScores = analyzeSkinPhoto(skinPhotoImages.end);
+      // 선택된 피부타입을 한 번만 읽어 두 사진 분석에 동일하게 적용(트러블 감지 민감도 등)
+      const skinType = getSelectedSkinType();
+      const startScores = analyzeSkinPhoto(skinPhotoImages.start, skinType);
+      const endScores = analyzeSkinPhoto(skinPhotoImages.end, skinType);
       // 사후케어 화면(#screen-aftercare)에서 그대로 쓸 수 있도록 반올림해 보관 (blemish → blemishCount로 이름만 맞춤)
       skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: Math.round(startScores.blemish) };
       skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.round(endScores.blemish) };
@@ -3510,52 +4003,90 @@ HTML_PAGE = """<!DOCTYPE html>
     }
 
     // 분석된 1일차/마지막날 점수로 "항목별 변화" 카드 4개 + 종합 요약을 동적으로 갱신
+    // 피부타입(건성/지성 등)에 따라 문구를 다르게 서술하는 설명 생성기.
+    // 판정(배지) 자체는 공통 임계값 로직을 그대로 쓰되, 설명 문구만 선택된 피부타입 맥락에 맞게 조정
+    function buildHydrationDesc(skinType, badge) {
+      if (badge.label === '개선됨') {
+        return skinType === 'dry'
+          ? '표면이 매끈해지고 수분감이 올라갔어요. 건성 피부에서는 특히 반가운 변화예요.'
+          : '사진 비교 결과 표면이 매끈해져 수분감이 올라간 것으로 보여요.';
+      }
+      if (badge.label === '주의 필요') {
+        if (skinType === 'dry') return '표면 텍스처가 거칠어져 수분감이 더 떨어졌어요. 건성 피부는 수분 손실에 특히 취약하니 고보습 크림을 꼭 챙겨보세요.';
+        if (skinType === 'oily') return '표면 결이 거칠어졌어요. 유분과는 별개로 속수분이 부족해진 신호일 수 있어요.';
+        return '표면 텍스처가 거칠어져 수분감이 떨어진 것으로 보여요. 수분크림을 더 챙겨보세요.';
+      }
+      return skinType === 'dry'
+        ? '수분감은 1일차와 큰 차이가 없어요. 건성 피부는 유지만으로는 부족할 수 있으니 수분 케어를 꾸준히 더해보세요.'
+        : '수분감은 1일차와 큰 차이가 없어요.';
+    }
+
+    function buildRednessDesc(skinType, badge) {
+      if (badge.label === '주의 필요') {
+        if (skinType === 'dry') return '붉은 영역이 넓어졌어요. 건조로 인한 자극성 홍조일 수 있어 저자극 진정 크림과 보습을 함께 챙겨보세요.';
+        if (skinType === 'oily' || skinType === 'combination') return '붉은 영역이 넓어졌어요. 피지·트러블성 자극일 수 있어 진정 성분 위주로 관리해보세요.';
+        return '사진 속 붉은 영역이 넓어졌어요. 강한 자외선 노출과 관련 있을 수 있어요.';
+      }
+      if (badge.label === '개선됨') return '붉은기가 가라앉아 톤이 안정된 것으로 보여요.';
+      return '톤·홍조는 1일차와 큰 차이가 없어요.';
+    }
+
+    function buildBlemishDesc(skinType, blemishDelta) {
+      if (blemishDelta > 0) {
+        return skinType === 'oily' || skinType === 'combination'
+          ? '새로운 트러블이 감지됐어요. T존·코 주변 모공에 피지가 쌓이지 않도록 세안과 각질 케어를 다시 점검해보세요.'
+          : '새로운 트러블이 감지됐어요. 세안과 보습 루틴을 다시 점검해보세요.';
+      }
+      if (blemishDelta < 0) return '트러블이 줄어들어 피부가 안정된 것으로 보여요.';
+      return '트러블 개수는 1일차와 같아요.';
+    }
+
+    // 유분·수분처럼 4단계 판정('개선'/'유지'/'악화'/'주의')을 쓰는 항목들을 다른 카드와
+    // 통일된 배지 라벨로 변환
+    const SKIN_JUDGMENT_STATUS_LABEL = { 개선: '개선됨', 유지: '변화 없음', 악화: '악화', 주의: '주의 필요' };
+
     function renderSkinChangeCards(startScores, endScores) {
       const s = {
         hydration: Math.round(startScores.hydration),
         redness: Math.round(startScores.redness),
         oiliness: Math.round(startScores.oiliness),
+        cheekOiliness: Math.round(startScores.cheekOiliness),
+        cheekHydration: Math.round(startScores.cheekHydration),
         blemish: Math.round(startScores.blemish),
       };
       const e = {
         hydration: Math.round(endScores.hydration),
         redness: Math.round(endScores.redness),
         oiliness: Math.round(endScores.oiliness),
+        cheekOiliness: Math.round(endScores.cheekOiliness),
+        cheekHydration: Math.round(endScores.cheekHydration),
         blemish: Math.round(endScores.blemish),
       };
+      // 온보딩에서 선택한 피부타입을 "절대 기준"으로 삼아 4개 항목 모두 그 맥락에 맞게 해석
+      const skinType = getSelectedSkinType();
 
-      // 수분: 오를수록 좋음(초록)
-      const hydrationBadge = computeScoreBadge(e.hydration - s.hydration, true);
+      // 수분: 높을수록 좋은 게 아니라 피부타입별 "적정 범위"에 가까울수록 좋음 → judgeHydrationBySkinType로 판정
+      const hydrationJudgment = judgeHydrationBySkinType(skinType, s, e);
+      const hydrationBadge = { label: SKIN_JUDGMENT_STATUS_LABEL[hydrationJudgment.status], color: hydrationJudgment.color };
       setSkinBadge('hydrationBadge', hydrationBadge.label, hydrationBadge.color);
       document.getElementById('hydrationScoreLine').innerHTML =
         `1일차 <span class="font-bold text-gray-900">${s.hydration}</span> → 마지막날 <span class="font-bold text-gray-900">${e.hydration}</span>/100 <span class="${skinTextColorClasses[hydrationBadge.color]} font-semibold ml-1">${formatPercentDelta(s.hydration, e.hydration)}</span>`;
-      document.getElementById('hydrationDesc').textContent = hydrationBadge.label === '개선됨'
-        ? '사진 비교 결과 표면이 매끈해져 수분감이 올라간 것으로 보여요.'
-        : hydrationBadge.label === '주의 필요'
-          ? '표면 텍스처가 거칠어져 수분감이 떨어진 것으로 보여요. 수분크림을 더 챙겨보세요.'
-          : '수분감은 1일차와 큰 차이가 없어요.';
+      document.getElementById('hydrationDesc').textContent = hydrationJudgment.desc;
 
-      // 톤·홍조: 오를수록 나쁨(빨강/주황)
+      // 톤·홍조: 오를수록 나쁨(빨강/주황) — 판정은 공통 로직, 설명만 피부타입별로 다르게
       const rednessBadge = computeScoreBadge(e.redness - s.redness, false);
       setSkinBadge('rednessBadge', rednessBadge.label, rednessBadge.color);
       document.getElementById('rednessScoreLine').innerHTML =
         `1일차 <span class="font-bold text-gray-900">${s.redness}</span> → 마지막날 <span class="font-bold text-gray-900">${e.redness}</span>/100 <span class="${skinTextColorClasses[rednessBadge.color]} font-semibold ml-1">${formatPercentDelta(s.redness, e.redness)}</span>`;
-      document.getElementById('rednessDesc').textContent = rednessBadge.label === '주의 필요'
-        ? '사진 속 붉은 영역이 넓어졌어요. 강한 자외선 노출과 관련 있을 수 있어요.'
-        : rednessBadge.label === '개선됨'
-          ? '붉은기가 가라앉아 톤이 안정된 것으로 보여요.'
-          : '톤·홍조는 1일차와 큰 차이가 없어요.';
+      document.getElementById('rednessDesc').textContent = buildRednessDesc(skinType, rednessBadge);
 
-      // 유분: 오를수록 나쁨(번들거림)
-      const oilinessBadge = computeScoreBadge(e.oiliness - s.oiliness, false);
+      // 유분: 피부타입에 따라 "오르면 개선"일 수도 "내려야 개선"일 수도 있음 → judgeOilinessBySkinType로 판정
+      const oilinessJudgment = judgeOilinessBySkinType(skinType, s, e);
+      const oilinessBadge = { label: SKIN_JUDGMENT_STATUS_LABEL[oilinessJudgment.status], color: oilinessJudgment.color };
       setSkinBadge('oilinessBadge', oilinessBadge.label, oilinessBadge.color);
       document.getElementById('oilinessScoreLine').innerHTML =
         `1일차 <span class="font-bold text-gray-900">${s.oiliness}</span> → 마지막날 <span class="font-bold text-gray-900">${e.oiliness}</span>/100 T존 <span class="${skinTextColorClasses[oilinessBadge.color]} font-semibold ml-1">${formatPercentDelta(s.oiliness, e.oiliness)}</span>`;
-      document.getElementById('oilinessDesc').textContent = oilinessBadge.label === '주의 필요'
-        ? 'T존 반사광이 늘어 유분이 증가한 것으로 보여요.'
-        : oilinessBadge.label === '개선됨'
-          ? 'T존 번들거림이 줄어 유분이 안정된 것으로 보여요.'
-          : 'T존 유분은 1일차와 큰 차이가 없어요.';
+      document.getElementById('oilinessDesc').textContent = oilinessJudgment.desc;
 
       // 트러블: 반점(blob) 개수 차이를 "건수"로 표시
       const blemishDelta = e.blemish - s.blemish;
@@ -3564,11 +4095,7 @@ HTML_PAGE = """<!DOCTYPE html>
       const blemishDiffText = blemishDelta === 0 ? '±0건' : blemishDelta > 0 ? `+${blemishDelta}건` : `${blemishDelta}건`;
       document.getElementById('blemishScoreLine').innerHTML =
         `1일차 <span class="font-bold text-gray-900">${s.blemish}건</span> → 마지막날 <span class="font-bold text-gray-900">${e.blemish}건</span> <span class="${skinTextColorClasses[blemishBadge.color]} font-semibold ml-1">${blemishDiffText}</span>`;
-      document.getElementById('blemishDesc').textContent = blemishDelta > 0
-        ? '새로운 트러블이 감지됐어요. 세안과 보습 루틴을 다시 점검해보세요.'
-        : blemishDelta < 0
-          ? '트러블이 줄어들어 피부가 안정된 것으로 보여요.'
-          : '트러블 개수는 1일차와 같아요.';
+      document.getElementById('blemishDesc').textContent = buildBlemishDesc(skinType, blemishDelta);
 
       // 종합 요약: 수분·톤/홍조·유분·트러블 4개 항목의 배지 판정을 모두 종합해 최종 총평 생성
       const summary = buildSkinReportSummary(hydrationBadge, rednessBadge, oilinessBadge, blemishBadge);
@@ -3764,6 +4291,176 @@ HTML_PAGE = """<!DOCTYPE html>
     // 공용 .back-to-nav-btn과 달리 이 화면은 전용 핸들러로 skinReport 탭에 직접 복귀시킴)
     document.getElementById('aftercareBackBtn').addEventListener('click', () => {
       switchTab('skinReport');
+    });
+
+    // 저장된 리포트 목록 화면도 사후케어 화면과 동일하게 하단 네비 탭이 아닌 피부 변화 리포트의
+    // 하위 화면이므로, 뒤로가기는 항상 skinReport 탭으로 복귀시킴
+    document.getElementById('savedReportsBackBtn').addEventListener('click', () => {
+      switchTab('skinReport');
+    });
+
+    // ===== "리포트 저장하기": 피부 변화 리포트를 localStorage에 배열로 누적 저장 =====
+
+    const SKIN_REPORTS_STORAGE_KEY = 'skinTripSavedReports';
+
+    // 저장된 리포트 배열을 읽어옴 (최초 실행/파싱 실패 시 빈 배열로 폴백)
+    function loadSavedSkinReports() {
+      try {
+        const raw = localStorage.getItem(SKIN_REPORTS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveSkinReportsToStorage(list) {
+      localStorage.setItem(SKIN_REPORTS_STORAGE_KEY, JSON.stringify(list));
+    }
+
+    // 저장할 사진을 정사각형으로 center-crop한 뒤 축소한 JPEG dataURL로 변환.
+    // 원본 화질 그대로 저장하면 사진 2장만으로도 localStorage 용량을 금방 채우기 때문에
+    // "조회 화면에서 보여주는 용도"에 맞는 해상도(320px)로만 줄여서 저장함
+    function shrinkPhotoForStorage(imgEl, size = 320) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const srcW = imgEl.naturalWidth || imgEl.width;
+      const srcH = imgEl.naturalHeight || imgEl.height;
+      const side = Math.min(srcW, srcH);
+      const sx = (srcW - side) / 2;
+      const sy = (srcH - side) / 2;
+      ctx.drawImage(imgEl, sx, sy, side, side, 0, 0, size, size);
+      return canvas.toDataURL('image/jpeg', 0.75);
+    }
+
+    // "리포트 저장하기" 버튼: 현재 화면에 표시된 항목별 변화·종합 요약·사진을 그대로 스냅샷으로 저장
+    document.getElementById('saveSkinReportBtn').addEventListener('click', () => {
+      const segment = getActiveSegment();
+      const destination = segment ? segment.country : '여행지 미등록';
+      const flag = destinationFlags[destination] || '📍';
+      const report = {
+        id: Date.now(), // 저장 시각을 고유 id로 사용(같은 ms에 두 번 저장될 일은 없다고 가정)
+        destination,
+        flag,
+        startDate: segment ? segment.start : '-',
+        endDate: segment ? segment.end : '-',
+        scores: {
+          start: { ...skinPhotoScores.start },
+          end: { ...skinPhotoScores.end },
+        },
+        summary: document.getElementById('skinReportSummary').textContent,
+        photos: {
+          start: shrinkPhotoForStorage(skinPhotoImages.start),
+          end: shrinkPhotoForStorage(skinPhotoImages.end),
+        },
+      };
+      const list = loadSavedSkinReports();
+      list.push(report);
+      try {
+        saveSkinReportsToStorage(list);
+      } catch (e) {
+        // localStorage 용량 초과 등으로 저장이 실패해도 화면 전환은 그대로 진행(치명적 오류로 막지 않음)
+        console.error('피부 리포트 저장 실패:', e);
+      }
+      switchTab('savedReports'); // 저장 후 저장된 리포트 목록 화면으로 이동
+    });
+
+    // 저장된 리포트 목록 렌더링: 각 행 = [여행지 | 날짜 | 리포트 조회하기 | 삭제(X)]
+    function renderSavedSkinReportsList() {
+      const list = loadSavedSkinReports();
+      const listEl = document.getElementById('savedReportsList');
+      const emptyEl = document.getElementById('savedReportsEmptyNote');
+
+      if (list.length === 0) {
+        emptyEl.classList.remove('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      // 최근 저장한 리포트가 위로 오도록 역순 정렬
+      listEl.innerHTML = [...list].reverse().map((report) => `
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold truncate">${report.flag} ${report.destination}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${report.startDate} ~ ${report.endDate}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" class="view-saved-report-btn text-xs font-semibold text-brand-600 border border-brand-100 rounded-full px-3 py-1.5" data-report-id="${report.id}">리포트 조회하기</button>
+            <button type="button" class="delete-saved-report-btn text-gray-300 hover:text-gray-500 text-sm px-1" data-report-id="${report.id}" aria-label="리포트 삭제">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.view-saved-report-btn').forEach((btn) => {
+        btn.addEventListener('click', () => openSavedReportView(Number(btn.dataset.reportId)));
+      });
+      // 삭제(X): 확인창 없이 바로 목록에서 제거 (앱 내 다른 ✕ 삭제 버튼들과 동일한 방식)
+      listEl.querySelectorAll('.delete-saved-report-btn').forEach((btn) => {
+        btn.addEventListener('click', () => deleteSavedSkinReport(Number(btn.dataset.reportId)));
+      });
+    }
+
+    // 저장된 리포트 삭제 후 목록 다시 렌더링
+    function deleteSavedSkinReport(reportId) {
+      const list = loadSavedSkinReports().filter((r) => r.id !== reportId);
+      saveSkinReportsToStorage(list);
+      renderSavedSkinReportsList();
+    }
+
+    // 저장된 리포트 항목명·라벨(모달에 표시할 4개 항목)
+    const SAVED_REPORT_ITEM_LABELS = [
+      { key: 'hydration', label: '💧 수분', unit: '/100' },
+      { key: 'redness', label: '☀️ 톤·홍조', unit: '/100' },
+      { key: 'oiliness', label: '💧 유분', unit: '/100' },
+      { key: 'blemishCount', label: '🦠 트러블', unit: '건' },
+    ];
+
+    // 리포트 조회 팝업(모달) 열기: id로 저장된 리포트를 찾아 항목별 수치·종합 요약을 채워 넣음
+    function openSavedReportView(reportId) {
+      const list = loadSavedSkinReports();
+      const report = list.find((r) => r.id === reportId);
+      if (!report) return;
+
+      document.getElementById('savedReportViewTitle').textContent = `${report.flag} ${report.destination}`;
+      document.getElementById('savedReportViewDateRange').textContent = `${report.startDate} ~ ${report.endDate}`;
+
+      // 저장 당시 등록했던 1일차·마지막날 사진 표시 (사진 없이 저장된 예전 리포트는 이 영역을 숨김)
+      const photosEl = document.getElementById('savedReportViewPhotos');
+      if (report.photos && report.photos.start && report.photos.end) {
+        document.getElementById('savedReportViewStartPhoto').src = report.photos.start;
+        document.getElementById('savedReportViewEndPhoto').src = report.photos.end;
+        photosEl.classList.remove('hidden');
+      } else {
+        photosEl.classList.add('hidden');
+      }
+
+      document.getElementById('savedReportViewItems').innerHTML = SAVED_REPORT_ITEM_LABELS.map(({ key, label, unit }) => {
+        const startVal = report.scores.start ? report.scores.start[key] : '-';
+        const endVal = report.scores.end ? report.scores.end[key] : '-';
+        return `
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-semibold text-gray-700">${label}</span>
+            <span class="text-gray-500">${startVal}${unit} → <span class="font-bold text-gray-900">${endVal}${unit}</span></span>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('savedReportViewSummary').textContent = report.summary || '';
+
+      document.getElementById('savedReportViewModal').classList.remove('hidden');
+    }
+
+    function closeSavedReportView() {
+      document.getElementById('savedReportViewModal').classList.add('hidden');
+    }
+    document.getElementById('savedReportViewCloseBtn').addEventListener('click', closeSavedReportView);
+    document.getElementById('savedReportViewModal').addEventListener('click', (e) => {
+      // 배경(빈 공간) 탭으로도 닫히게 하되, 카드/닫기 버튼 자체를 누른 경우는 그대로 둠
+      if (e.target.id === 'savedReportViewModal') {
+        closeSavedReportView();
+      }
     });
 
     // 배달의뷰티 서비스 종료 안내 팝업 닫기
@@ -4425,18 +5122,34 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('pouchBasketConfirmBtn').addEventListener('click', closePouchBasketModal);
 
     // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
-    const importBanData = {
-      이탈리아: {
-        displayCountry: '이탈리아(EU)',
-        authority: 'EU 화장품 규정 (EC No 1223/2009)',
-        ingredient: '하이드로퀴논 (Hydroquinone)',
-        ingredientKeywords: ['하이드로퀴논'], // 파우치 제품 전성분과 대조할 때 쓰는 실제 성분명 키워드
-        productHint: '미백·잡티 개선 크림, 톤업크림',
-        alternative: '나이아신아마이드, 알부틴 등 EU에서 허용된 미백 성분 제품으로 교체를 추천해요',
-        source: 'EU Cosmetics Regulation (EC) No 1223/2009, Annex II',
-        lastUpdated: '2024.03 개정',
-      },
+    // EU 회원국 + 미국 + 캐나다 여행지 등록 시 공통으로 안내하는 CBD(칸나비디올) 반입 경고.
+    // (해당 지역은 CBD 함유 화장품·오일 등이 합법적으로 유통돼 여행자가 모르고 구매하기 쉬운데,
+    // 한국으로 반입 시에는 대마 성분으로 분류돼 형사처벌 대상이 될 수 있어 국가별 성분 규제보다
+    // 이 경고를 우선 안내함)
+    const CBD_IMPORT_WARNING = {
+      title: 'CBD 함유 제품은 한국 반입이 불법이에요',
+      message:
+        '한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 \\'대마\\'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.',
+      authority: '마약류 관리에 관한 법률',
+      ingredient: 'CBD(칸나비디올)',
+      ingredientKeywords: [], // 실제 보유 제품에 CBD가 들어있는 경우는 없어 파우치 성분 대조 배너는 사용하지 않음
+      productHint: '',
+      alternative: '구매 전 제품 라벨에 HEMP·Cannabis·CBD·CBN·THC 표시가 있는지 꼭 확인하세요',
+      source: '관세청 여행자 휴대품 통관 안내',
+      lastUpdated: '',
     };
+    const CBD_WARNING_COUNTRIES = [
+      // EU 27개 회원국
+      '오스트리아', '벨기에', '불가리아', '크로아티아', '키프로스', '체코', '덴마크', '에스토니아', '핀란드', '프랑스',
+      '독일', '그리스', '헝가리', '아일랜드', '이탈리아', '라트비아', '리투아니아', '룩셈부르크', '몰타', '네덜란드',
+      '폴란드', '포르투갈', '루마니아', '슬로바키아', '슬로베니아', '스페인', '스웨덴',
+      // + 미국, 캐나다
+      '미국', '캐나다',
+    ];
+    const importBanData = {};
+    CBD_WARNING_COUNTRIES.forEach((country) => {
+      importBanData[country] = { ...CBD_IMPORT_WARNING, displayCountry: country };
+    });
 
     // 등록된 파우치 제품 중, 현재 등록된 여행 구간 국가에서 반입 금지된 성분을 포함한 제품을 찾음
     function findPouchIngredientBanMatches() {
@@ -4477,13 +5190,12 @@ HTML_PAGE = """<!DOCTYPE html>
       const info = importBanData[destinationKey];
       if (!info) return false;
 
-      document.getElementById('importBanTitle').textContent = `이 제품은 ${info.displayCountry}에서 반입 금지 물품이에요`;
-      document.getElementById('importBanMessage').textContent =
-        `보유 중인 ${info.productHint} 제품에 포함된 ${info.ingredient} 성분이 ${info.displayCountry} 반입 금지 물질로 분류되어 있어요.`;
+      document.getElementById('importBanTitle').textContent = info.title;
+      document.getElementById('importBanMessage').textContent = info.message;
       document.getElementById('importBanAuthority').textContent = info.authority;
       document.getElementById('importBanIngredient').textContent = info.ingredient;
       document.getElementById('importBanAlternative').textContent = info.alternative;
-      document.getElementById('importBanSource').textContent = `출처 · ${info.source} · ${info.lastUpdated}`;
+      document.getElementById('importBanSource').textContent = `출처 · ${info.source}${info.lastUpdated ? ' · ' + info.lastUpdated : ''}`;
       document.getElementById('importBanModal').classList.remove('hidden');
       return true;
     }
@@ -5251,7 +5963,7 @@ HTML_PAGE = """<!DOCTYPE html>
       이란: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이스라엘: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이집트: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
-      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Italy`, lat: 41.9028, lng: 12.4964 },
+      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Italy`, lat: 41.9028, lng: 12.4964, cityKey: `rome`, cityLabel: `로마` },
       인도: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
       인도네시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
       일본: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
@@ -5349,6 +6061,12 @@ HTML_PAGE = """<!DOCTYPE html>
         { name: '올리브영 판교역점', category: '헬스&뷰티', distance: '0.3km', products: ['수분 크림', '선크림'] },
         { name: '시코르 현대백화점 판교점', category: '뷰티 편집샵', distance: '0.6km', products: ['진정 마스크팩', '쿨링 미스트'] },
         { name: '아리따움 판교점', category: '헬스&뷰티', distance: '0.9km', products: ['수분 세럼'] },
+      ],
+      // 구글 맵 기준 실제 좌표 (Via del Tritone 74 / Via del Corso 486-487 / Piazza dei Cinquecento)
+      rome: [
+        { name: 'Sephora 트레비 (Via del Tritone)', category: '뷰티 편집샵', distance: '0.3km', products: ['수분 크림', '립틴트'], lat: 41.9036, lng: 12.4857 },
+        { name: 'Sephora 델 코르소 (Via del Corso)', category: '뷰티 편집샵', distance: '1.2km', products: ['향수', '립밤'], lat: 41.9095, lng: 12.4768 },
+        { name: 'Sephora 테르미니 (Piazza dei Cinquecento)', category: '뷰티 편집샵', distance: '1.5km', products: ['선크림', '핸드크림'], lat: 41.9009, lng: 12.5016 },
       ],
     };
 
@@ -5707,12 +6425,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
     function renderCommunityStoreMarkers(cityKey, weather) {
       clearCommunityMarkers();
-      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const storeKey = weather.cityKey || (weather.en ? weather.en.toLowerCase() : '');
       const baseStores = storeData[storeKey] || [];
       const offsets = [
         [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
       ];
       communityCurrentStores = baseStores.map((store, i) => {
+        if (store.lat != null && store.lng != null) return { ...store };
         const off = offsets[i % offsets.length];
         return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
       });
@@ -6210,6 +6929,21 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // "들고 가면 좋을 제품": 여행지의 기후(weatherData[destination].climate)에 맞춰
     // 국가별 추천화장품 DB(260713_추천화장품.csv)를 기후 단위로 묶어서 추천
+    //
+    // 아래 이미지들은 여러 기후 그룹에서 공통으로 재사용됨. 이전에는 각 등장 지점마다
+    // base64 이미지 데이터 원문을 그대로 복사해 넣었는데, 그러다 보니 같은 이미지가 최대
+    // 5번까지 중복되어(예: 이즈앤트리 선크림) 페이지 전체 크기가 수 MB씩 불필요하게 커졌음.
+    // 이는 배포 환경에서 응답 전송 중 문자 인코딩이 깨져 <script> 전체가 파싱조차 안 되는
+    // 문제(= 모든 버튼이 먹통이 되는 원인)로 이어졌음. IMG_ASSETS에 한 번씩만 담아두고
+    // 아래에서는 참조만 하도록 바꿔 실제 데이터가 한 번만 삽입되게 함.
+    const IMG_ASSETS = {
+      CARE_IMG_ABIB_AQUAFIT: '__CARE_IMG_ABIB_AQUAFIT__',
+      CARE_IMG_TORRIDEN_DIVEIN: '__CARE_IMG_TORRIDEN_DIVEIN__',
+      CARE_IMG_ABIB_SERUM: '__CARE_IMG_ABIB_SERUM__',
+      CARE_IMG_TORRIDEN_LIP: '__CARE_IMG_TORRIDEN_LIP__',
+      CARE_IMG_BRINGGREEN_ALOE: '__CARE_IMG_BRINGGREEN_ALOE__',
+      CARE_IMG_ISNTREE_SUNCREAM: '__CARE_IMG_ISNTREE_SUNCREAM__',
+    };
     const CARE_RECOMMEND_DATA = {
       열대기후: {
         ment: '무더운 이 지역은 가벼운 기초, 강한 선케어, 그리고 무너지지 않는 화장을 위해 픽서와 유분 관리 템을 들고 가면 좋아요.',
@@ -6217,7 +6951,7 @@ HTML_PAGE = """<!DOCTYPE html>
           { name: '토리든 패드 밸런스풀', img: '__CARE_IMG_TORRIDEN_BALANCEFUL__' },
           { name: '바닐라코 프라임 프라이머 피니쉬 파우더', img: '__CARE_IMG_BANILA_PRIMER__' },
           { name: '키스미 스무스 리퀴드 아이라이너', img: '__CARE_IMG_KISSME_EYELINER__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
           { name: '쏘내추럴 올 데이 타이트 메이크업 세팅 픽서', img: '__CARE_IMG_SONATURAL_FIXER__' },
         ],
       },
@@ -6227,21 +6961,21 @@ HTML_PAGE = """<!DOCTYPE html>
           { name: '구달 청귤 비타C 잡티케어 세럼마스크 알파', img: '__CARE_IMG_GOODAL_VITAC__' },
           { name: '더마토리 프로 앰플 마스크- 미백', img: '__CARE_IMG_DERMATORY_AMPOULE__' },
           { name: '바이오던스 리얼 딥 마스크 - 래디언트 비타 나이아신', img: '__CARE_IMG_BIODANCE_MASK__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
         ],
       },
       건조기후: {
         ment: '건조한 이 지역은 수분 진정과 강한 선케어, 그리고 헤어·두피 관리(헤어 에센스, 두피 토닉)까지 챙겨 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
           { name: '헤어플러스 단백질본드 워터에센스', img: '__CARE_IMG_HAIRPLUS_ESSENCE__' },
           { name: '라운드랩 소나무 진정 시카 두피 토닉', img: '__CARE_IMG_ROUNDLAB_TONIC__' },
         ],
@@ -6249,23 +6983,23 @@ HTML_PAGE = """<!DOCTYPE html>
       냉대기후: {
         ment: '쌀쌀한 이 지역은 수분 진정, 수분-바디, 강한 선케어 제품을 들고 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '브링그린 알로에 97% 수딩젤', img: '__CARE_IMG_BRINGGREEN_ALOE__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '브링그린 알로에 97% 수딩젤', img: IMG_ASSETS.CARE_IMG_BRINGGREEN_ALOE },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
         ],
       },
       한대기후: {
         ment: '추운 이 지역은 수분 진정, 수분-바디, 강한 선케어 제품을 챙겨 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '브링그린 알로에 97% 수딩젤', img: '__CARE_IMG_BRINGGREEN_ALOE__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '브링그린 알로에 97% 수딩젤', img: IMG_ASSETS.CARE_IMG_BRINGGREEN_ALOE },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
         ],
       },
     };
