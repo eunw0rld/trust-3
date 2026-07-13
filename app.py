@@ -1775,10 +1775,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- 온보딩 완료 화면 -->
         <div id="reg-complete" class="wizard-step hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 40px);">
-          <span class="text-5xl mb-4">✅</span>
-          <h2 class="text-xl font-bold mb-2">Thanks!</h2>
-          <p class="text-sm text-gray-400 mb-10">이제 다 준비됐어요</p>
-          <button id="wizardFinishBtn" type="button" class="wizard-cta-btn w-full max-w-xs">시작하기</button>
+          <h2 class="text-xl mb-2 text-display">분석이 끝났어요</h2>
+          <p class="text-sm mb-10" style="color: #888888;">이제 피부 걱정 없는 여행을 시작해볼까요?</p>
+          <button id="wizardFinishBtn" type="button" class="btn-primary py-3.5" style="width: 68%;">시작하기</button>
         </div>
 
       </section>
