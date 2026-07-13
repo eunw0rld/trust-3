@@ -19,6 +19,7 @@ def _data_uri(path: Path, mime: str) -> str:
 
 EARTH_BG_URI = _data_uri(_ASSET_DIR / "bg.png", "image/png")
 LOGO_URI = _data_uri(_ASSET_DIR / "landing_logo.png", "image/png")
+STAR_URI = _data_uri(_ASSET_DIR / "Union.png", "image/png")
 AVATAR_URIS = [
     _data_uri(_AVATAR_DIR / "3.png", "image/png"),
     _data_uri(_AVATAR_DIR / "1.png", "image/png"),
@@ -666,31 +667,117 @@ HTML_PAGE = """<!DOCTYPE html>
        가려지지 않도록 네비 높이(58px) + 여백만큼 아래쪽을 비워둠 */
     padding-bottom: 96px;
   }
-  /* 랜딩 페이지: 지구 위에 떠 있는 사용자 프로필 사진 말풍선 */
+  /* 랜딩 페이지: 지구 위에 떠 있는 사용자 프로필 사진 말풍선 - 등장(pop) 후 미세한 floating.
+     --bubble-delay는 각 말풍선의 inline style에서 지정(4단계 지구 등장 후 순차 등장) */
   .landing-bubble {
     position: absolute;
     z-index: 2;
     width: 46px;
-    animation: landingFloat 3.2s ease-in-out infinite;
+    opacity: 0;
+    animation: welcomeBubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) var(--bubble-delay, 0s) both;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
   }
+  /* floating(landingFloat)은 부모(.landing-bubble)의 pop-in(scale) 애니메이션과 같은
+     transform 속성을 두고 충돌하지 않도록 자식 img에 따로 적용 */
   .landing-bubble img {
     display: block;
     width: 100%;
     height: auto;
+    animation: landingFloat 3.2s ease-in-out var(--bubble-delay, 0s) infinite;
   }
   @keyframes landingFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
   }
-  /* 웰컴 화면: 지구.jpg 자체에 검은 우주 배경이 포함돼 있어서, 원형으로 잘라 쓰는 대신
-     화면 전체 배경으로 깔고 background-position/size로 지구 위치·크기를 맞춤
-     (실제 배경 설정은 #screen-welcome 인라인 스타일에 있음) */
+  @keyframes welcomeBubblePop {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes landingFadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes landingLogoShimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.82; }
+  }
+  /* 웰컴 인트로 1~2단계: 별표 심볼이 화면 중앙에서 스케일+회전+페이드로 등장한 뒤,
+     로고 자리(좌상단)로 이동. 393x852 고정 뷰포트 기준, 별표 최종 위치와 화면 중앙 간
+     오프셋을 고정 픽셀로 계산해 transform: translate로 처리(실제 레이아웃은 그대로 둠) */
+  @keyframes welcomeStarIntro {
+    0% { opacity: 0; transform: translate(150px, 372px) scale(0.7) rotate(-45deg); }
+    55% { opacity: 1; transform: translate(150px, 372px) scale(1) rotate(0deg); }
+    100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  }
+  .welcome-star-intro-wrap {
+    display: inline-block;
+    animation: welcomeStarIntro 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes welcomeStarIdleRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  /* 웰컴 인트로 4단계: 지구(01 landing page/bg.png)가 화면을 채운 레이어로 크게 시작해
+     scale만으로 줌아웃(실제 width/height는 고정) + 흐림 해소. 넘치는 부분은
+     overflow:hidden으로 잘라 레이아웃/스크롤에 영향 없게 함 */
+  .welcome-earth-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .welcome-earth-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    animation: welcomeEarthZoomOut 1s ease-out 1.1s both;
+  }
+  @keyframes welcomeEarthZoomOut {
+    from { opacity: 0; transform: scale(1.8); filter: blur(6px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+  /* 로고 = 별표(Union.png) + 워드마크(landing_logo.png) 두 장을 세로로 쌓은 조합 */
+  .welcome-logo-lockup {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .welcome-star-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    animation: welcomeStarIdleRotate 20s linear 1.1s infinite, landingLogoShimmer 4s ease-in-out 1.1s infinite;
+  }
   .welcome-logo-icon {
-    height: 52px;
+    height: 40px;
     width: auto;
     display: block;
     filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.35));
+    opacity: 0;
+    animation: landingFadeInUp 0.5s ease-out 0.6s both, landingLogoShimmer 4s ease-in-out 1.1s infinite;
+  }
+  .welcome-subcopy {
+    opacity: 0;
+    animation: landingFadeInUp 0.4s ease-out 1.1s both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .welcome-star-intro-wrap,
+    .welcome-logo-icon,
+    .welcome-subcopy,
+    .welcome-earth-img,
+    .landing-bubble,
+    .welcome-cta-btn {
+      animation-duration: 0.01s !important;
+      animation-delay: 0s !important;
+    }
+    .welcome-star-icon,
+    .landing-bubble img {
+      animation: none !important;
+    }
   }
   .app-header-logo {
     height: 22px;
@@ -715,7 +802,13 @@ HTML_PAGE = """<!DOCTYPE html>
     font-size: 14px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    animation: welcomeCtaSlideUp 0.3s ease-out 2.6s both;
     transition: transform 0.12s ease, background 0.12s ease;
+  }
+  @keyframes welcomeCtaSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .welcome-cta-btn::before {
     content: '';
@@ -1420,20 +1513,27 @@ HTML_PAGE = """<!DOCTYPE html>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 (웰컴 화면) ============ -->
-  <div id="screen-welcome" class="relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-color: #000; background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
+  <div id="screen-welcome" class="relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-color: #000;">
+
+    <div class="welcome-earth-wrap">
+      <img class="welcome-earth-img" src="__EARTH_BG_URI__" alt="" />
+    </div>
 
     <div class="relative z-10 pt-8 px-6 text-left">
-      <img src="__LOGO_URI__" alt="GlowTrip" class="welcome-logo-icon" />
-      <p class="mt-2 text-sm text-white/90 leading-relaxed font-normal">
+      <div class="welcome-logo-lockup">
+        <span class="welcome-star-intro-wrap"><img src="__STAR_URI__" alt="" class="welcome-star-icon" /></span>
+        <img src="__LOGO_URI__" alt="GlowTrip" class="welcome-logo-icon" />
+      </div>
+      <p class="welcome-subcopy mt-2 text-sm text-white/90 leading-relaxed font-normal">
         <span class="font-bold">글로우트립</span>과 함께,<br />피부 걱정 없이 어디든
       </p>
     </div>
 
-    <div class="landing-bubble" style="top: 36%; left: 30%;"><img src="__AVATAR_URI_1__" alt="" /></div>
-    <div class="landing-bubble" style="top: 43%; left: 13%;"><img src="__AVATAR_URI_2__" alt="" /></div>
-    <div class="landing-bubble" style="top: 56%; left: 60%;"><img src="__AVATAR_URI_3__" alt="" /></div>
-    <div class="landing-bubble" style="top: 60%; left: 76%;"><img src="__AVATAR_URI_4__" alt="" /></div>
-    <div class="landing-bubble" style="top: 69%; left: 30%;"><img src="__AVATAR_URI_5__" alt="" /></div>
+    <div class="landing-bubble" style="top: 36%; left: 30%; --bubble-delay: 2.1s;"><img src="__AVATAR_URI_1__" alt="" /></div>
+    <div class="landing-bubble" style="top: 43%; left: 13%; --bubble-delay: 2.2s;"><img src="__AVATAR_URI_2__" alt="" /></div>
+    <div class="landing-bubble" style="top: 56%; left: 60%; --bubble-delay: 2.3s;"><img src="__AVATAR_URI_3__" alt="" /></div>
+    <div class="landing-bubble" style="top: 60%; left: 76%; --bubble-delay: 2.4s;"><img src="__AVATAR_URI_4__" alt="" /></div>
+    <div class="landing-bubble" style="top: 69%; left: 30%; --bubble-delay: 2.5s;"><img src="__AVATAR_URI_5__" alt="" /></div>
 
     <div class="absolute inset-x-0 bottom-9 z-10 flex justify-center">
       <button id="welcomeStartBtn" type="button" class="welcome-cta-btn" style="width: 60%;">시작하기</button>
@@ -7564,6 +7664,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 HTML_PAGE = (
     HTML_PAGE.replace("__EARTH_BG_URI__", EARTH_BG_URI)
     .replace("__LOGO_URI__", LOGO_URI)
+    .replace("__STAR_URI__", STAR_URI)
     .replace("__AVATAR_URI_1__", AVATAR_URIS[0])
     .replace("__AVATAR_URI_2__", AVATAR_URIS[1])
     .replace("__AVATAR_URI_3__", AVATAR_URIS[2])
