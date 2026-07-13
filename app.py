@@ -361,8 +361,6 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .pouch-add-choice-btn.primary {
     padding: 20px 18px;
-    border-color: var(--accent-red);
-    background: #fde7ea;
   }
   .pouch-add-choice-btn.secondary {
     padding: 12px 18px;
@@ -733,6 +731,7 @@ HTML_PAGE = """<!DOCTYPE html>
     object-fit: cover;
     object-position: center;
     display: block;
+    will-change: transform, filter, opacity;
     animation: welcomeEarthZoomOut 1s ease-out 1.1s both;
   }
   @keyframes welcomeEarthZoomOut {
@@ -1314,6 +1313,24 @@ HTML_PAGE = """<!DOCTYPE html>
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
     z-index: 3;
+  }
+  /* 선반 위 각 제품 우상단의 삭제 버튼 - 좌상단 번호 배지(레드)와 구분되도록 검정 톤 */
+  .pouch-item-delete-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: #111827;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    z-index: 4;
   }
   .pouch-chip-badge {
     width: 22px;
@@ -2546,8 +2563,9 @@ HTML_PAGE = """<!DOCTYPE html>
           <div id="pouchChipsRow" class="flex flex-col gap-2 mt-5 px-1 w-full"></div>
         </div>
       </div>
-      <div class="px-6 pt-3 pb-8 shrink-0">
-        <button id="pouchBasketConfirmBtn" type="button" class="w-full py-3.5 rounded-2xl bg-brand-500 text-white text-sm font-bold shadow-md active:scale-[0.98] transition">확인</button>
+      <div class="px-6 pt-3 pb-8 shrink-0 space-y-2">
+        <button id="pouchBasketAddMoreBtn" type="button" class="pill w-full justify-center py-2.5 text-sm font-semibold">+ 추가하기</button>
+        <button id="pouchBasketConfirmBtn" type="button" class="btn-primary w-full py-3.5 shadow-md active:scale-[0.98] transition">등록하기</button>
       </div>
     </div>
 
@@ -5090,11 +5108,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     function completeCosmeticScan() {
       document.getElementById('cosmeticScanModal').classList.add('hidden');
-
-      // 인식된 화장품들로 리스트를 새로 채우는 동안 자동 접힘을 잠깐 막아서
-      // "등록하기" 버튼까지 함께 눈에 보이게 함
-      suppressPouchAutoCollapse = true;
-      pouchCaptureForceOpen = true;
+      pouchAddReturnToTray = false; // 스캔은 항상 트레이로 이동하므로 플래그를 소비해둠
 
       advancePouchAddEventCount();
       const forcedProduct = getForcedAddProduct();
@@ -5112,10 +5126,8 @@ HTML_PAGE = """<!DOCTYPE html>
       productsToAdd.forEach((product) => {
         cosmeticRows.appendChild(buildCosmeticRow(product.name, product.category));
       });
-      updatePouchSectionView();
-      setTimeout(() => {
-        suppressPouchAutoCollapse = false;
-      }, 0);
+      // 인식 완료 후 화장품 목록 페이지를 거치지 않고 곧바로 선반 정리 장면으로 이동
+      openPouchBasketModal();
     }
 
     function cancelCosmeticScan() {
@@ -5238,6 +5250,17 @@ HTML_PAGE = """<!DOCTYPE html>
         e.stopPropagation();
         showPouchItemTooltip(el, product.name);
       });
+      // 잘못 인식된 항목을 선반에서 바로 뺄 수 있는 삭제 버튼(우상단 X)
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'pouch-item-delete-btn';
+      deleteBtn.setAttribute('aria-label', '삭제');
+      deleteBtn.textContent = '✕';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removePouchItemAndRefresh(product.name);
+      });
+      el.appendChild(deleteBtn);
       return el;
     }
 
@@ -5287,7 +5310,18 @@ HTML_PAGE = """<!DOCTYPE html>
       return chip;
     }
 
-    let pouchBasketAutoCloseTimer = null; // 확인 탭 없이도 담기 연출이 끝나면 자동으로 선반으로 넘어가기 위한 타이머
+    // 트레이(선반)에서 "추가하기"로 들어온 경우, 촬영/입력이 끝나면 목록 화면이 아니라
+    // 다시 이 트레이로 돌아가야 하므로 표시해두는 플래그
+    let pouchAddReturnToTray = false;
+
+    // 선반 위 화장품 삭제/추가 후 최신 목록으로 다시 그림(번호·위치가 자연스럽게 재정렬됨)
+    function removePouchItemAndRefresh(productName) {
+      const row = Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
+        .find((r) => r.querySelector('input').value.trim() === productName);
+      if (row) row.remove();
+      openPouchBasketModal();
+    }
+
     function openPouchBasketModal() {
       const myProducts = getMyProducts();
       const products = myProducts.length > 0 ? myProducts : pouchScanProducts;
@@ -5307,23 +5341,32 @@ HTML_PAGE = """<!DOCTYPE html>
       });
 
       document.getElementById('pouchBasketModal').classList.remove('hidden');
+    }
 
-      // 아이템이 다 날아들어와 자리잡는 연출(최대 9개 * 0.18s 지연 + 0.65s 비행)이 끝나고
-      // 잠깐 볼 시간을 준 뒤, 확인 탭을 하지 않아도 자동으로 선반(카드 그리드)으로 넘어감
-      clearTimeout(pouchBasketAutoCloseTimer);
-      pouchBasketAutoCloseTimer = setTimeout(closePouchBasketModal, 3200);
+    // 모달만 잠깐 숨김(등록 확정 X) - "추가하기"로 촬영/입력 화면으로 넘어갈 때 사용
+    function hidePouchBasketModal() {
+      document.getElementById('pouchBasketModal').classList.add('hidden');
+      document.getElementById('pouchItemTooltip').classList.remove('visible');
     }
 
     function closePouchBasketModal() {
-      clearTimeout(pouchBasketAutoCloseTimer);
-      document.getElementById('pouchBasketModal').classList.add('hidden');
-      document.getElementById('pouchItemTooltip').classList.remove('visible');
+      hidePouchBasketModal();
       // 등록이 끝나면 파우치 섹션을 접어 등록된 화장품 카드 그리드(선반)를 그 자리에서 그대로 보여줌
       // (이미 홈 화면 안에서 일어나는 흐름이라 switchTab('inuse')로 화면을 다시 튕길 필요가 없음)
       pouchCaptureForceOpen = false;
       updatePouchSectionView();
       document.getElementById('pouchSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    // 트레이 화면의 "+ 추가하기": 기존 사진/직접입력 선택 흐름으로 이동, 완료되면 다시 트레이로 돌아옴
+    document.getElementById('pouchBasketAddMoreBtn').addEventListener('click', () => {
+      pouchAddReturnToTray = true;
+      hidePouchBasketModal();
+      pouchCaptureForceOpen = true;
+      showPouchAddStep('choice');
+      updatePouchSectionView();
+      document.getElementById('pouchSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     document.getElementById('pouchRegisterBtn').addEventListener('click', () => {
       openPouchBasketModal();
@@ -5990,6 +6033,11 @@ HTML_PAGE = """<!DOCTYPE html>
         cosmeticRows.appendChild(buildCosmeticRow(name, category));
       }
       nameInput.value = '';
+      // 트레이(선반)의 "+ 추가하기"를 거쳐 들어온 경우엔 목록 화면 대신 다시 트레이로 복귀
+      if (pouchAddReturnToTray) {
+        pouchAddReturnToTray = false;
+        openPouchBasketModal();
+      }
     });
 
     // 화장품이 1개 이상이면 카드 그리드를 보여주고 촬영/입력 UI는 접음("+ 추가"로 다시 펼침)
