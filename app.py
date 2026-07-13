@@ -431,6 +431,10 @@ HTML_PAGE = """<!DOCTYPE html>
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  /* 로딩 오버레이 -> 콜라주 전환 시 짧게 페이드 (기존 모달 페이드 키프레임 재사용) */
+  .archive-collage-fade-in {
+    animation: archiveModalFade 0.25s ease-out;
+  }
   /* 각 오마주 요소가 "탁" 하고 도장처럼 찍히는 효과: 크게 나타나 살짝 회전하며 안착 */
   .stamp-el {
     opacity: 0;
@@ -1065,6 +1069,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .pouch-basket {
     background-image: none !important;
     background: linear-gradient(180deg, #eef5f4 0%, #e2eeec 100%) !important;
+    /* 선반 배경만 흑백으로: .pouch-basket-items(제품 사진)는 형제 요소라 영향받지 않음 */
+    filter: grayscale(1);
   }
   .pouch-glass-shelf-line {
     position: absolute;
@@ -1489,7 +1495,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">이름이<br />어떻게 되나요?</h2>
-            <input id="regNameInput" type="text" placeholder="이름을 입력해주세요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+            <input id="regNameInput" type="text" placeholder="이름을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
             <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-nickname" disabled>다음</button>
@@ -1503,7 +1509,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">어떻게<br />불러드릴까요?</h2>
-            <input id="regNicknameInput" type="text" placeholder="다른 사용자에게 보여질 닉네임이에요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+            <input id="regNicknameInput" type="text" placeholder="다른 사용자에게 보여질 닉네임이에요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
             <p class="text-xs text-gray-400 mt-2">커뮤니티에서 이 닉네임으로 보여요</p>
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
@@ -1725,7 +1731,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <div id="pouchAddTextView" class="pouch-add-step hidden">
               <button type="button" class="pouch-add-back-btn text-xs text-gray-400 mb-3">← 이전</button>
               <div class="space-y-2">
-                <input id="pouchAddTextName" type="text" placeholder="제품명" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" />
+                <input id="pouchAddTextName" type="text" placeholder="제품명" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" />
                 <select id="pouchAddTextCategory" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-600 focus:outline-none focus:border-brand-500"></select>
                 <button id="pouchAddTextSaveBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">추가하기</button>
               </div>
@@ -1762,11 +1768,11 @@ HTML_PAGE = """<!DOCTYPE html>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </button>
               <div id="mapSearchBar" class="hidden flex-1 min-w-0 bg-white rounded-2xl shadow-md p-3">
-                <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2 px-3 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-400 transition-colors" />
+                <input id="globeSearchInput" type="text" placeholder="도시를 검색해보세요" class="w-full py-2 px-3 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-400 transition-colors" />
                 <p id="globeSearchNotFound" class="hidden mt-1.5 ml-1 inline-block text-[11px] font-medium text-brand-500 bg-brand-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
                 <p class="text-[11px] font-semibold text-gray-400 mt-2.5 mb-1.5">인기 여행지</p>
                 <div class="flex flex-wrap gap-1.5">
-                  <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+                  <button type="button" class="trip-destination-chip" data-city="로마">로마</button>
                   <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
                   <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
                   <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
@@ -2253,11 +2259,11 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
           <div>
             <p class="text-xs font-semibold text-gray-400 mb-2">이름</p>
-            <input id="nameInput" type="text" placeholder="이름을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+            <input id="nameInput" type="text" placeholder="이름을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
           </div>
           <div>
             <p class="text-xs font-semibold text-gray-400 mb-2">닉네임 <span class="text-gray-300 font-normal">(선택, 설정하면 닉네임으로 불러드려요)</span></p>
-            <input id="nicknameInput" type="text" placeholder="닉네임을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+            <input id="nicknameInput" type="text" placeholder="닉네임을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
           </div>
         </div>
 
@@ -2693,7 +2699,9 @@ HTML_PAGE = """<!DOCTYPE html>
       if (!q) return null;
       const matchKey = Object.keys(weatherData).find((key) => {
         const entry = weatherData[key];
-        return key.toLowerCase().includes(q) || (entry.en && entry.en.toLowerCase().includes(q));
+        return key.toLowerCase().includes(q)
+          || (entry.en && entry.en.toLowerCase().includes(q))
+          || (entry.cityLabel && entry.cityLabel.toLowerCase().includes(q));
       });
       if (!matchKey) return null;
       const weather = weatherData[matchKey];
@@ -5216,28 +5224,11 @@ HTML_PAGE = """<!DOCTYPE html>
     updateTabLockUI();
 
     // ===== 여행 일정 등록 (다중 구간) =====
-    // 등록 2단계에서 쓰던 curated 국가 목록을 그대로 재사용
+    // 여행지 국가 선택 드롭다운에 노출할 20개국(가나다순)으로 축소
+    // (value는 weatherData/매장 데이터 조회에 그대로 쓰이는 키라 기존 한글 국가명 형식을 유지함)
     const ALL_COUNTRIES = [
-      '가나', '가봉', '가이아나', '감비아', '과테말라', '그레나다', '그리스', '기니', '기니비사우', '나미비아',
-      '나우루', '나이지리아', '남수단', '남아프리카공화국', '네덜란드', '네팔', '노르웨이', '뉴질랜드', '니제르', '니카라과',
-      '대만', '대한민국', '덴마크', '도미니카', '도미니카공화국', '독일', '동티모르', '라오스', '라이베리아', '라트비아',
-      '러시아', '레바논', '레소토', '루마니아', '룩셈부르크', '르완다', '리비아', '리투아니아', '리히텐슈타인', '마다가스카르',
-      '마셜제도', '말라위', '말레이시아', '말리', '멕시코', '모나코', '모로코', '모리셔스', '모리타니', '모잠비크',
-      '몬테네그로', '몰도바', '몰디브', '몰타', '몽골', '미국', '미얀마', '미크로네시아', '바누아투', '바레인',
-      '바베이도스', '바티칸', '바하마', '방글라데시', '베냉', '베네수엘라', '베트남', '벨기에', '벨라루스', '벨리즈',
-      '보스니아헤르체고비나', '보츠와나', '볼리비아', '부룬디', '부르키나파소', '부탄', '북마케도니아', '북한', '불가리아', '브라질',
-      '브루나이', '사모아', '사우디아라비아', '산마리노', '상투메프린시페', '세네갈', '세르비아', '세이셸', '세인트루시아', '세인트빈센트그레나딘',
-      '세인트키츠네비스', '소말리아', '솔로몬제도', '수단', '수리남', '스리랑카', '스웨덴', '스위스', '스페인', '슬로바키아',
-      '슬로베니아', '시리아', '시에라리온', '싱가포르', '아랍에미리트', '아르메니아', '아르헨티나', '아이슬란드', '아이티', '아일랜드',
-      '아제르바이잔', '아프가니스탄', '안도라', '알바니아', '알제리', '앙골라', '앤티가바부다', '에리트레아', '에스와티니', '에스토니아',
-      '에콰도르', '에티오피아', '엘살바도르', '영국', '예멘', '오만', '오스트리아', '온두라스', '요르단', '우간다',
-      '우루과이', '우즈베키스탄', '우크라이나', '이라크', '이란', '이스라엘', '이집트', '이탈리아', '인도', '인도네시아',
-      '일본', '자메이카', '잠비아', '적도기니', '조지아', '중국', '중앙아프리카공화국', '지부티', '짐바브웨', '차드',
-      '체코', '칠레', '카메룬', '카보베르데', '카자흐스탄', '카타르', '캄보디아', '캐나다', '케냐', '코모로',
-      '코스타리카', '코트디부아르', '콜롬비아', '콩고공화국', '콩고민주공화국', '쿠바', '쿠웨이트', '크로아티아', '키르기스스탄', '키리바시',
-      '키프로스', '타지키스탄', '탄자니아', '태국', '토고', '통가', '투르크메니스탄', '투발루', '튀니지', '튀르키예',
-      '트리니다드토바고', '파나마', '파라과이', '파키스탄', '파푸아뉴기니', '팔라우', '팔레스타인', '페루', '포르투갈', '폴란드',
-      '프랑스', '피지', '핀란드', '필리핀', '헝가리', '호주',
+      '그리스', '뉴질랜드', '독일', '미국', '베트남', '스위스', '스페인', '싱가포르', '영국', '오스트리아',
+      '이탈리아', '일본', '중국', '캐나다', '태국', '튀르키예', '포르투갈', '프랑스', '필리핀', '호주',
     ];
 
     let tripSegments = []; // 확정 값 - "저장하기"를 눌렀을 때만 갱신되고, 홈 화면 전체가 이 값만 참조함
@@ -5301,7 +5292,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <input type="hidden" class="segment-start-input" value="${initial.start || ''}" />
         <input type="hidden" class="segment-end-input" value="${initial.end || ''}" />
         <select class="segment-country-select w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-brand-500">
-          <option value="">국가를 선택해주세요</option>
+          <option value="" disabled ${!initial.country ? 'selected' : ''}>국가를 선택해주세요</option>
           ${countryOptions}
         </select>
       `;
@@ -7262,10 +7253,28 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
     // ===== 아카이빙 상세: 월별 달력 오마주 + 도장 애니메이션 =====
     let archiveStampTimers = [];
+    let archiveLoadingTimer = null;
 
     function clearArchiveStampTimers() {
       archiveStampTimers.forEach((t) => clearTimeout(t));
       archiveStampTimers = [];
+    }
+
+    function clearArchiveLoadingTimer() {
+      if (archiveLoadingTimer) {
+        clearTimeout(archiveLoadingTimer);
+        archiveLoadingTimer = null;
+      }
+    }
+
+    // 콜라주가 뜨기 직전 아주 짧게 보여주는 로딩 오버레이 (my-location-spinner와 동일한 스피너 스타일 재사용)
+    function buildArchiveLoadingMarkup() {
+      return `
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3" style="background:#0d0d0f;">
+          <span class="my-location-spinner" style="width:20px;height:20px;border-width:3px;"></span>
+          <p class="text-sm font-semibold" style="color:rgba(255,255,255,0.75);">여행 기록을 불러오고 있어요</p>
+        </div>
+      `;
     }
 
     function openArchiveDetail(item) {
@@ -7274,16 +7283,23 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       const status = getArchiveStatus(item);
 
       clearArchiveStampTimers();
+      clearArchiveLoadingTimer();
 
       // stack(콜라주 에셋)이 있는 모든 달은 풀 콜라주 화면, 없으면 준비중 안내
       if (item.stack) {
         // 콜라주 화면은 자체 제목/날짜를 그리므로 상단 헤더 텍스트는 비움
         document.getElementById('archiveHeaderTitle').textContent = '';
         document.getElementById('archiveHeaderSub').textContent = '';
-        canvas.innerHTML = buildItalyArchiveMarkup(item);
+        canvas.innerHTML = buildArchiveLoadingMarkup();
         modal.classList.remove('hidden');
-        requestAnimationFrame(() => runStampSequence());
-        wireArchiveTapTargets();
+        // 실제 네트워크 요청 없이 "불러오는" 느낌만 주기 위한 mock 지연
+        archiveLoadingTimer = setTimeout(() => {
+          archiveLoadingTimer = null;
+          canvas.innerHTML = buildItalyArchiveMarkup(item);
+          canvas.querySelector(':scope > div')?.classList.add('archive-collage-fade-in');
+          requestAnimationFrame(() => runStampSequence());
+          wireArchiveTapTargets();
+        }, 500);
       } else {
         document.getElementById('archiveHeaderTitle').textContent = `${item.flag} ${item.country} · ${item.city}`;
         document.getElementById('archiveHeaderSub').textContent = `${item.start} ~ ${item.end} · ${status.label}`;
@@ -7294,6 +7310,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
     function closeArchiveDetail() {
       clearArchiveStampTimers();
+      clearArchiveLoadingTimer();
       document.getElementById('archiveModal').classList.add('hidden');
       document.getElementById('archiveCanvas').innerHTML = '';
       document.getElementById('archivePhotoLightbox').classList.add('hidden');
