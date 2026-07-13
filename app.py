@@ -1667,7 +1667,7 @@ HTML_PAGE = """<!DOCTYPE html>
       </section>
 
       <!-- ============ 2. 메인 페이지 (대시보드) ============ -->
-      <section id="screen-inuse" class="hidden pt-3 pb-6 space-y-6">
+      <section id="screen-inuse" class="hidden pt-3 pb-6 space-y-4">
 
         <!-- 상단 헤더 블록: 인사말 → 국가 스위처(칩) → 선택된 여행 요약을 한 덩어리로 묶어서
              "지금 어떤 여행 기준으로 보고 있는지"를 처방/카드를 보기 전에 먼저 인지하게 함.
@@ -1684,32 +1684,32 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 오늘의 처방(또는 이미 다녀온 여행이면 회고) 히어로 카드: "정보 나열"이 아니라 오늘 뭘 하면
              되는지(혹은 그때 날씨가 어땠는지) 한 문장으로 안내. 여행지 등록 후에만 표시,
              인사말/칩/여행 요약 바로 아래(여행 폼/파우치/지도보다 위)에 노출 -->
-        <div id="todayInsightCard" class="hidden bg-white border border-gray-100 rounded-2xl p-5">
-          <p id="todayInsightWeatherLine" class="text-xs font-semibold text-gray-400 mb-2"></p>
-          <p id="todayInsightMain" class="text-lg font-extrabold text-gray-900 leading-snug mb-1.5"></p>
-          <p id="todayInsightSub" class="text-xs text-gray-500 mb-4"></p>
-          <div id="todayInsightMetrics" class="flex items-center gap-3 text-[11px] font-semibold text-gray-400"></div>
+        <div id="todayInsightCard" class="hidden card p-5">
+          <p id="todayInsightWeatherLine" class="text-xs font-semibold mb-2" style="color: #888888; text-transform: lowercase;"></p>
+          <p id="todayInsightMain" class="text-lg leading-snug mb-1.5 text-display"></p>
+          <p id="todayInsightSub" class="text-xs mb-4" style="color: #888888;"></p>
+          <div id="todayInsightMetrics" class="flex items-center gap-2"></div>
         </div>
 
         <!-- 예측 경고 배너: 처방 카드가 주인공이 되도록 카드 아래에 작게, 여행지 등록 후에만
              노출 (단, 이미 다녀온 과거 여행이면 더 이상 의미가 없으므로 숨김) -->
-        <button id="predictiveWarningBanner" type="button" class="hidden w-full flex items-center gap-2 text-left rounded-xl px-3 py-2.5" style="background: #fde7ea; border-left: 3px solid #eb0029;">
+        <button id="predictiveWarningBanner" type="button" class="hidden card w-full flex items-center gap-2 text-left p-4" style="background: #fde7ea; border-left: 3px solid #eb0029;">
           <span class="text-xs font-semibold leading-snug" style="color: #b4001f;">⚠️ 이틀 뒤 습도가 급격히 떨어져요. 지금 루틴이면 각질이 올라올 수 있어요.</span>
         </button>
 
         <!-- 여행 계획 입력: 여행지 미등록 시엔 이 인라인 카드 안에 항상 펼쳐져 있고,
              등록 후에는 아래 팝업(바텀시트)으로 옮겨져서 "수정하기" 클릭 시에만 열림 -->
-        <div id="tripSegmentsInlineSlot" class="bg-white border border-gray-100 rounded-2xl p-4">
+        <div id="tripSegmentsInlineSlot" class="card p-4">
           <div id="tripSegmentsSection" class="space-y-3">
             <div id="tripSegmentRows" class="space-y-3"></div>
-            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
+            <button id="addTripSegmentBtn" type="button" class="pill w-full justify-center py-2.5 text-sm font-semibold">+ 구간 추가</button>
             <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
-            <button id="tripSegmentsSaveBtn" type="button" class="w-full py-2.5 rounded-xl bg-brand-500 text-white text-sm font-bold">저장하기</button>
+            <button id="tripSegmentsSaveBtn" type="button" class="btn-primary w-full py-2.5 text-sm">저장하기</button>
           </div>
         </div>
 
         <!-- 내 파우치 (촬영/직접입력 UI가 클릭 없이 항상 바로 노출) -->
-        <div id="pouchSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+        <div id="pouchSection" class="card p-4">
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-base font-bold">내 파우치</h2>
             <button id="pouchAddMoreBtn" type="button" class="hidden text-xs font-semibold text-brand-500">+ 추가</button>
@@ -1871,7 +1871,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <div id="recommendedRoutineSection" class="hidden">
             <h3 class="text-sm font-semibold text-gray-700 mb-1">다른 여행자의 추천 루틴</h3>
             <p id="recommendedRoutineNote" class="text-xs text-gray-400 mb-3"></p>
-            <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+            <div class="card p-4 space-y-3">
               <div>
                 <p class="text-xs font-semibold text-brand-600 mb-1">추천 화장품</p>
                 <p id="recommendedCosmetics" class="text-sm text-gray-600 leading-relaxed"></p>
