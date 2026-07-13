@@ -481,24 +481,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .archive-tappable.tap-flash {
     filter: brightness(0.85) !important;
   }
-  /* 콜라주 우하단에 살짝 겹쳐 뜨는 사진 추가 FAB - 이 화면의 유일한 주 액션이라 레드 사용 */
-  .archive-add-photo-fab {
-    position: absolute;
-    right: -8px;
-    bottom: -8px;
-    width: 54px;
-    height: 54px;
-    border-radius: 9999px;
-    background: var(--accent-red);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-    z-index: 25;
-    transition: transform 0.12s ease;
-  }
-  .archive-add-photo-fab:active {
-    transform: scale(0.95);
+  .archive-add-photo-btn:active {
+    filter: brightness(0.9);
   }
   /* 음악 플레이어 스탬프를 탭하면 "재생 중" 느낌으로 은은하게 펄스 */
   .archive-tappable[data-stamp-name="player"].is-playing {
@@ -4193,8 +4177,9 @@ HTML_PAGE = """<!DOCTYPE html>
       const startScores = analyzeSkinPhoto(skinPhotoImages.start, skinType);
       const endScores = analyzeSkinPhoto(skinPhotoImages.end, skinType);
       // 사후케어 화면(#screen-aftercare)에서 그대로 쓸 수 있도록 반올림해 보관 (blemish → blemishCount로 이름만 맞춤)
-      skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: Math.round(startScores.blemish) };
-      skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.round(endScores.blemish) };
+      // 트러블 건수는 데모 스토리상 1일차 0건 고정, 마지막날은 실제 분석값과 무관하게 최소 1건 이상 보장
+      skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: 0 };
+      skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.max(1, Math.round(endScores.blemish)) };
       beginSkinScan(startScores, endScores);
     }
 
@@ -7765,9 +7750,9 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       });
     }
 
-    // 콜라주 우하단 FAB: 탭하면 사진 선택창을 열고, 고른 사진을 콜라주에 새 카드로 추가
+    // 뱃지 줄의 "추가하기" 버튼: 탭하면 사진 선택창을 열고, 고른 사진을 콜라주에 새 카드로 추가
     function wireArchiveAddPhotoFab() {
-      const fab = document.querySelector('#archiveCanvas .archive-add-photo-fab');
+      const fab = document.querySelector('#archiveCanvas .archive-add-photo-btn');
       const input = document.querySelector('#archiveCanvas .archive-add-photo-input');
       if (!fab || !input) return;
       fab.addEventListener('click', (e) => {
@@ -7794,7 +7779,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       img.src = dataUrl;
       img.alt = '추가한 사진';
       img.className = 'stamp-el stamped archive-tappable';
-      img.style.cssText = 'position:absolute; left:36%; top:36%; width:36%; height:36%; object-fit:cover; border-radius:10px; transform:rotate(-4deg); filter:drop-shadow(0 4px 10px rgba(0,0,0,0.45)); z-index:16;';
+      img.style.cssText = 'position:absolute; left:46%; top:52%; width:32%; height:32%; object-fit:cover; border-radius:10px; transform:rotate(-4deg); filter:drop-shadow(0 4px 10px rgba(0,0,0,0.45)); z-index:16;';
       img.addEventListener('click', (e) => {
         e.stopPropagation();
         img.classList.add('tap-flash');
@@ -7905,7 +7890,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
       return `
         <div class="absolute inset-0" style="background:#0d0d0f;overflow:hidden;">
           <!-- ===== 상단 검은 영역: 고정 배경처럼 두고, 바텀시트가 그 위로 겹쳐 올라옴 ===== -->
-          <div style="position:relative;background:#0d0d0f;padding:104px ${sidePad}px 22px;">
+          <div style="position:relative;z-index:1;background:#0d0d0f;padding:104px ${sidePad}px 22px;">
             <!-- 월 제목 + 흔들리는 국기 / 날짜 -->
             <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;">
               <h1 style="font-size:40px;font-weight:800;color:#fff;margin:0;letter-spacing:-1px;line-height:1;">
@@ -7925,20 +7910,14 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
                             background:linear-gradient(180deg,#0d0d0f 0%,rgba(13,13,15,0.6) 42%,rgba(13,13,15,0) 100%);"></div>
                 <div style="position:absolute;left:0;right:0;bottom:0;height:130px;z-index:15;pointer-events:none;
                             background:linear-gradient(0deg,#0d0d0f 0%,rgba(13,13,15,0.6) 45%,rgba(13,13,15,0) 100%);"></div>
-                <!-- 사진 위 하이라이트 뱃지 3개 (상단 오버레이) - 앱 다른 화면의 흰색 플랫 칩과 톤을 맞춤 -->
+                <!-- 사진 위 하이라이트 뱃지 3개 + 사진 추가 버튼 (상단 오버레이) - 앱 다른 화면의 흰색 플랫 칩과 톤을 맞춤 -->
                 <div style="position:absolute;left:${sidePad}px;right:${sidePad}px;top:14px;display:flex;gap:6px;flex-wrap:wrap;z-index:20;">
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">${wIcon} ${wLabel} ${wTemp}°</span>
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">🚶 ${stepsStr}보</span>
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">📸 ${recordCount}개의 기록</span>
+                  <button type="button" class="archive-add-photo-btn" style="font-size:11px;font-weight:800;color:var(--accent-red);background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">추가하기</button>
                 </div>
               </div>
-              <!-- 콜라주에 새 사진 추가: 우하단에 살짝 겹치는 원형 FAB (기존 콜라주/일기 카드 동작과 무관) -->
-              <button type="button" class="archive-add-photo-fab" aria-label="사진 추가">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path>
-                  <circle cx="12" cy="13.5" r="3.5"></circle>
-                </svg>
-              </button>
               <input type="file" accept="image/*" class="archive-add-photo-input hidden" />
             </div>
           </div>
