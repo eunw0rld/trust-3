@@ -5129,7 +5129,7 @@ HTML_PAGE = """<!DOCTYPE html>
     const CBD_IMPORT_WARNING = {
       title: 'CBD 함유 제품은 한국 반입이 불법이에요',
       message:
-        '한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 \'대마\'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.',
+        '한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 \\'대마\\'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.',
       authority: '마약류 관리에 관한 법률',
       ingredient: 'CBD(칸나비디올)',
       ingredientKeywords: [], // 실제 보유 제품에 CBD가 들어있는 경우는 없어 파우치 성분 대조 배너는 사용하지 않음
@@ -6929,6 +6929,21 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // "들고 가면 좋을 제품": 여행지의 기후(weatherData[destination].climate)에 맞춰
     // 국가별 추천화장품 DB(260713_추천화장품.csv)를 기후 단위로 묶어서 추천
+    //
+    // 아래 이미지들은 여러 기후 그룹에서 공통으로 재사용됨. 이전에는 각 등장 지점마다
+    // base64 이미지 데이터 원문을 그대로 복사해 넣었는데, 그러다 보니 같은 이미지가 최대
+    // 5번까지 중복되어(예: 이즈앤트리 선크림) 페이지 전체 크기가 수 MB씩 불필요하게 커졌음.
+    // 이는 배포 환경에서 응답 전송 중 문자 인코딩이 깨져 <script> 전체가 파싱조차 안 되는
+    // 문제(= 모든 버튼이 먹통이 되는 원인)로 이어졌음. IMG_ASSETS에 한 번씩만 담아두고
+    // 아래에서는 참조만 하도록 바꿔 실제 데이터가 한 번만 삽입되게 함.
+    const IMG_ASSETS = {
+      CARE_IMG_ABIB_AQUAFIT: '__CARE_IMG_ABIB_AQUAFIT__',
+      CARE_IMG_TORRIDEN_DIVEIN: '__CARE_IMG_TORRIDEN_DIVEIN__',
+      CARE_IMG_ABIB_SERUM: '__CARE_IMG_ABIB_SERUM__',
+      CARE_IMG_TORRIDEN_LIP: '__CARE_IMG_TORRIDEN_LIP__',
+      CARE_IMG_BRINGGREEN_ALOE: '__CARE_IMG_BRINGGREEN_ALOE__',
+      CARE_IMG_ISNTREE_SUNCREAM: '__CARE_IMG_ISNTREE_SUNCREAM__',
+    };
     const CARE_RECOMMEND_DATA = {
       열대기후: {
         ment: '무더운 이 지역은 가벼운 기초, 강한 선케어, 그리고 무너지지 않는 화장을 위해 픽서와 유분 관리 템을 들고 가면 좋아요.',
@@ -6936,7 +6951,7 @@ HTML_PAGE = """<!DOCTYPE html>
           { name: '토리든 패드 밸런스풀', img: '__CARE_IMG_TORRIDEN_BALANCEFUL__' },
           { name: '바닐라코 프라임 프라이머 피니쉬 파우더', img: '__CARE_IMG_BANILA_PRIMER__' },
           { name: '키스미 스무스 리퀴드 아이라이너', img: '__CARE_IMG_KISSME_EYELINER__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
           { name: '쏘내추럴 올 데이 타이트 메이크업 세팅 픽서', img: '__CARE_IMG_SONATURAL_FIXER__' },
         ],
       },
@@ -6946,21 +6961,21 @@ HTML_PAGE = """<!DOCTYPE html>
           { name: '구달 청귤 비타C 잡티케어 세럼마스크 알파', img: '__CARE_IMG_GOODAL_VITAC__' },
           { name: '더마토리 프로 앰플 마스크- 미백', img: '__CARE_IMG_DERMATORY_AMPOULE__' },
           { name: '바이오던스 리얼 딥 마스크 - 래디언트 비타 나이아신', img: '__CARE_IMG_BIODANCE_MASK__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
         ],
       },
       건조기후: {
         ment: '건조한 이 지역은 수분 진정과 강한 선케어, 그리고 헤어·두피 관리(헤어 에센스, 두피 토닉)까지 챙겨 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
           { name: '헤어플러스 단백질본드 워터에센스', img: '__CARE_IMG_HAIRPLUS_ESSENCE__' },
           { name: '라운드랩 소나무 진정 시카 두피 토닉', img: '__CARE_IMG_ROUNDLAB_TONIC__' },
         ],
@@ -6968,23 +6983,23 @@ HTML_PAGE = """<!DOCTYPE html>
       냉대기후: {
         ment: '쌀쌀한 이 지역은 수분 진정, 수분-바디, 강한 선케어 제품을 들고 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '브링그린 알로에 97% 수딩젤', img: '__CARE_IMG_BRINGGREEN_ALOE__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '브링그린 알로에 97% 수딩젤', img: IMG_ASSETS.CARE_IMG_BRINGGREEN_ALOE },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
         ],
       },
       한대기후: {
         ment: '추운 이 지역은 수분 진정, 수분-바디, 강한 선케어 제품을 챙겨 가면 좋아요.',
         products: [
-          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: '__CARE_IMG_ABIB_AQUAFIT__' },
-          { name: '토리든 패드 다이브인', img: '__CARE_IMG_TORRIDEN_DIVEIN__' },
-          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: '__CARE_IMG_ABIB_SERUM__' },
-          { name: '토리든 솔리드인 세라마이드 립 에센스', img: '__CARE_IMG_TORRIDEN_LIP__' },
-          { name: '브링그린 알로에 97% 수딩젤', img: '__CARE_IMG_BRINGGREEN_ALOE__' },
-          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: '__CARE_IMG_ISNTREE_SUNCREAM__' },
+          { name: '아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏', img: IMG_ASSETS.CARE_IMG_ABIB_AQUAFIT },
+          { name: '토리든 패드 다이브인', img: IMG_ASSETS.CARE_IMG_TORRIDEN_DIVEIN },
+          { name: '아비브 히알루로닉 붐 세럼 워터드롭', img: IMG_ASSETS.CARE_IMG_ABIB_SERUM },
+          { name: '토리든 솔리드인 세라마이드 립 에센스', img: IMG_ASSETS.CARE_IMG_TORRIDEN_LIP },
+          { name: '브링그린 알로에 97% 수딩젤', img: IMG_ASSETS.CARE_IMG_BRINGGREEN_ALOE },
+          { name: '이즈앤트리 히알루론산 에어리 바디 선크림', img: IMG_ASSETS.CARE_IMG_ISNTREE_SUNCREAM },
         ],
       },
     };
