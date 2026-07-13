@@ -2508,16 +2508,40 @@ HTML_PAGE = """<!DOCTYPE html>
 
     // 웰컴 화면 "시작하기" -> 앱 진입 (온보딩 위저드 1단계부터 시작)
     function enterApp() {
-      document.getElementById('screen-welcome').classList.add('hidden');
-      const app = document.getElementById('appContainer');
-      app.classList.remove('hidden');
       try {
+        const welcome = document.getElementById('screen-welcome');
+        const app = document.getElementById('appContainer');
+        if (!welcome || !app) {
+          console.error('enterApp: 화면 요소를 찾을 수 없음', { welcome: !!welcome, app: !!app });
+          return;
+        }
+        welcome.classList.add('hidden');
+        app.classList.remove('hidden');
         playScreenTransition(app);
       } catch (e) {
         console.error('enterApp 전환 중 오류:', e);
       }
     }
-    document.getElementById('welcomeStartBtn').addEventListener('click', enterApp);
+    // 일부 모바일 브라우저는 컴포넌트가 srcdoc iframe 안에 있을 때 iframe에 처음
+    // 탭하는 동작이 포커스 이동으로만 소모되고 click 이벤트가 발생하지 않는 경우가
+    // 있어(:active 프레스 효과는 보이지만 다음 화면으로 안 넘어가는 증상과 일치),
+    // touchend에도 동일하게 걸어 click이 먹지 않는 경우를 보완함
+    (function bindWelcomeStart() {
+      const btn = document.getElementById('welcomeStartBtn');
+      if (!btn) {
+        console.error('welcomeStartBtn을 찾을 수 없음');
+        return;
+      }
+      let handled = false;
+      function handleStart() {
+        if (handled) return;
+        handled = true;
+        enterApp();
+        setTimeout(() => { handled = false; }, 600);
+      }
+      btn.addEventListener('click', handleStart);
+      btn.addEventListener('touchend', handleStart);
+    })();
 
     // 하단 메뉴바 전환 (메인/기록/부가서비스)
     const bottomNavButtons = document.querySelectorAll('.bottom-nav-btn');
