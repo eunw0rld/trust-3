@@ -4379,6 +4379,7 @@ HTML_PAGE = """<!DOCTYPE html>
       return chip;
     }
 
+    let pouchBasketAutoCloseTimer = null; // 확인 탭 없이도 담기 연출이 끝나면 자동으로 선반으로 넘어가기 위한 타이머
     function openPouchBasketModal() {
       const myProducts = getMyProducts();
       const products = myProducts.length > 0 ? myProducts : pouchScanProducts;
@@ -4398,9 +4399,15 @@ HTML_PAGE = """<!DOCTYPE html>
       });
 
       document.getElementById('pouchBasketModal').classList.remove('hidden');
+
+      // 아이템이 다 날아들어와 자리잡는 연출(최대 9개 * 0.18s 지연 + 0.65s 비행)이 끝나고
+      // 잠깐 볼 시간을 준 뒤, 확인 탭을 하지 않아도 자동으로 선반(카드 그리드)으로 넘어감
+      clearTimeout(pouchBasketAutoCloseTimer);
+      pouchBasketAutoCloseTimer = setTimeout(closePouchBasketModal, 3200);
     }
 
     function closePouchBasketModal() {
+      clearTimeout(pouchBasketAutoCloseTimer);
       document.getElementById('pouchBasketModal').classList.add('hidden');
       document.getElementById('pouchItemTooltip').classList.remove('visible');
       // 등록이 끝나면 파우치 섹션을 접어 등록된 화장품 카드 그리드(선반)를 그 자리에서 그대로 보여줌
