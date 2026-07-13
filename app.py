@@ -5913,7 +5913,7 @@ HTML_PAGE = """<!DOCTYPE html>
       const card = document.createElement('div');
       card.className = 'pouch-card bg-white border border-gray-100 rounded-2xl p-3 cursor-pointer active:opacity-70';
       card.innerHTML = `
-        <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2 overflow-hidden">
+        <div class="w-10 h-10 rounded-xl ${img ? '' : 'bg-gray-50'} flex items-center justify-center text-lg mb-2 overflow-hidden">
           ${img ? `<img src="${img}" alt="${product.name}" class="w-full h-full object-contain" />` : (category ? category.icon : '🧴')}
         </div>
         <p class="text-sm font-semibold truncate">${product.name}</p>
