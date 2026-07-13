@@ -19,6 +19,7 @@ def _data_uri(path: Path, mime: str) -> str:
 
 EARTH_BG_URI = _data_uri(_ASSET_DIR / "bg.png", "image/png")
 LOGO_URI = _data_uri(_ASSET_DIR / "landing_logo.png", "image/png")
+STAR_URI = _data_uri(_ASSET_DIR / "Union.png", "image/png")
 AVATAR_URIS = [
     _data_uri(_AVATAR_DIR / "3.png", "image/png"),
     _data_uri(_AVATAR_DIR / "1.png", "image/png"),
@@ -397,6 +398,35 @@ HTML_PAGE = """<!DOCTYPE html>
   .wizard-cta-btn:disabled {
     background: #d1d5db;
   }
+  /* 온보딩 "분석 중" 화면의 로고 - GlowTrip 로고 PNG를 마스크로 써서 실제 색은 배경(회색 →
+     브랜드 그라데이션)으로 채움. mask-image는 JS에서 로고 원본 src를 그대로 읽어와 지정함
+     (별도 에셋 중복 없이 재사용) */
+  .analyzing-logo-wrap {
+    position: relative;
+    width: 200px;
+    height: 66px;
+  }
+  .analyzing-logo-base, .analyzing-logo-fill {
+    position: absolute;
+    inset: 0;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  }
+  .analyzing-logo-base {
+    background: #e5e5e5;
+  }
+  .analyzing-logo-fill {
+    background: var(--accent-gradient);
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 2.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .analyzing-logo-fill.filled {
+    clip-path: inset(0% 0 0 0);
+  }
   /* 내 파우치 "+ 추가" 1단계: 사진/직접입력 선택 카드 - 사진 쪽을 더 크고 진하게 강조 */
   .pouch-add-choice-btn {
     width: 100%;
@@ -410,8 +440,6 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .pouch-add-choice-btn.primary {
     padding: 20px 18px;
-    border-color: var(--accent-red);
-    background: #fde7ea;
   }
   .pouch-add-choice-btn.secondary {
     padding: 12px 18px;
@@ -510,6 +538,10 @@ HTML_PAGE = """<!DOCTYPE html>
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  /* 로딩 오버레이 -> 콜라주 전환 시 짧게 페이드 (기존 모달 페이드 키프레임 재사용) */
+  .archive-collage-fade-in {
+    animation: archiveModalFade 0.25s ease-out;
+  }
   /* 각 오마주 요소가 "탁" 하고 도장처럼 찍히는 효과: 크게 나타나 살짝 회전하며 안착 */
   .stamp-el {
     opacity: 0;
@@ -527,6 +559,9 @@ HTML_PAGE = """<!DOCTYPE html>
   }
   .archive-tappable.tap-flash {
     filter: brightness(0.85) !important;
+  }
+  .archive-add-photo-btn:active {
+    filter: brightness(0.9);
   }
   /* 음악 플레이어 스탬프를 탭하면 "재생 중" 느낌으로 은은하게 펄스 */
   .archive-tappable[data-stamp-name="player"].is-playing {
@@ -555,6 +590,58 @@ HTML_PAGE = """<!DOCTYPE html>
   @keyframes stampRing {
     0%   { opacity: 0.7; transform: scale(0.85); }
     100% { opacity: 0; transform: scale(1.15); }
+  }
+  /* 여행 기록 상세: 하단 정보를 콜라주 위에 겹치는 드래그 가능한 바텀시트로 */
+  .archive-sheet-dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    z-index: 2;
+    transition: background 0.3s ease;
+  }
+  .archive-sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--app-height) - 100px);
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+  }
+  /* 스탬프 연출이 끝나기 전까지는 트랜지션 없이 화면 밖에 완전히 숨겨둠 */
+  .archive-sheet.hidden-below {
+    transform: translateY(100%);
+  }
+  .archive-sheet-handle-wrap {
+    padding: 10px 0 6px;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  .archive-sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: #e5e7eb;
+  }
+  .archive-sheet-peek-header {
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  .archive-sheet-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 24px 40px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
   /* 국기 이모지 흔들림 */
   .flag-wave {
@@ -712,31 +799,118 @@ HTML_PAGE = """<!DOCTYPE html>
        가려지지 않도록 네비 높이(58px) + 여백만큼 아래쪽을 비워둠 */
     padding-bottom: 96px;
   }
-  /* 랜딩 페이지: 지구 위에 떠 있는 사용자 프로필 사진 말풍선 */
+  /* 랜딩 페이지: 지구 위에 떠 있는 사용자 프로필 사진 말풍선 - 등장(pop) 후 미세한 floating.
+     --bubble-delay는 각 말풍선의 inline style에서 지정(4단계 지구 등장 후 순차 등장) */
   .landing-bubble {
     position: absolute;
     z-index: 2;
     width: 46px;
-    animation: landingFloat 3.2s ease-in-out infinite;
+    opacity: 0;
+    animation: welcomeBubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) var(--bubble-delay, 0s) both;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
   }
+  /* floating(landingFloat)은 부모(.landing-bubble)의 pop-in(scale) 애니메이션과 같은
+     transform 속성을 두고 충돌하지 않도록 자식 img에 따로 적용 */
   .landing-bubble img {
     display: block;
     width: 100%;
     height: auto;
+    animation: landingFloat 3.2s ease-in-out var(--bubble-delay, 0s) infinite;
   }
   @keyframes landingFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
   }
-  /* 웰컴 화면: 지구.jpg 자체에 검은 우주 배경이 포함돼 있어서, 원형으로 잘라 쓰는 대신
-     화면 전체 배경으로 깔고 background-position/size로 지구 위치·크기를 맞춤
-     (실제 배경 설정은 #screen-welcome 인라인 스타일에 있음) */
+  @keyframes welcomeBubblePop {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes landingFadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes landingLogoShimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.82; }
+  }
+  /* 웰컴 인트로 1~2단계: 별표 심볼이 화면 중앙에서 스케일+회전+페이드로 등장한 뒤,
+     로고 자리(좌상단)로 이동. 393x852 고정 뷰포트 기준, 별표 최종 위치와 화면 중앙 간
+     오프셋을 고정 픽셀로 계산해 transform: translate로 처리(실제 레이아웃은 그대로 둠) */
+  @keyframes welcomeStarIntro {
+    0% { opacity: 0; transform: translate(150px, 372px) scale(0.7) rotate(-45deg); }
+    55% { opacity: 1; transform: translate(150px, 372px) scale(1) rotate(0deg); }
+    100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  }
+  .welcome-star-intro-wrap {
+    display: inline-block;
+    animation: welcomeStarIntro 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes welcomeStarIdleRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  /* 웰컴 인트로 4단계: 지구(01 landing page/bg.png)가 화면을 채운 레이어로 크게 시작해
+     scale만으로 줌아웃(실제 width/height는 고정) + 흐림 해소. 넘치는 부분은
+     overflow:hidden으로 잘라 레이아웃/스크롤에 영향 없게 함 */
+  .welcome-earth-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .welcome-earth-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    will-change: transform, filter, opacity;
+    animation: welcomeEarthZoomOut 1s ease-out 1.1s both;
+  }
+  @keyframes welcomeEarthZoomOut {
+    from { opacity: 0; transform: scale(1.8); filter: blur(6px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+  /* 로고 = 별표(Union.png) + 워드마크(landing_logo.png) 두 장을 세로로 쌓은 조합 */
+  .welcome-logo-lockup {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .welcome-star-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    animation: welcomeStarIdleRotate 20s linear 1.1s infinite, landingLogoShimmer 4s ease-in-out 1.1s infinite;
+  }
   .welcome-logo-icon {
-    height: 52px;
+    height: 40px;
     width: auto;
     display: block;
     filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.35));
+    opacity: 0;
+    animation: landingFadeInUp 0.5s ease-out 0.6s both, landingLogoShimmer 4s ease-in-out 1.1s infinite;
+  }
+  .welcome-subcopy {
+    opacity: 0;
+    animation: landingFadeInUp 0.4s ease-out 1.1s both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .welcome-star-intro-wrap,
+    .welcome-logo-icon,
+    .welcome-subcopy,
+    .welcome-earth-img,
+    .landing-bubble,
+    .welcome-cta-btn {
+      animation-duration: 0.01s !important;
+      animation-delay: 0s !important;
+    }
+    .welcome-star-icon,
+    .landing-bubble img {
+      animation: none !important;
+    }
   }
   .app-header-logo {
     height: 22px;
@@ -761,7 +935,13 @@ HTML_PAGE = """<!DOCTYPE html>
     font-size: 14px;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    animation: welcomeCtaSlideUp 0.3s ease-out 2.6s both;
     transition: transform 0.12s ease, background 0.12s ease;
+  }
+  @keyframes welcomeCtaSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .welcome-cta-btn::before {
     content: '';
@@ -1144,6 +1324,8 @@ HTML_PAGE = """<!DOCTYPE html>
   .pouch-basket {
     background-image: none !important;
     background: linear-gradient(180deg, #eef5f4 0%, #e2eeec 100%) !important;
+    /* 선반 배경만 흑백으로: .pouch-basket-items(제품 사진)는 형제 요소라 영향받지 않음 */
+    filter: grayscale(1);
   }
   .pouch-glass-shelf-line {
     position: absolute;
@@ -1265,6 +1447,24 @@ HTML_PAGE = """<!DOCTYPE html>
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
     z-index: 3;
+  }
+  /* 선반 위 각 제품 우상단의 삭제 버튼 - 좌상단 번호 배지(레드)와 구분되도록 검정 톤 */
+  .pouch-item-delete-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: #111827;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    z-index: 4;
   }
   .pouch-chip-badge {
     width: 22px;
@@ -1421,7 +1621,7 @@ HTML_PAGE = """<!DOCTYPE html>
      너비/높이는 제품별로 buildPouchItemEl에서 인라인으로 지정 */
   .pouch-item-photo {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
   }
   .pouch-item-photo img {
@@ -1464,20 +1664,27 @@ HTML_PAGE = """<!DOCTYPE html>
 <body class="font-sans text-gray-900">
 
   <!-- ============ 랜딩 페이지 (웰컴 화면) ============ -->
-  <div id="screen-welcome" class="relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-color: #000; background-image: url('__EARTH_BG_URI__'); background-size: cover; background-position: center;">
+  <div id="screen-welcome" class="relative mx-auto overflow-hidden" style="width: var(--app-width); height: var(--app-height); background-color: #000;">
+
+    <div class="welcome-earth-wrap">
+      <img class="welcome-earth-img" src="__EARTH_BG_URI__" alt="" />
+    </div>
 
     <div class="relative z-10 pt-8 px-6 text-left">
-      <img src="__LOGO_URI__" alt="GlowTrip" class="welcome-logo-icon" />
-      <p class="mt-2 text-sm text-white/90 leading-relaxed font-normal">
+      <div class="welcome-logo-lockup">
+        <span class="welcome-star-intro-wrap"><img src="__STAR_URI__" alt="" class="welcome-star-icon" /></span>
+        <img src="__LOGO_URI__" alt="GlowTrip" class="welcome-logo-icon" />
+      </div>
+      <p class="welcome-subcopy mt-2 text-sm text-white/90 leading-relaxed font-normal">
         <span class="font-bold">글로우트립</span>과 함께,<br />피부 걱정 없이 어디든
       </p>
     </div>
 
-    <div class="landing-bubble" style="top: 36%; left: 30%;"><img src="__AVATAR_URI_1__" alt="" /></div>
-    <div class="landing-bubble" style="top: 43%; left: 13%;"><img src="__AVATAR_URI_2__" alt="" /></div>
-    <div class="landing-bubble" style="top: 56%; left: 60%;"><img src="__AVATAR_URI_3__" alt="" /></div>
-    <div class="landing-bubble" style="top: 60%; left: 76%;"><img src="__AVATAR_URI_4__" alt="" /></div>
-    <div class="landing-bubble" style="top: 69%; left: 30%;"><img src="__AVATAR_URI_5__" alt="" /></div>
+    <div class="landing-bubble" style="top: 36%; left: 30%; --bubble-delay: 2.1s;"><img src="__AVATAR_URI_1__" alt="" /></div>
+    <div class="landing-bubble" style="top: 43%; left: 13%; --bubble-delay: 2.2s;"><img src="__AVATAR_URI_2__" alt="" /></div>
+    <div class="landing-bubble" style="top: 56%; left: 60%; --bubble-delay: 2.3s;"><img src="__AVATAR_URI_3__" alt="" /></div>
+    <div class="landing-bubble" style="top: 60%; left: 76%; --bubble-delay: 2.4s;"><img src="__AVATAR_URI_4__" alt="" /></div>
+    <div class="landing-bubble" style="top: 69%; left: 30%; --bubble-delay: 2.5s;"><img src="__AVATAR_URI_5__" alt="" /></div>
 
     <div class="absolute inset-x-0 bottom-9 z-10 flex justify-center">
       <button id="welcomeStartBtn" type="button" class="welcome-cta-btn" style="width: 60%;">시작하기</button>
@@ -1568,7 +1775,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">이름이<br />어떻게 되나요?</h2>
-            <input id="regNameInput" type="text" placeholder="이름을 입력해주세요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+            <input id="regNameInput" type="text" placeholder="이름을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
             <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-nickname" disabled>다음</button>
@@ -1582,7 +1789,7 @@ HTML_PAGE = """<!DOCTYPE html>
           </div>
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2">
             <h2 class="text-xl font-bold mb-8">어떻게<br />불러드릴까요?</h2>
-            <input id="regNicknameInput" type="text" placeholder="다른 사용자에게 보여질 닉네임이에요" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
+            <input id="regNicknameInput" type="text" placeholder="다른 사용자에게 보여질 닉네임이에요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full max-w-xs border border-gray-200 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-brand-500" />
             <p class="text-xs text-gray-400 mt-2">커뮤니티에서 이 닉네임으로 보여요</p>
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
@@ -1686,22 +1893,31 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
-            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-complete" disabled>선택 완료</button>
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-analyzing" disabled>선택 완료</button>
           </div>
+        </div>
+
+        <!-- 온보딩 완료 직후: 피부 분석 중 로딩 화면 (로고가 아래→위로 브랜드 컬러로 채워짐) -->
+        <div id="reg-analyzing" class="wizard-step hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="analyzing-logo-wrap mb-6">
+            <div class="analyzing-logo-base"></div>
+            <div id="analyzingLogoFill" class="analyzing-logo-fill"></div>
+          </div>
+          <h2 class="text-xl mb-2 text-display">피부를 분석하고 있어요</h2>
+          <p id="analyzingSubCopy" class="text-sm" style="color: #888888;"></p>
         </div>
 
         <!-- 온보딩 완료 화면 -->
         <div id="reg-complete" class="wizard-step hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 40px);">
-          <span class="text-5xl mb-4">✅</span>
-          <h2 class="text-xl font-bold mb-2">Thanks!</h2>
-          <p class="text-sm text-gray-400 mb-10">이제 다 준비됐어요</p>
-          <button id="wizardFinishBtn" type="button" class="wizard-cta-btn w-full max-w-xs">시작하기</button>
+          <h2 class="text-xl mb-2 text-display">분석이 끝났어요</h2>
+          <p class="text-sm mb-10" style="color: #888888;">이제 피부 걱정 없는 여행을 시작해볼까요?</p>
+          <button id="wizardFinishBtn" type="button" class="btn-primary py-3.5" style="width: 68%;">시작하기</button>
         </div>
 
       </section>
 
       <!-- ============ 2. 메인 페이지 (대시보드) ============ -->
-      <section id="screen-inuse" class="hidden pt-3 pb-6 space-y-6">
+      <section id="screen-inuse" class="hidden pt-3 pb-6 space-y-4">
 
         <!-- 상단 헤더 블록: 인사말 → 국가 스위처(칩) → 선택된 여행 요약을 한 덩어리로 묶어서
              "지금 어떤 여행 기준으로 보고 있는지"를 처방/카드를 보기 전에 먼저 인지하게 함.
@@ -1718,32 +1934,32 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- 오늘의 처방(또는 이미 다녀온 여행이면 회고) 히어로 카드: "정보 나열"이 아니라 오늘 뭘 하면
              되는지(혹은 그때 날씨가 어땠는지) 한 문장으로 안내. 여행지 등록 후에만 표시,
              인사말/칩/여행 요약 바로 아래(여행 폼/파우치/지도보다 위)에 노출 -->
-        <div id="todayInsightCard" class="hidden bg-white border border-gray-100 rounded-2xl p-5">
-          <p id="todayInsightWeatherLine" class="text-xs font-semibold text-gray-400 mb-2"></p>
-          <p id="todayInsightMain" class="text-lg font-extrabold text-gray-900 leading-snug mb-1.5"></p>
-          <p id="todayInsightSub" class="text-xs text-gray-500 mb-4"></p>
-          <div id="todayInsightMetrics" class="flex items-center gap-3 text-[11px] font-semibold text-gray-400"></div>
+        <div id="todayInsightCard" class="hidden card p-5">
+          <p id="todayInsightWeatherLine" class="text-xs font-semibold mb-2" style="color: #888888; text-transform: lowercase;"></p>
+          <p id="todayInsightMain" class="text-lg leading-snug mb-1.5 text-display"></p>
+          <p id="todayInsightSub" class="text-xs mb-4" style="color: #888888;"></p>
+          <div id="todayInsightMetrics" class="flex items-center gap-2"></div>
         </div>
 
         <!-- 예측 경고 배너: 처방 카드가 주인공이 되도록 카드 아래에 작게, 여행지 등록 후에만
              노출 (단, 이미 다녀온 과거 여행이면 더 이상 의미가 없으므로 숨김) -->
-        <button id="predictiveWarningBanner" type="button" class="hidden w-full flex items-center gap-2 text-left rounded-xl px-3 py-2.5" style="background: #fde7ea; border-left: 3px solid #eb0029;">
+        <button id="predictiveWarningBanner" type="button" class="hidden card w-full flex items-center gap-2 text-left p-4" style="background: #fde7ea; border-left: 3px solid #eb0029;">
           <span class="text-xs font-semibold leading-snug" style="color: #b4001f;">⚠️ 이틀 뒤 습도가 급격히 떨어져요. 지금 루틴이면 각질이 올라올 수 있어요.</span>
         </button>
 
         <!-- 여행 계획 입력: 여행지 미등록 시엔 이 인라인 카드 안에 항상 펼쳐져 있고,
              등록 후에는 아래 팝업(바텀시트)으로 옮겨져서 "수정하기" 클릭 시에만 열림 -->
-        <div id="tripSegmentsInlineSlot" class="bg-white border border-gray-100 rounded-2xl p-4">
+        <div id="tripSegmentsInlineSlot" class="card p-4">
           <div id="tripSegmentsSection" class="space-y-3">
             <div id="tripSegmentRows" class="space-y-3"></div>
-            <button id="addTripSegmentBtn" type="button" class="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-semibold">+ 구간 추가</button>
+            <button id="addTripSegmentBtn" type="button" class="pill w-full justify-center py-2.5 text-sm font-semibold">+ 구간 추가</button>
             <p id="tripSegmentWarning" class="hidden text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2"></p>
-            <button id="tripSegmentsSaveBtn" type="button" class="w-full py-2.5 rounded-xl bg-brand-500 text-white text-sm font-bold">저장하기</button>
+            <button id="tripSegmentsSaveBtn" type="button" class="btn-primary w-full py-2.5 text-sm">저장하기</button>
           </div>
         </div>
 
         <!-- 내 파우치 (촬영/직접입력 UI가 클릭 없이 항상 바로 노출) -->
-        <div id="pouchSection" class="bg-white border border-gray-100 rounded-2xl p-4">
+        <div id="pouchSection" class="card p-4">
           <div class="flex items-center justify-between mb-1">
             <h2 class="text-base font-bold">내 파우치</h2>
             <button id="pouchAddMoreBtn" type="button" class="hidden text-xs font-semibold text-brand-500">+ 추가</button>
@@ -1804,7 +2020,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <div id="pouchAddTextView" class="pouch-add-step hidden">
               <button type="button" class="pouch-add-back-btn text-xs text-gray-400 mb-3">← 이전</button>
               <div class="space-y-2">
-                <input id="pouchAddTextName" type="text" placeholder="제품명" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" />
+                <input id="pouchAddTextName" type="text" placeholder="제품명" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500" />
                 <select id="pouchAddTextCategory" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-600 focus:outline-none focus:border-brand-500"></select>
                 <button id="pouchAddTextSaveBtn" type="button" class="w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-bold">추가하기</button>
               </div>
@@ -1841,11 +2057,11 @@ HTML_PAGE = """<!DOCTYPE html>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </button>
               <div id="mapSearchBar" class="hidden flex-1 min-w-0 bg-white rounded-2xl shadow-md p-3">
-                <input id="globeSearchInput" type="text" placeholder="나라 또는 도시를 검색해보세요" class="w-full py-2 px-3 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-400 transition-colors" />
+                <input id="globeSearchInput" type="text" placeholder="도시를 검색해보세요" class="w-full py-2 px-3 rounded-full bg-gray-50 border-2 border-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-400 transition-colors" />
                 <p id="globeSearchNotFound" class="hidden mt-1.5 ml-1 inline-block text-[11px] font-medium text-brand-500 bg-brand-50 px-2 py-1 rounded-full">찾을 수 없어요</p>
                 <p class="text-[11px] font-semibold text-gray-400 mt-2.5 mb-1.5">인기 여행지</p>
                 <div class="flex flex-wrap gap-1.5">
-                  <button type="button" class="trip-destination-chip" data-city="이탈리아">이탈리아</button>
+                  <button type="button" class="trip-destination-chip" data-city="로마">로마</button>
                   <button type="button" class="trip-destination-chip" data-city="밀라노">밀라노</button>
                   <button type="button" class="trip-destination-chip" data-city="도쿄">도쿄</button>
                   <button type="button" class="trip-destination-chip" data-city="파리">파리</button>
@@ -1905,7 +2121,7 @@ HTML_PAGE = """<!DOCTYPE html>
           <div id="recommendedRoutineSection" class="hidden">
             <h3 class="text-sm font-semibold text-gray-700 mb-1">다른 여행자의 추천 루틴</h3>
             <p id="recommendedRoutineNote" class="text-xs text-gray-400 mb-3"></p>
-            <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+            <div class="card p-4 space-y-3">
               <div>
                 <p class="text-xs font-semibold text-brand-600 mb-1">추천 화장품</p>
                 <p id="recommendedCosmetics" class="text-sm text-gray-600 leading-relaxed"></p>
@@ -2332,11 +2548,11 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
           <div>
             <p class="text-xs font-semibold text-gray-400 mb-2">이름</p>
-            <input id="nameInput" type="text" placeholder="이름을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+            <input id="nameInput" type="text" placeholder="이름을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
           </div>
           <div>
             <p class="text-xs font-semibold text-gray-400 mb-2">닉네임 <span class="text-gray-300 font-normal">(선택, 설정하면 닉네임으로 불러드려요)</span></p>
-            <input id="nicknameInput" type="text" placeholder="닉네임을 입력해주세요" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
+            <input id="nicknameInput" type="text" placeholder="닉네임을 입력해주세요" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" />
           </div>
         </div>
 
@@ -2480,8 +2696,9 @@ HTML_PAGE = """<!DOCTYPE html>
           <div id="pouchChipsRow" class="flex flex-col gap-2 mt-5 px-1 w-full"></div>
         </div>
       </div>
-      <div class="px-6 pt-3 pb-8 shrink-0">
-        <button id="pouchBasketConfirmBtn" type="button" class="w-full py-3.5 rounded-2xl bg-brand-500 text-white text-sm font-bold shadow-md active:scale-[0.98] transition">확인</button>
+      <div class="px-6 pt-3 pb-8 shrink-0 space-y-2">
+        <button id="pouchBasketAddMoreBtn" type="button" class="pill w-full justify-center py-2.5 text-sm font-semibold">+ 추가하기</button>
+        <button id="pouchBasketConfirmBtn" type="button" class="btn-primary w-full py-3.5 shadow-md active:scale-[0.98] transition">등록하기</button>
       </div>
     </div>
 
@@ -2772,7 +2989,9 @@ HTML_PAGE = """<!DOCTYPE html>
       if (!q) return null;
       const matchKey = Object.keys(weatherData).find((key) => {
         const entry = weatherData[key];
-        return key.toLowerCase().includes(q) || (entry.en && entry.en.toLowerCase().includes(q));
+        return key.toLowerCase().includes(q)
+          || (entry.en && entry.en.toLowerCase().includes(q))
+          || (entry.cityLabel && entry.cityLabel.toLowerCase().includes(q));
       });
       if (!matchKey) return null;
       const weather = weatherData[matchKey];
@@ -3074,6 +3293,35 @@ HTML_PAGE = """<!DOCTYPE html>
         document.getElementById('wizardProgressFill').style.width = `${((stepIndex + 1) / WIZARD_STEP_ORDER.length) * 100}%`;
       }
       playScreenTransition(document.getElementById(stepId));
+      if (stepId === 'reg-analyzing') startAnalyzingSequence();
+    }
+
+    // GlowTrip 로고 PNG(웰컴 화면에 이미 있는 흰색 원본)를 그대로 mask-image로 재사용해서
+    // "분석 중"/"분석 완료" 화면에서 회색→브랜드 그라데이션으로 채워지는 로고를 만듦
+    // (같은 이미지를 새로 임베드하지 않고 원본 src를 그대로 읽어와 씀)
+    function applyGlowTripLogoMask(selector) {
+      const src = document.querySelector('.welcome-logo-icon').src;
+      document.querySelectorAll(selector).forEach((el) => {
+        el.style.maskImage = `url("${src}")`;
+        el.style.webkitMaskImage = `url("${src}")`;
+      });
+    }
+
+    let analyzingTimer = null;
+    // "선택 완료" 직후 잠깐 보여주는 분석 로딩: 로고가 아래→위로 채워지고, 다 채워지면
+    // 자동으로 완료 화면으로 넘어감
+    function startAnalyzingSequence() {
+      applyGlowTripLogoMask('.analyzing-logo-base, .analyzing-logo-fill');
+      const name = document.getElementById('regNameInput').value.trim();
+      document.getElementById('analyzingSubCopy').textContent = name
+        ? `${name}님께 딱 맞는 여행 루틴을 찾는 중이에요`
+        : '딱 맞는 여행 루틴을 찾는 중이에요';
+      const fillEl = document.getElementById('analyzingLogoFill');
+      fillEl.classList.remove('filled');
+      void fillEl.offsetWidth; // 강제 리플로우: 다시 진입해도 채워지는 연출이 처음부터 재생되게 함
+      requestAnimationFrame(() => fillEl.classList.add('filled'));
+      clearTimeout(analyzingTimer);
+      analyzingTimer = setTimeout(() => showWizardStep('reg-complete'), 2300);
     }
 
     // 여행지 국기 이모지 (커뮤니티에 큐레이션된 주요 여행지 위주, 나머지는 📍로 대체)
@@ -4008,8 +4256,9 @@ HTML_PAGE = """<!DOCTYPE html>
       const startScores = analyzeSkinPhoto(skinPhotoImages.start, skinType);
       const endScores = analyzeSkinPhoto(skinPhotoImages.end, skinType);
       // 사후케어 화면(#screen-aftercare)에서 그대로 쓸 수 있도록 반올림해 보관 (blemish → blemishCount로 이름만 맞춤)
-      skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: Math.round(startScores.blemish) };
-      skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.round(endScores.blemish) };
+      // 트러블 건수는 데모 스토리상 1일차 0건 고정, 마지막날은 실제 분석값과 무관하게 최소 1건 이상 보장
+      skinPhotoScores.start = { hydration: Math.round(startScores.hydration), redness: Math.round(startScores.redness), oiliness: Math.round(startScores.oiliness), blemishCount: 0 };
+      skinPhotoScores.end = { hydration: Math.round(endScores.hydration), redness: Math.round(endScores.redness), oiliness: Math.round(endScores.oiliness), blemishCount: Math.max(1, Math.round(endScores.blemish)) };
       beginSkinScan(startScores, endScores);
     }
 
@@ -4795,7 +5044,6 @@ HTML_PAGE = """<!DOCTYPE html>
     // 한 번에 자동 채워짐 (한 장의 사진으로 파우치 속 여러 화장품을 인식하는 컨셉)
     const pouchScanProducts = [
       { name: '넘버즈인 1번 진정 맑게 담은 청초토너 토너', category: 'toner' },
-      { name: '넘버즈인 1번 판토텐산 액티브업 수딩세럼', category: 'serum' },
       { name: '넘버즈인 1번 청초 진정맑은 물막선크림', category: 'sunscreen' },
       { name: '닥터지 레드 블레미쉬 클리어 수딩 크림', category: 'cream' },
       { name: '비디비치 블랙 퍼펙션 커버 핏 쿠션', category: 'cushion' },
@@ -4803,7 +5051,12 @@ HTML_PAGE = """<!DOCTYPE html>
       { name: '롬앤 베러 댄 컨투어 02 그레이 쿨', category: 'shading' },
       { name: '롬앤 더 쥬시 래스팅 틴트 03 베어그레이프', category: 'lip' },
       { name: '에스쁘아 더브로우', category: 'eye' },
+    ];
+    // 2번째/3번째 파우치 추가 이벤트에서 입력값과 무관하게 강제로 등록되는 제품
+    // (POUCH_CARD_IMG/POUCH_VISUALS/PRODUCT_DETAILS 매핑은 그대로 재사용)
+    const FORCED_ADD_PRODUCTS = [
       { name: '글린트 하이라이터 듀이 문', category: 'highlighter' },
+      { name: '넘버즈인 1번 판토텐산 액티브업 수딩세럼', category: 'serum' },
     ];
 
     // 내 파우치 카드/상세 모달에서 이모지 아이콘 대신 보여줄 실제 제품 사진
@@ -4964,26 +5217,51 @@ HTML_PAGE = """<!DOCTYPE html>
       completeCosmeticScan();
     }
 
+    // 파우치에 제품을 추가하는 두 경로(사진 스캔 완료 / 직접 입력 저장)를 합쳐서 세는
+    // 공통 카운터. 2번째/3번째 이벤트는 사용자가 실제로 뭘 찍었거나 입력했는지와 무관하게
+    // FORCED_ADD_PRODUCTS를 강제로 등록시키는 데 쓰임
+    let pouchAddEventCount = 0;
+
+    // 파우치가 완전히 비어있는 상태에서 호출되면(전체 삭제 후 재시작 등) 카운트를 리셋해
+    // "1번째 이벤트" 취급이 자연스럽게 다시 적용되게 함
+    function advancePouchAddEventCount() {
+      if (getMyProducts().length === 0) pouchAddEventCount = 0;
+      pouchAddEventCount += 1;
+    }
+
+    // 2번째/3번째 이벤트에 강제로 등록할 제품을 반환(해당 없으면 null).
+    // 이미 파우치에 그 제품이 있으면(사용자가 그 사이 직접 같은 이름을 입력한 경우 등) 건너뜀
+    function getForcedAddProduct() {
+      if (pouchAddEventCount === 2 || pouchAddEventCount === 3) {
+        const forced = FORCED_ADD_PRODUCTS[pouchAddEventCount - 2];
+        const existingNames = new Set(getMyProducts().map((product) => product.name));
+        if (!existingNames.has(forced.name)) return forced;
+      }
+      return null;
+    }
+
     function completeCosmeticScan() {
       document.getElementById('cosmeticScanModal').classList.add('hidden');
+      pouchAddReturnToTray = false; // 스캔은 항상 트레이로 이동하므로 플래그를 소비해둠
 
-      // 인식된 화장품들로 리스트를 새로 채우는 동안 자동 접힘을 잠깐 막아서
-      // "등록하기" 버튼까지 함께 눈에 보이게 함
-      suppressPouchAutoCollapse = true;
-      pouchCaptureForceOpen = true;
-      // 이미 등록된 제품은 그대로 두고, 아직 없는 제품만 추가함(재촬영 시 기존 파우치가 통째로
-      // 지워지지 않도록). 최초 1회(파우치가 비어있을 때)는 데모용으로 9개를 한번에 채우고,
-      // 이후("+ 추가"로 재촬영)에는 사진 한 장 = 제품 한 개 인식처럼 1개만 추가함
-      const existingNames = new Set(getMyProducts().map((product) => product.name));
-      const newProducts = pouchScanProducts.filter((product) => !existingNames.has(product.name));
-      const productsToAdd = existingNames.size === 0 ? newProducts : newProducts.slice(0, 1);
+      advancePouchAddEventCount();
+      const forcedProduct = getForcedAddProduct();
+      let productsToAdd;
+      if (forcedProduct) {
+        productsToAdd = [forcedProduct];
+      } else {
+        // 이미 등록된 제품은 그대로 두고, 아직 없는 제품만 추가함(재촬영 시 기존 파우치가 통째로
+        // 지워지지 않도록). 최초 1회(파우치가 비어있을 때)는 데모용으로 일괄 채우고,
+        // 이후("+ 추가"로 재촬영)에는 사진 한 장 = 제품 한 개 인식처럼 1개만 추가함
+        const existingNames = new Set(getMyProducts().map((product) => product.name));
+        const newProducts = pouchScanProducts.filter((product) => !existingNames.has(product.name));
+        productsToAdd = existingNames.size === 0 ? newProducts : newProducts.slice(0, 1);
+      }
       productsToAdd.forEach((product) => {
         cosmeticRows.appendChild(buildCosmeticRow(product.name, product.category));
       });
-      updatePouchSectionView();
-      setTimeout(() => {
-        suppressPouchAutoCollapse = false;
-      }, 0);
+      // 인식 완료 후 화장품 목록 페이지를 거치지 않고 곧바로 선반 정리 장면으로 이동
+      openPouchBasketModal();
     }
 
     function cancelCosmeticScan() {
@@ -5106,6 +5384,17 @@ HTML_PAGE = """<!DOCTYPE html>
         e.stopPropagation();
         showPouchItemTooltip(el, product.name);
       });
+      // 잘못 인식된 항목을 선반에서 바로 뺄 수 있는 삭제 버튼(우상단 X)
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'pouch-item-delete-btn';
+      deleteBtn.setAttribute('aria-label', '삭제');
+      deleteBtn.textContent = '✕';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removePouchItemAndRefresh(product.name);
+      });
+      el.appendChild(deleteBtn);
       return el;
     }
 
@@ -5155,7 +5444,18 @@ HTML_PAGE = """<!DOCTYPE html>
       return chip;
     }
 
-    let pouchBasketAutoCloseTimer = null; // 확인 탭 없이도 담기 연출이 끝나면 자동으로 선반으로 넘어가기 위한 타이머
+    // 트레이(선반)에서 "추가하기"로 들어온 경우, 촬영/입력이 끝나면 목록 화면이 아니라
+    // 다시 이 트레이로 돌아가야 하므로 표시해두는 플래그
+    let pouchAddReturnToTray = false;
+
+    // 선반 위 화장품 삭제/추가 후 최신 목록으로 다시 그림(번호·위치가 자연스럽게 재정렬됨)
+    function removePouchItemAndRefresh(productName) {
+      const row = Array.from(cosmeticRows.querySelectorAll('.cosmetic-row'))
+        .find((r) => r.querySelector('input').value.trim() === productName);
+      if (row) row.remove();
+      openPouchBasketModal();
+    }
+
     function openPouchBasketModal() {
       const myProducts = getMyProducts();
       const products = myProducts.length > 0 ? myProducts : pouchScanProducts;
@@ -5175,23 +5475,32 @@ HTML_PAGE = """<!DOCTYPE html>
       });
 
       document.getElementById('pouchBasketModal').classList.remove('hidden');
+    }
 
-      // 아이템이 다 날아들어와 자리잡는 연출(최대 9개 * 0.18s 지연 + 0.65s 비행)이 끝나고
-      // 잠깐 볼 시간을 준 뒤, 확인 탭을 하지 않아도 자동으로 선반(카드 그리드)으로 넘어감
-      clearTimeout(pouchBasketAutoCloseTimer);
-      pouchBasketAutoCloseTimer = setTimeout(closePouchBasketModal, 3200);
+    // 모달만 잠깐 숨김(등록 확정 X) - "추가하기"로 촬영/입력 화면으로 넘어갈 때 사용
+    function hidePouchBasketModal() {
+      document.getElementById('pouchBasketModal').classList.add('hidden');
+      document.getElementById('pouchItemTooltip').classList.remove('visible');
     }
 
     function closePouchBasketModal() {
-      clearTimeout(pouchBasketAutoCloseTimer);
-      document.getElementById('pouchBasketModal').classList.add('hidden');
-      document.getElementById('pouchItemTooltip').classList.remove('visible');
+      hidePouchBasketModal();
       // 등록이 끝나면 파우치 섹션을 접어 등록된 화장품 카드 그리드(선반)를 그 자리에서 그대로 보여줌
       // (이미 홈 화면 안에서 일어나는 흐름이라 switchTab('inuse')로 화면을 다시 튕길 필요가 없음)
       pouchCaptureForceOpen = false;
       updatePouchSectionView();
       document.getElementById('pouchSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    // 트레이 화면의 "+ 추가하기": 기존 사진/직접입력 선택 흐름으로 이동, 완료되면 다시 트레이로 돌아옴
+    document.getElementById('pouchBasketAddMoreBtn').addEventListener('click', () => {
+      pouchAddReturnToTray = true;
+      hidePouchBasketModal();
+      pouchCaptureForceOpen = true;
+      showPouchAddStep('choice');
+      updatePouchSectionView();
+      document.getElementById('pouchSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     document.getElementById('pouchRegisterBtn').addEventListener('click', () => {
       openPouchBasketModal();
@@ -5208,7 +5517,7 @@ HTML_PAGE = """<!DOCTYPE html>
     const CBD_IMPORT_WARNING = {
       title: 'CBD 함유 제품은 한국 반입이 불법이에요',
       message:
-        "한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 '대마'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.",
+        '한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 \\'대마\\'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.',
       authority: '마약류 관리에 관한 법률',
       ingredient: 'CBD(칸나비디올)',
       ingredientKeywords: [], // 실제 보유 제품에 CBD가 들어있는 경우는 없어 파우치 성분 대조 배너는 사용하지 않음
@@ -5295,28 +5604,11 @@ HTML_PAGE = """<!DOCTYPE html>
     updateTabLockUI();
 
     // ===== 여행 일정 등록 (다중 구간) =====
-    // 등록 2단계에서 쓰던 curated 국가 목록을 그대로 재사용
+    // 여행지 국가 선택 드롭다운에 노출할 20개국(가나다순)으로 축소
+    // (value는 weatherData/매장 데이터 조회에 그대로 쓰이는 키라 기존 한글 국가명 형식을 유지함)
     const ALL_COUNTRIES = [
-      '가나', '가봉', '가이아나', '감비아', '과테말라', '그레나다', '그리스', '기니', '기니비사우', '나미비아',
-      '나우루', '나이지리아', '남수단', '남아프리카공화국', '네덜란드', '네팔', '노르웨이', '뉴질랜드', '니제르', '니카라과',
-      '대만', '대한민국', '덴마크', '도미니카', '도미니카공화국', '독일', '동티모르', '라오스', '라이베리아', '라트비아',
-      '러시아', '레바논', '레소토', '루마니아', '룩셈부르크', '르완다', '리비아', '리투아니아', '리히텐슈타인', '마다가스카르',
-      '마셜제도', '말라위', '말레이시아', '말리', '멕시코', '모나코', '모로코', '모리셔스', '모리타니', '모잠비크',
-      '몬테네그로', '몰도바', '몰디브', '몰타', '몽골', '미국', '미얀마', '미크로네시아', '바누아투', '바레인',
-      '바베이도스', '바티칸', '바하마', '방글라데시', '베냉', '베네수엘라', '베트남', '벨기에', '벨라루스', '벨리즈',
-      '보스니아헤르체고비나', '보츠와나', '볼리비아', '부룬디', '부르키나파소', '부탄', '북마케도니아', '북한', '불가리아', '브라질',
-      '브루나이', '사모아', '사우디아라비아', '산마리노', '상투메프린시페', '세네갈', '세르비아', '세이셸', '세인트루시아', '세인트빈센트그레나딘',
-      '세인트키츠네비스', '소말리아', '솔로몬제도', '수단', '수리남', '스리랑카', '스웨덴', '스위스', '스페인', '슬로바키아',
-      '슬로베니아', '시리아', '시에라리온', '싱가포르', '아랍에미리트', '아르메니아', '아르헨티나', '아이슬란드', '아이티', '아일랜드',
-      '아제르바이잔', '아프가니스탄', '안도라', '알바니아', '알제리', '앙골라', '앤티가바부다', '에리트레아', '에스와티니', '에스토니아',
-      '에콰도르', '에티오피아', '엘살바도르', '영국', '예멘', '오만', '오스트리아', '온두라스', '요르단', '우간다',
-      '우루과이', '우즈베키스탄', '우크라이나', '이라크', '이란', '이스라엘', '이집트', '이탈리아', '인도', '인도네시아',
-      '일본', '자메이카', '잠비아', '적도기니', '조지아', '중국', '중앙아프리카공화국', '지부티', '짐바브웨', '차드',
-      '체코', '칠레', '카메룬', '카보베르데', '카자흐스탄', '카타르', '캄보디아', '캐나다', '케냐', '코모로',
-      '코스타리카', '코트디부아르', '콜롬비아', '콩고공화국', '콩고민주공화국', '쿠바', '쿠웨이트', '크로아티아', '키르기스스탄', '키리바시',
-      '키프로스', '타지키스탄', '탄자니아', '태국', '토고', '통가', '투르크메니스탄', '투발루', '튀니지', '튀르키예',
-      '트리니다드토바고', '파나마', '파라과이', '파키스탄', '파푸아뉴기니', '팔라우', '팔레스타인', '페루', '포르투갈', '폴란드',
-      '프랑스', '피지', '핀란드', '필리핀', '헝가리', '호주',
+      '그리스', '뉴질랜드', '독일', '미국', '베트남', '스위스', '스페인', '싱가포르', '영국', '오스트리아',
+      '이탈리아', '일본', '중국', '캐나다', '태국', '튀르키예', '포르투갈', '프랑스', '필리핀', '호주',
     ];
 
     let tripSegments = []; // 확정 값 - "저장하기"를 눌렀을 때만 갱신되고, 홈 화면 전체가 이 값만 참조함
@@ -5380,7 +5672,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <input type="hidden" class="segment-start-input" value="${initial.start || ''}" />
         <input type="hidden" class="segment-end-input" value="${initial.end || ''}" />
         <select class="segment-country-select w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-brand-500">
-          <option value="">국가를 선택해주세요</option>
+          <option value="" disabled ${!initial.country ? 'selected' : ''}>국가를 선택해주세요</option>
           ${countryOptions}
         </select>
       `;
@@ -5798,7 +6090,7 @@ HTML_PAGE = """<!DOCTYPE html>
       const card = document.createElement('div');
       card.className = 'pouch-card bg-white border border-gray-100 rounded-2xl p-3 cursor-pointer active:opacity-70';
       card.innerHTML = `
-        <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg mb-2 overflow-hidden">
+        <div class="w-10 h-10 rounded-xl ${img ? '' : 'bg-gray-50'} flex items-center justify-center text-lg mb-2 overflow-hidden">
           ${img ? `<img src="${img}" alt="${product.name}" class="w-full h-full object-contain" />` : (category ? category.icon : '🧴')}
         </div>
         <p class="text-sm font-semibold truncate">${product.name}</p>
@@ -5866,8 +6158,20 @@ HTML_PAGE = """<!DOCTYPE html>
       const name = nameInput.value.trim();
       if (!name) return;
       const category = document.getElementById('pouchAddTextCategory').value;
-      cosmeticRows.appendChild(buildCosmeticRow(name, category));
+
+      advancePouchAddEventCount();
+      const forcedProduct = getForcedAddProduct();
+      if (forcedProduct) {
+        cosmeticRows.appendChild(buildCosmeticRow(forcedProduct.name, forcedProduct.category));
+      } else {
+        cosmeticRows.appendChild(buildCosmeticRow(name, category));
+      }
       nameInput.value = '';
+      // 트레이(선반)의 "+ 추가하기"를 거쳐 들어온 경우엔 목록 화면 대신 다시 트레이로 복귀
+      if (pouchAddReturnToTray) {
+        pouchAddReturnToTray = false;
+        openPouchBasketModal();
+      }
     });
 
     // 화장품이 1개 이상이면 카드 그리드를 보여주고 촬영/입력 UI는 접음("+ 추가"로 다시 펼침)
@@ -7006,8 +7310,6 @@ HTML_PAGE = """<!DOCTYPE html>
       return dustByClimate[climate] || '보통';
     }
 
-    // "들고 가면 좋을 제품": 여행지의 기후(weatherData[destination].climate)에 맞춰
-    // 국가별 추천화장품 DB(260713_추천화장품.csv)를 기후 단위로 묶어서 추천
     // "들고 가면 좋을 제품": 여행지(국가)별 추천화장품 DB(나라별_준비물_추천_최종_중복제거_ment.csv) 기준
 const CARE_IMG_URIS = {"TORRIDEN_BALANCEFUL":"__CARE_IMG_TORRIDEN_BALANCEFUL__","BANILA_PRIMER":"__CARE_IMG_BANILA_PRIMER__","KISSME_EYELINER":"__CARE_IMG_KISSME_EYELINER__","ISNTREE_SUNCREAM":"__CARE_IMG_ISNTREE_SUNCREAM__","SONATURAL_FIXER":"__CARE_IMG_SONATURAL_FIXER__","ABIB_AQUAFIT":"__CARE_IMG_ABIB_AQUAFIT__","TORRIDEN_DIVEIN":"__CARE_IMG_TORRIDEN_DIVEIN__","ABIB_SERUM":"__CARE_IMG_ABIB_SERUM__","TORRIDEN_LIP":"__CARE_IMG_TORRIDEN_LIP__","HAIRPLUS_ESSENCE":"__CARE_IMG_HAIRPLUS_ESSENCE__","ROUNDLAB_TONIC":"__CARE_IMG_ROUNDLAB_TONIC__","BRINGGREEN_ALOE":"__CARE_IMG_BRINGGREEN_ALOE__"};
 const CARE_RECOMMEND_DATA = {"싱가포르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"일본":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"이탈리아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"대만":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"몽골":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"태국":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"베트남":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"인도네시아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"필리핀":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"아랍에미리트":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"이집트":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"호주":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"미국":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"프랑스":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"영국":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"스페인":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"튀르키예":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"캐나다":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"러시아":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"아이슬란드":{"ment":"혹독하게 춥고 건조한 곳이에요. 강력한 수분 진정과 바디 보습으로 피부 장벽을 지키는 게 가장 중요해요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"독일":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"인도":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"브라질":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"멕시코":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"아르헨티나":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"남아프리카공화국":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"스위스":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"네덜란드":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"그리스":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"포르투갈":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"오스트리아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"스웨덴":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"노르웨이":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"핀란드":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"뉴질랜드":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"말레이시아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"카타르":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"사우디아라비아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"모로코":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"케냐":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"페루":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"칠레":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"쿠바":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"자메이카":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"크로아티아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"체코":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"헝가리":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"폴란드":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"대한민국":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"중국":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"캄보디아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"스리랑카":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"나이지리아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"에티오피아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"콜롬비아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"베네수엘라":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"파나마":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"니카라과":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"과테말라":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"온두라스":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"아이티":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"도미니카공화국":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"파푸아뉴기니":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"피지":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"몰디브":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"미얀마":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"방글라데시":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"라오스":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"가나":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"탄자니아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"아프가니스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"알제리":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"리비아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"요르단":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"쿠웨이트":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"이라크":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"이란":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"파키스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"카자흐스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"튀니지":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"오만":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"벨기에":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"덴마크":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"아일랜드":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"몰타":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"슬로바키아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"슬로베니아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"세르비아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"루마니아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"불가리아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"우크라이나":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"우루과이":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"파라과이":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"몰도바":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"조지아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"레바논":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"벨라루스":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"에스토니아":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"라트비아":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"리투아니아":{"ment":"춥고 건조한 곳이에요. 얼굴은 수분 진정으로, 당기는 몸은 수분-바디로 촉촉하게 채워주세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"브링그린 알로에 97% 수딩젤","img":"BRINGGREEN_ALOE"}]},"알바니아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"안도라":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"앙골라":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"앤티가바부다":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"아르메니아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"아제르바이잔":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"바하마":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"바레인":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"바베이도스":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"벨리즈":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"베냉":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"부탄":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"볼리비아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"보스니아헤르체고비나":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"보츠와나":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"브루나이":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"부르키나파소":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"부룬디":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"카보베르데":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"카메룬":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"중앙아프리카공화국":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"차드":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"코모로":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"콩고공화국":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"콩고민주공화국":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"코스타리카":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"코트디부아르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"키프로스":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"지부티":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"도미니카":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"에콰도르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"엘살바도르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"적도기니":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"에리트레아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"에스와티니":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"가봉":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"감비아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"그레나다":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"기니":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"기니비사우":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"가이아나":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"이스라엘":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"키리바시":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"키르기스스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"레소토":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"라이베리아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"리히텐슈타인":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"룩셈부르크":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"마다가스카르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"말라위":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"말리":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"마셜제도":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"모리타니":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"모리셔스":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"미크로네시아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"모나코":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"몬테네그로":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"모잠비크":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"나미비아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"나우루":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"네팔":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"니제르":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"북한":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"북마케도니아":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"팔라우":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"르완다":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"세인트키츠네비스":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"세인트루시아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"세인트빈센트그레나딘":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"사모아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"산마리노":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"상투메프린시페":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"세네갈":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"세이셸":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"시에라리온":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"솔로몬제도":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"소말리아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"남수단":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"수단":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"수리남":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"시리아":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"타지키스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"동티모르":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"토고":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"통가":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"트리니다드토바고":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"투르크메니스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"투발루":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"우간다":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"우즈베키스탄":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"바누아투":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"예멘":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]},"잠비아":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"짐바브웨":{"ment":"덥고 습해 피지와 땀이 많은 곳이에요. 번들거림을 잡아주는 유분 관리와 강한 햇빛을 막을 선케어, 무너짐을 잡는 픽서를 챙기세요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"쏘내추럴 올 데이 타이트 메이크업 세팅 픽서","img":"SONATURAL_FIXER"}]},"바티칸":{"ment":"온화한 사계절 기후예요. 피지 균형을 위한 유분 관리와 수분 진정, 가벼운 선케어면 데일리로 충분해요.","products":[{"name":"토리든 패드 밸런스풀","img":"TORRIDEN_BALANCEFUL"},{"name":"바닐라코 프라임 프라이머 피니쉬 파우더","img":"BANILA_PRIMER"},{"name":"키스미 스무스 리퀴드 아이라이너","img":"KISSME_EYELINER"},{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"}]},"팔레스타인":{"ment":"건조하고 자외선이 강한 곳이에요. 속당김을 막을 수분 진정과 선케어는 필수, 푸석해지기 쉬운 모발을 위한 헤어 케어도 잊지 마세요.","products":[{"name":"아비브 약산성 pH 시트 마스크 핏 -아쿠아 핏","img":"ABIB_AQUAFIT"},{"name":"토리든 패드 다이브인","img":"TORRIDEN_DIVEIN"},{"name":"아비브 히알루로닉 붐 세럼 워터드롭","img":"ABIB_SERUM"},{"name":"토리든 솔리드인 세라마이드 립 에센스","img":"TORRIDEN_LIP"},{"name":"이즈앤트리 히알루론산 에어리 바디 선크림","img":"ISNTREE_SUNCREAM"},{"name":"헤어플러스 단백질본드 워터에센스","img":"HAIRPLUS_ESSENCE"},{"name":"라운드랩 소나무 진정 시카 두피 토닉","img":"ROUNDLAB_TONIC"}]}};
@@ -7269,10 +7571,125 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
 
     // ===== 아카이빙 상세: 월별 달력 오마주 + 도장 애니메이션 =====
     let archiveStampTimers = [];
+    let archiveLoadingTimer = null;
 
     function clearArchiveStampTimers() {
       archiveStampTimers.forEach((t) => clearTimeout(t));
       archiveStampTimers = [];
+    }
+
+    function clearArchiveLoadingTimer() {
+      if (archiveLoadingTimer) {
+        clearTimeout(archiveLoadingTimer);
+        archiveLoadingTimer = null;
+      }
+    }
+
+    // 콜라주가 뜨기 직전 아주 짧게 보여주는 로딩 오버레이 (my-location-spinner와 동일한 스피너 스타일 재사용)
+    function buildArchiveLoadingMarkup() {
+      return `
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3" style="background:#0d0d0f;">
+          <span class="my-location-spinner" style="width:20px;height:20px;border-width:3px;"></span>
+          <p class="text-sm font-semibold" style="color:rgba(255,255,255,0.75);">여행 기록을 불러오고 있어요</p>
+        </div>
+      `;
+    }
+
+    // ===== 여행 기록 상세 바텀시트: peek(위치 정보만) <-> expanded(일기/순간들까지 전부) =====
+    const ARCHIVE_SHEET_PEEK_PX = 128; // peek 상태에서 시트 위로 보이는 높이(핸들 + 위치 정보)
+    let archiveSheetExpanded = false;
+    let archiveSheetDragging = false;
+
+    function getArchiveSheetEl() {
+      return document.getElementById('archiveSheet');
+    }
+
+    function setArchiveSheetTranslate(px, animate) {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      sheet.style.transition = animate ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none';
+      sheet.style.transform = `translateY(${px}px)`;
+      const dim = document.getElementById('archiveSheetDim');
+      const collapsedPx = Math.max(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, 1);
+      const progress = 1 - Math.min(Math.max(px / collapsedPx, 0), 1); // 0=peek, 1=expanded
+      if (dim) dim.style.background = `rgba(0, 0, 0, ${(progress * 0.35).toFixed(2)})`;
+    }
+
+    // 스탬프 연출이 끝난 직후: 화면 밖에 숨어있던 시트를 peek 위치로 슬라이드업
+    function revealArchiveSheet() {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      sheet.classList.remove('hidden-below');
+      archiveSheetExpanded = false;
+      setArchiveSheetTranslate(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, true);
+    }
+
+    function collapseArchiveSheet(animate) {
+      const sheet = getArchiveSheetEl();
+      if (!sheet) return;
+      archiveSheetExpanded = false;
+      setArchiveSheetTranslate(sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX, animate);
+    }
+
+    function expandArchiveSheet(animate) {
+      archiveSheetExpanded = true;
+      setArchiveSheetTranslate(0, animate);
+    }
+
+    // 핸들/peek 헤더를 드래그하거나(위/아래) 탭하면 펼침·접힘 토글. 펼쳐진 상태에서
+    // 내용(archiveSheetContent)은 별도로 자연 스크롤됨(이 드래그 로직과 무관)
+    function wireArchiveSheetDrag() {
+      const sheet = getArchiveSheetEl();
+      const handle = document.getElementById('archiveSheetHandleWrap');
+      const peekHeader = document.querySelector('#archiveCanvas .archive-sheet-peek-header');
+      if (!sheet || !handle) return;
+      let dragStartY = 0;
+      let dragStartTranslate = 0;
+      let moved = false;
+
+      const onPointerDown = (e) => {
+        archiveSheetDragging = true;
+        moved = false;
+        dragStartY = e.clientY;
+        dragStartTranslate = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        if (archiveSheetExpanded) dragStartTranslate = 0;
+        sheet.style.transition = 'none';
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      };
+      const onPointerMove = (e) => {
+        if (!archiveSheetDragging) return;
+        const deltaY = e.clientY - dragStartY;
+        if (Math.abs(deltaY) > 4) moved = true;
+        const collapsedPx = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        const next = Math.min(Math.max(dragStartTranslate + deltaY, 0), collapsedPx);
+        setArchiveSheetTranslate(next, false);
+      };
+      const onPointerUp = () => {
+        if (!archiveSheetDragging) return;
+        archiveSheetDragging = false;
+        if (!moved) {
+          // 드래그 없이 탭만 했으면 현재 상태의 반대로 토글
+          if (archiveSheetExpanded) collapseArchiveSheet(true); else expandArchiveSheet(true);
+          return;
+        }
+        const collapsedPx = sheet.offsetHeight - ARCHIVE_SHEET_PEEK_PX;
+        const currentMatch = /translateY\(([-\d.]+)px\)/.exec(sheet.style.transform);
+        const currentPx = currentMatch ? parseFloat(currentMatch[1]) : collapsedPx;
+        if (currentPx < collapsedPx / 2) expandArchiveSheet(true); else collapseArchiveSheet(true);
+      };
+
+      [handle, peekHeader].forEach((el) => {
+        if (!el) return;
+        el.addEventListener('pointerdown', onPointerDown);
+        el.addEventListener('pointermove', onPointerMove);
+        el.addEventListener('pointerup', onPointerUp);
+        el.addEventListener('pointercancel', onPointerUp);
+      });
+
+      // 접힌 상태에서 위로 스크롤(휠/트랙패드)하면 펼치기
+      sheet.addEventListener('wheel', (e) => {
+        if (!archiveSheetExpanded && e.deltaY < 0) expandArchiveSheet(true);
+      }, { passive: true });
     }
 
     function openArchiveDetail(item) {
@@ -7281,16 +7698,27 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
       const status = getArchiveStatus(item);
 
       clearArchiveStampTimers();
+      clearArchiveLoadingTimer();
+      archiveSheetExpanded = false;
+      archiveSheetDragging = false;
 
       // stack(콜라주 에셋)이 있는 모든 달은 풀 콜라주 화면, 없으면 준비중 안내
       if (item.stack) {
         // 콜라주 화면은 자체 제목/날짜를 그리므로 상단 헤더 텍스트는 비움
         document.getElementById('archiveHeaderTitle').textContent = '';
         document.getElementById('archiveHeaderSub').textContent = '';
-        canvas.innerHTML = buildItalyArchiveMarkup(item);
+        canvas.innerHTML = buildArchiveLoadingMarkup();
         modal.classList.remove('hidden');
-        requestAnimationFrame(() => runStampSequence());
-        wireArchiveTapTargets();
+        // 실제 네트워크 요청 없이 "불러오는" 느낌만 주기 위한 mock 지연
+        archiveLoadingTimer = setTimeout(() => {
+          archiveLoadingTimer = null;
+          canvas.innerHTML = buildItalyArchiveMarkup(item);
+          canvas.querySelector(':scope > div')?.classList.add('archive-collage-fade-in');
+          requestAnimationFrame(() => runStampSequence());
+          wireArchiveTapTargets();
+          wireArchiveSheetDrag();
+          wireArchiveAddPhotoFab();
+        }, 500);
       } else {
         document.getElementById('archiveHeaderTitle').textContent = `${item.flag} ${item.country} · ${item.city}`;
         document.getElementById('archiveHeaderSub').textContent = `${item.start} ~ ${item.end} · ${status.label}`;
@@ -7301,6 +7729,7 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
 
     function closeArchiveDetail() {
       clearArchiveStampTimers();
+      clearArchiveLoadingTimer();
       document.getElementById('archiveModal').classList.add('hidden');
       document.getElementById('archiveCanvas').innerHTML = '';
       document.getElementById('archivePhotoLightbox').classList.add('hidden');
@@ -7326,6 +7755,45 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
       });
     }
 
+    // 뱃지 줄의 "추가하기" 버튼: 탭하면 사진 선택창을 열고, 고른 사진을 콜라주에 새 카드로 추가
+    function wireArchiveAddPhotoFab() {
+      const fab = document.querySelector('#archiveCanvas .archive-add-photo-btn');
+      const input = document.querySelector('#archiveCanvas .archive-add-photo-input');
+      if (!fab || !input) return;
+      fab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.click();
+      });
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          appendArchivePhoto(reader.result);
+          input.value = '';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 사용자가 고른 사진을 콜라주 위에 폴라로이드 스타일로 하나 추가(기존 스탬프와 동일하게 탭하면 확대)
+    function appendArchivePhoto(dataUrl) {
+      const collage = document.querySelector('#archiveCanvas .archive-collage-inner');
+      if (!collage) return;
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = '추가한 사진';
+      img.className = 'stamp-el stamped archive-tappable';
+      img.style.cssText = 'position:absolute; left:46%; top:52%; width:32%; height:32%; object-fit:cover; border-radius:10px; transform:rotate(-4deg); filter:drop-shadow(0 4px 10px rgba(0,0,0,0.45)); z-index:16;';
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        img.classList.add('tap-flash');
+        setTimeout(() => img.classList.remove('tap-flash'), 120);
+        openArchivePhotoLightbox(img.src, img.alt);
+      });
+      collage.appendChild(img);
+    }
+
     function openArchivePhotoLightbox(src, alt) {
       document.getElementById('archivePhotoLightboxImg').src = src;
       document.getElementById('archivePhotoLightboxImg').alt = alt || '';
@@ -7347,16 +7815,25 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
       `;
     }
 
-    // 순차적으로 .stamp-el 에 stamped 클래스를 붙여 도장 애니메이션 실행
+    // 순차적으로 .stamp-el 에 stamped 클래스를 붙여 도장 애니메이션 실행.
+    // 스탬프 개수(N)와 무관하게 전체 연출이 대략 1.5초에 끝나도록 간격을 동적으로 배분하고,
+    // 다 끝나면 바텀시트를 peek 상태로 올림
     function runStampSequence() {
       const els = Array.from(document.querySelectorAll('#archiveCanvas .stamp-el'));
+      const totalMs = 1500;
+      const stampAnimMs = 450;
+      const baseDelay = 80;
+      const step = els.length > 1 ? (totalMs - baseDelay - stampAnimMs) / (els.length - 1) : 0;
       els.forEach((el, i) => {
-        const delay = 250 + i * 320; // 첫 요소 후 약 0.32초 간격으로 하나씩
+        const delay = baseDelay + i * step;
         const t = setTimeout(() => {
           el.classList.add('stamped');
         }, delay);
         archiveStampTimers.push(t);
       });
+      const revealDelay = els.length > 0 ? baseDelay + (els.length - 1) * step + stampAnimMs : 200;
+      const revealTimer = setTimeout(() => revealArchiveSheet(), revealDelay);
+      archiveStampTimers.push(revealTimer);
     }
 
     // ===== 여행 상세(범용): 상단 검은 영역(월 제목 + 확대 콜라주 + 뱃지) =====
@@ -7416,9 +7893,9 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
       `).join('');
 
       return `
-        <div class="absolute inset-0 overflow-y-auto" style="-webkit-overflow-scrolling:touch;background:#0d0d0f;">
-          <!-- ===== 상단 검은 영역 ===== -->
-          <div style="position:relative;background:#0d0d0f;padding:104px ${sidePad}px 22px;">
+        <div class="absolute inset-0" style="background:#0d0d0f;overflow:hidden;">
+          <!-- ===== 상단 검은 영역: 고정 배경처럼 두고, 바텀시트가 그 위로 겹쳐 올라옴 ===== -->
+          <div style="position:relative;z-index:1;background:#0d0d0f;padding:104px ${sidePad}px 22px;">
             <!-- 월 제목 + 흔들리는 국기 / 날짜 -->
             <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;">
               <h1 style="font-size:40px;font-weight:800;color:#fff;margin:0;letter-spacing:-1px;line-height:1;">
@@ -7429,7 +7906,7 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
 
             <!-- 확대 콜라주 (검은 영역 꽉 채움, 화면 폭 full-bleed, 테두리 없음) + 뱃지 오버레이 -->
             <div style="position:relative;width:${appW}px;margin:0 -${sidePad}px;">
-              <div style="position:relative;width:${appW}px;height:${Math.round(appW * S.aspect)}px;overflow:hidden;background:#0d0d0f;">
+              <div class="archive-collage-inner" style="position:relative;width:${appW}px;height:${Math.round(appW * S.aspect)}px;overflow:hidden;background:#0d0d0f;">
                 <img src="${S.base}" alt="${item.country} ${item.city} ${monthTitle} 콜라주"
                      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;" />
                 ${stamps}
@@ -7438,37 +7915,44 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
                             background:linear-gradient(180deg,#0d0d0f 0%,rgba(13,13,15,0.6) 42%,rgba(13,13,15,0) 100%);"></div>
                 <div style="position:absolute;left:0;right:0;bottom:0;height:130px;z-index:15;pointer-events:none;
                             background:linear-gradient(0deg,#0d0d0f 0%,rgba(13,13,15,0.6) 45%,rgba(13,13,15,0) 100%);"></div>
-                <!-- 사진 위 하이라이트 뱃지 3개 (상단 오버레이) - 앱 다른 화면의 흰색 플랫 칩과 톤을 맞춤 -->
+                <!-- 사진 위 하이라이트 뱃지 3개 + 사진 추가 버튼 (상단 오버레이) - 앱 다른 화면의 흰색 플랫 칩과 톤을 맞춤 -->
                 <div style="position:absolute;left:${sidePad}px;right:${sidePad}px;top:14px;display:flex;gap:6px;flex-wrap:wrap;z-index:20;">
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">${wIcon} ${wLabel} ${wTemp}°</span>
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">🚶 ${stepsStr}보</span>
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">📸 ${recordCount}개의 기록</span>
+                  <button type="button" class="archive-add-photo-btn" style="font-size:11px;font-weight:800;color:var(--accent-red);background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">추가하기</button>
                 </div>
               </div>
+              <input type="file" accept="image/*" class="archive-add-photo-input hidden" />
             </div>
           </div>
 
-          <!-- ===== 하단 흰 영역: 위치(국가/일정) → 일기 → 이번 여행의 순간들 ===== -->
-          <div style="background:#fff;border-radius:26px 26px 0 0;margin-top:-18px;position:relative;
-                      padding:24px 24px 40px;min-height:200px;">
-            <!-- 1) 위치 정보 (국가/일정) -->
-            <div style="display:flex;align-items:center;gap:8px;">
+          <!-- 시트가 펼쳐질수록 콜라주 위에 어두워지는 딤 처리 -->
+          <div id="archiveSheetDim" class="archive-sheet-dim"></div>
+
+          <!-- ===== 바텀시트: peek(위치 정보만) <-> 드래그/탭/스크롤로 확장(일기 + 이번 여행의 순간들) ===== -->
+          <div id="archiveSheet" class="archive-sheet hidden-below">
+            <div id="archiveSheetHandleWrap" class="archive-sheet-handle-wrap">
+              <div class="archive-sheet-handle"></div>
+            </div>
+            <div class="archive-sheet-peek-header" style="display:flex;align-items:center;gap:8px;padding:0 24px 16px;">
               <span style="font-size:16px;">📍</span>
               <div>
                 <p style="font-size:16px;font-weight:800;color:#111827;margin:0;letter-spacing:-0.3px;">${item.city}, ${item.country}</p>
                 <p style="font-size:12px;color:#9ca3af;margin:2px 0 0;">${item.start} ~ ${item.end} · ${status.label || '여행'}</p>
               </div>
             </div>
+            <div id="archiveSheetContent" class="archive-sheet-content">
+              <!-- 여행 일기 (화장품 구매 후기) -->
+              <div style="background:#f9fafb;border-radius:16px;padding:16px 18px;">
+                <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:0 0 8px;">🛍️ 여행 일기 · 이번 여행의 득템</p>
+                <p style="font-size:14px;line-height:1.7;color:#374151;margin:0;">${diary}</p>
+              </div>
 
-            <!-- 2) 여행 일기 (화장품 구매 후기) -->
-            <div style="margin-top:18px;background:#f9fafb;border-radius:16px;padding:16px 18px;">
-              <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:0 0 8px;">🛍️ 여행 일기 · 이번 여행의 득템</p>
-              <p style="font-size:14px;line-height:1.7;color:#374151;margin:0;">${diary}</p>
+              <!-- 이번 여행의 순간들 -->
+              <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:24px 0 4px;">이번 여행의 순간들</p>
+              ${scheduleItems}
             </div>
-
-            <!-- 3) 이번 여행의 순간들 -->
-            <p style="font-size:12px;font-weight:700;color:#9ca3af;margin:24px 0 4px;">이번 여행의 순간들</p>
-            ${scheduleItems}
           </div>
         </div>
       `;
@@ -7486,6 +7970,7 @@ const MAY_STACK = {"base":"__ARCHIVE_MAYSTACK_BASE__","aspect":1.2556,"elems":{"
 HTML_PAGE = (
     HTML_PAGE.replace("__EARTH_BG_URI__", EARTH_BG_URI)
     .replace("__LOGO_URI__", LOGO_URI)
+    .replace("__STAR_URI__", STAR_URI)
     .replace("__AVATAR_URI_1__", AVATAR_URIS[0])
     .replace("__AVATAR_URI_2__", AVATAR_URIS[1])
     .replace("__AVATAR_URI_3__", AVATAR_URIS[2])
