@@ -481,6 +481,25 @@ HTML_PAGE = """<!DOCTYPE html>
   .archive-tappable.tap-flash {
     filter: brightness(0.85) !important;
   }
+  /* 콜라주 우하단에 살짝 겹쳐 뜨는 사진 추가 FAB - 이 화면의 유일한 주 액션이라 레드 사용 */
+  .archive-add-photo-fab {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 54px;
+    height: 54px;
+    border-radius: 9999px;
+    background: var(--accent-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    z-index: 25;
+    transition: transform 0.12s ease;
+  }
+  .archive-add-photo-fab:active {
+    transform: scale(0.95);
+  }
   /* 음악 플레이어 스탬프를 탭하면 "재생 중" 느낌으로 은은하게 펄스 */
   .archive-tappable[data-stamp-name="player"].is-playing {
     animation: archivePlayerPulse 1.6s ease-in-out infinite;
@@ -7708,6 +7727,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
           requestAnimationFrame(() => runStampSequence());
           wireArchiveTapTargets();
           wireArchiveSheetDrag();
+          wireArchiveAddPhotoFab();
         }, 500);
       } else {
         document.getElementById('archiveHeaderTitle').textContent = `${item.flag} ${item.country} · ${item.city}`;
@@ -7743,6 +7763,45 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
           openArchivePhotoLightbox(el.src, el.alt);
         });
       });
+    }
+
+    // 콜라주 우하단 FAB: 탭하면 사진 선택창을 열고, 고른 사진을 콜라주에 새 카드로 추가
+    function wireArchiveAddPhotoFab() {
+      const fab = document.querySelector('#archiveCanvas .archive-add-photo-fab');
+      const input = document.querySelector('#archiveCanvas .archive-add-photo-input');
+      if (!fab || !input) return;
+      fab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.click();
+      });
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          appendArchivePhoto(reader.result);
+          input.value = '';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 사용자가 고른 사진을 콜라주 위에 폴라로이드 스타일로 하나 추가(기존 스탬프와 동일하게 탭하면 확대)
+    function appendArchivePhoto(dataUrl) {
+      const collage = document.querySelector('#archiveCanvas .archive-collage-inner');
+      if (!collage) return;
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = '추가한 사진';
+      img.className = 'stamp-el stamped archive-tappable';
+      img.style.cssText = 'position:absolute; left:36%; top:36%; width:36%; height:36%; object-fit:cover; border-radius:10px; transform:rotate(-4deg); filter:drop-shadow(0 4px 10px rgba(0,0,0,0.45)); z-index:16;';
+      img.addEventListener('click', (e) => {
+        e.stopPropagation();
+        img.classList.add('tap-flash');
+        setTimeout(() => img.classList.remove('tap-flash'), 120);
+        openArchivePhotoLightbox(img.src, img.alt);
+      });
+      collage.appendChild(img);
     }
 
     function openArchivePhotoLightbox(src, alt) {
@@ -7857,7 +7916,7 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
 
             <!-- 확대 콜라주 (검은 영역 꽉 채움, 화면 폭 full-bleed, 테두리 없음) + 뱃지 오버레이 -->
             <div style="position:relative;width:${appW}px;margin:0 -${sidePad}px;">
-              <div style="position:relative;width:${appW}px;height:${Math.round(appW * S.aspect)}px;overflow:hidden;background:#0d0d0f;">
+              <div class="archive-collage-inner" style="position:relative;width:${appW}px;height:${Math.round(appW * S.aspect)}px;overflow:hidden;background:#0d0d0f;">
                 <img src="${S.base}" alt="${item.country} ${item.city} ${monthTitle} 콜라주"
                      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;" />
                 ${stamps}
@@ -7873,6 +7932,14 @@ const MAY_STACK = {"base":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w
                   <span style="font-size:11px;font-weight:700;color:#374151;background:rgba(255,255,255,0.95);padding:5px 10px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.6);">📸 ${recordCount}개의 기록</span>
                 </div>
               </div>
+              <!-- 콜라주에 새 사진 추가: 우하단에 살짝 겹치는 원형 FAB (기존 콜라주/일기 카드 동작과 무관) -->
+              <button type="button" class="archive-add-photo-fab" aria-label="사진 추가">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path>
+                  <circle cx="12" cy="13.5" r="3.5"></circle>
+                </svg>
+              </button>
+              <input type="file" accept="image/*" class="archive-add-photo-input hidden" />
             </div>
           </div>
 
