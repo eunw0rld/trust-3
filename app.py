@@ -2737,12 +2737,15 @@ HTML_PAGE = """<!DOCTYPE html>
     // 도시 확대가 끝나면 storeData의 매장들을 도시 중심 근처 mock 좌표에 주황색 원형 마커로 표시
     function renderCityStoreMarkers(cityKey, weather) {
       clearCityMarkers();
-      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const storeKey = weather.cityKey || (weather.en ? weather.en.toLowerCase() : '');
       const baseStores = storeData[storeKey] || [];
       const offsets = [
         [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
       ];
       currentCityStores = baseStores.map((store, i) => {
+        // 구글 맵 기준 실제 좌표가 있는 매장(예: 로마 세포라)은 그대로 쓰고,
+        // 없는 mock 매장만 여행지 중심 좌표에서 살짝 흩어지게 배치
+        if (store.lat != null && store.lng != null) return { ...store };
         const off = offsets[i % offsets.length];
         return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
       });
@@ -2765,14 +2768,14 @@ HTML_PAGE = """<!DOCTYPE html>
         store.marker = marker;
         cityMarkers.push(marker);
       });
-      renderMapStoreList(cityKey, currentCityStores);
+      renderMapStoreList(weather.cityLabel || cityKey, currentCityStores);
     }
 
     // 지도 아래 매장 리스트 카드: 클릭 시 지도가 해당 매장 마커로 다시 flyTo
     // 타이틀/부제는 고정 문구를 유지하고, 위치 정보만 작은 라벨로 표시
-    function renderMapStoreList(cityKey, stores) {
+    function renderMapStoreList(displayLabel, stores) {
       const locationLabel = document.getElementById('mapStoreLocationLabel');
-      locationLabel.textContent = `📍 ${cityKey}`;
+      locationLabel.textContent = `📍 ${displayLabel}`;
       locationLabel.classList.remove('hidden');
       const list = document.getElementById('mapStoreList');
       if (stores.length === 0) {
@@ -5091,18 +5094,34 @@ HTML_PAGE = """<!DOCTYPE html>
     document.getElementById('pouchBasketConfirmBtn').addEventListener('click', closePouchBasketModal);
 
     // 전략미션A: 여행지별 반입 금지 성분 정보 (우선 이탈리아/EU만 반영, 이후 일본·미국 등으로 확장 가능)
-    const importBanData = {
-      이탈리아: {
-        displayCountry: '이탈리아(EU)',
-        authority: 'EU 화장품 규정 (EC No 1223/2009)',
-        ingredient: '하이드로퀴논 (Hydroquinone)',
-        ingredientKeywords: ['하이드로퀴논'], // 파우치 제품 전성분과 대조할 때 쓰는 실제 성분명 키워드
-        productHint: '미백·잡티 개선 크림, 톤업크림',
-        alternative: '나이아신아마이드, 알부틴 등 EU에서 허용된 미백 성분 제품으로 교체를 추천해요',
-        source: 'EU Cosmetics Regulation (EC) No 1223/2009, Annex II',
-        lastUpdated: '2024.03 개정',
-      },
+    // EU 회원국 + 미국 + 캐나다 여행지 등록 시 공통으로 안내하는 CBD(칸나비디올) 반입 경고.
+    // (해당 지역은 CBD 함유 화장품·오일 등이 합법적으로 유통돼 여행자가 모르고 구매하기 쉬운데,
+    // 한국으로 반입 시에는 대마 성분으로 분류돼 형사처벌 대상이 될 수 있어 국가별 성분 규제보다
+    // 이 경고를 우선 안내함)
+    const CBD_IMPORT_WARNING = {
+      title: 'CBD 함유 제품은 한국 반입이 불법이에요',
+      message:
+        '한국에서 CBD(칸나비디올)는 「마약류 관리에 관한 법률」상 \'대마\'로 분류되는 성분입니다. CBD가 함유된 화장품·오일·기호품 등은 EU를 포함한 해외에서 합법적으로 구매하셨더라도, 한국으로 반입하는 것은 불법이며 형사처벌 대상이 됩니다. 대마의 줄기 등에서 추출한 CBD도 동일하게 규제되며, 해외에서 사용한 경우에도 처벌될 수 있으니 각별히 유의해 주시기 바랍니다. 구매 전 제품에 HEMP, Cannabis, CBD, CBN, THC 등의 표시가 있는지 반드시 확인하세요.',
+      authority: '마약류 관리에 관한 법률',
+      ingredient: 'CBD(칸나비디올)',
+      ingredientKeywords: [], // 실제 보유 제품에 CBD가 들어있는 경우는 없어 파우치 성분 대조 배너는 사용하지 않음
+      productHint: '',
+      alternative: '구매 전 제품 라벨에 HEMP·Cannabis·CBD·CBN·THC 표시가 있는지 꼭 확인하세요',
+      source: '관세청 여행자 휴대품 통관 안내',
+      lastUpdated: '',
     };
+    const CBD_WARNING_COUNTRIES = [
+      // EU 27개 회원국
+      '오스트리아', '벨기에', '불가리아', '크로아티아', '키프로스', '체코', '덴마크', '에스토니아', '핀란드', '프랑스',
+      '독일', '그리스', '헝가리', '아일랜드', '이탈리아', '라트비아', '리투아니아', '룩셈부르크', '몰타', '네덜란드',
+      '폴란드', '포르투갈', '루마니아', '슬로바키아', '슬로베니아', '스페인', '스웨덴',
+      // + 미국, 캐나다
+      '미국', '캐나다',
+    ];
+    const importBanData = {};
+    CBD_WARNING_COUNTRIES.forEach((country) => {
+      importBanData[country] = { ...CBD_IMPORT_WARNING, displayCountry: country };
+    });
 
     // 등록된 파우치 제품 중, 현재 등록된 여행 구간 국가에서 반입 금지된 성분을 포함한 제품을 찾음
     function findPouchIngredientBanMatches() {
@@ -5143,13 +5162,12 @@ HTML_PAGE = """<!DOCTYPE html>
       const info = importBanData[destinationKey];
       if (!info) return false;
 
-      document.getElementById('importBanTitle').textContent = `이 제품은 ${info.displayCountry}에서 반입 금지 물품이에요`;
-      document.getElementById('importBanMessage').textContent =
-        `보유 중인 ${info.productHint} 제품에 포함된 ${info.ingredient} 성분이 ${info.displayCountry} 반입 금지 물질로 분류되어 있어요.`;
+      document.getElementById('importBanTitle').textContent = info.title;
+      document.getElementById('importBanMessage').textContent = info.message;
       document.getElementById('importBanAuthority').textContent = info.authority;
       document.getElementById('importBanIngredient').textContent = info.ingredient;
       document.getElementById('importBanAlternative').textContent = info.alternative;
-      document.getElementById('importBanSource').textContent = `출처 · ${info.source} · ${info.lastUpdated}`;
+      document.getElementById('importBanSource').textContent = `출처 · ${info.source}${info.lastUpdated ? ' · ' + info.lastUpdated : ''}`;
       document.getElementById('importBanModal').classList.remove('hidden');
       return true;
     }
@@ -5917,7 +5935,7 @@ HTML_PAGE = """<!DOCTYPE html>
       이란: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이스라엘: { temp: 35, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
       이집트: { temp: 34, humidity: 24, uvi: 11, climate: `건조기후`, waterQuality: `경수` },
-      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Italy`, lat: 41.9028, lng: 12.4964 },
+      이탈리아: { temp: 26, humidity: 47, uvi: 6, climate: `온대기후`, waterQuality: `경수`, en: `Italy`, lat: 41.9028, lng: 12.4964, cityKey: `rome`, cityLabel: `로마` },
       인도: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `경수` },
       인도네시아: { temp: 33, humidity: 82, uvi: 10, climate: `열대기후`, waterQuality: `연수` },
       일본: { temp: 20, humidity: 54, uvi: 6, climate: `온대기후`, waterQuality: `연수` },
@@ -6015,6 +6033,12 @@ HTML_PAGE = """<!DOCTYPE html>
         { name: '올리브영 판교역점', category: '헬스&뷰티', distance: '0.3km', products: ['수분 크림', '선크림'] },
         { name: '시코르 현대백화점 판교점', category: '뷰티 편집샵', distance: '0.6km', products: ['진정 마스크팩', '쿨링 미스트'] },
         { name: '아리따움 판교점', category: '헬스&뷰티', distance: '0.9km', products: ['수분 세럼'] },
+      ],
+      // 구글 맵 기준 실제 좌표 (Via del Tritone 74 / Via del Corso 486-487 / Piazza dei Cinquecento)
+      rome: [
+        { name: 'Sephora 트레비 (Via del Tritone)', category: '뷰티 편집샵', distance: '0.3km', products: ['수분 크림', '립틴트'], lat: 41.9036, lng: 12.4857 },
+        { name: 'Sephora 델 코르소 (Via del Corso)', category: '뷰티 편집샵', distance: '1.2km', products: ['향수', '립밤'], lat: 41.9095, lng: 12.4768 },
+        { name: 'Sephora 테르미니 (Piazza dei Cinquecento)', category: '뷰티 편집샵', distance: '1.5km', products: ['선크림', '핸드크림'], lat: 41.9009, lng: 12.5016 },
       ],
     };
 
@@ -6373,12 +6397,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
     function renderCommunityStoreMarkers(cityKey, weather) {
       clearCommunityMarkers();
-      const storeKey = weather.en ? weather.en.toLowerCase() : '';
+      const storeKey = weather.cityKey || (weather.en ? weather.en.toLowerCase() : '');
       const baseStores = storeData[storeKey] || [];
       const offsets = [
         [0.008, 0.006], [-0.009, 0.004], [0.004, -0.009], [-0.006, -0.007], [0.011, -0.002],
       ];
       communityCurrentStores = baseStores.map((store, i) => {
+        if (store.lat != null && store.lng != null) return { ...store };
         const off = offsets[i % offsets.length];
         return { ...store, lng: weather.lng + off[0], lat: weather.lat + off[1] };
       });
