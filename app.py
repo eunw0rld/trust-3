@@ -318,6 +318,35 @@ HTML_PAGE = """<!DOCTYPE html>
   .wizard-cta-btn:disabled {
     background: #d1d5db;
   }
+  /* 온보딩 "분석 중" 화면의 로고 - GlowTrip 로고 PNG를 마스크로 써서 실제 색은 배경(회색 →
+     브랜드 그라데이션)으로 채움. mask-image는 JS에서 로고 원본 src를 그대로 읽어와 지정함
+     (별도 에셋 중복 없이 재사용) */
+  .analyzing-logo-wrap {
+    position: relative;
+    width: 200px;
+    height: 66px;
+  }
+  .analyzing-logo-base, .analyzing-logo-fill {
+    position: absolute;
+    inset: 0;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+  }
+  .analyzing-logo-base {
+    background: #e5e5e5;
+  }
+  .analyzing-logo-fill {
+    background: var(--accent-gradient);
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 2.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .analyzing-logo-fill.filled {
+    clip-path: inset(0% 0 0 0);
+  }
   /* 내 파우치 "+ 추가" 1단계: 사진/직접입력 선택 카드 - 사진 쪽을 더 크고 진하게 강조 */
   .pouch-add-choice-btn {
     width: 100%;
@@ -1613,8 +1642,18 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
           </div>
           <div class="absolute inset-x-0 bottom-6 px-4">
-            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-complete" disabled>선택 완료</button>
+            <button type="button" class="wizard-next-btn wizard-cta-btn w-full" data-next="reg-analyzing" disabled>선택 완료</button>
           </div>
+        </div>
+
+        <!-- 온보딩 완료 직후: 피부 분석 중 로딩 화면 (로고가 아래→위로 브랜드 컬러로 채워짐) -->
+        <div id="reg-analyzing" class="wizard-step hidden flex flex-col items-center justify-center text-center px-8" style="min-height: calc(var(--app-height) - 40px);">
+          <div class="analyzing-logo-wrap mb-6">
+            <div class="analyzing-logo-base"></div>
+            <div id="analyzingLogoFill" class="analyzing-logo-fill"></div>
+          </div>
+          <h2 class="text-xl mb-2 text-display">피부를 분석하고 있어요</h2>
+          <p id="analyzingSubCopy" class="text-sm" style="color: #888888;"></p>
         </div>
 
         <!-- 온보딩 완료 화면 -->
@@ -3003,6 +3042,35 @@ HTML_PAGE = """<!DOCTYPE html>
         document.getElementById('wizardProgressFill').style.width = `${((stepIndex + 1) / WIZARD_STEP_ORDER.length) * 100}%`;
       }
       playScreenTransition(document.getElementById(stepId));
+      if (stepId === 'reg-analyzing') startAnalyzingSequence();
+    }
+
+    // GlowTrip 로고 PNG(웰컴 화면에 이미 있는 흰색 원본)를 그대로 mask-image로 재사용해서
+    // "분석 중"/"분석 완료" 화면에서 회색→브랜드 그라데이션으로 채워지는 로고를 만듦
+    // (같은 이미지를 새로 임베드하지 않고 원본 src를 그대로 읽어와 씀)
+    function applyGlowTripLogoMask(selector) {
+      const src = document.querySelector('.welcome-logo-icon').src;
+      document.querySelectorAll(selector).forEach((el) => {
+        el.style.maskImage = `url("${src}")`;
+        el.style.webkitMaskImage = `url("${src}")`;
+      });
+    }
+
+    let analyzingTimer = null;
+    // "선택 완료" 직후 잠깐 보여주는 분석 로딩: 로고가 아래→위로 채워지고, 다 채워지면
+    // 자동으로 완료 화면으로 넘어감
+    function startAnalyzingSequence() {
+      applyGlowTripLogoMask('.analyzing-logo-base, .analyzing-logo-fill');
+      const name = document.getElementById('regNameInput').value.trim();
+      document.getElementById('analyzingSubCopy').textContent = name
+        ? `${name}님께 딱 맞는 여행 루틴을 찾는 중이에요`
+        : '딱 맞는 여행 루틴을 찾는 중이에요';
+      const fillEl = document.getElementById('analyzingLogoFill');
+      fillEl.classList.remove('filled');
+      void fillEl.offsetWidth; // 강제 리플로우: 다시 진입해도 채워지는 연출이 처음부터 재생되게 함
+      requestAnimationFrame(() => fillEl.classList.add('filled'));
+      clearTimeout(analyzingTimer);
+      analyzingTimer = setTimeout(() => showWizardStep('reg-complete'), 2300);
     }
 
     // 여행지 국기 이모지 (커뮤니티에 큐레이션된 주요 여행지 위주, 나머지는 📍로 대체)
