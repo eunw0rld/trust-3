@@ -1487,7 +1487,7 @@ HTML_PAGE = """<!DOCTYPE html>
      너비/높이는 제품별로 buildPouchItemEl에서 인라인으로 지정 */
   .pouch-item-photo {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
   }
   .pouch-item-photo img {
