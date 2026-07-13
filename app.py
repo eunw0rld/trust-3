@@ -4892,7 +4892,6 @@ HTML_PAGE = """<!DOCTYPE html>
     // 한 번에 자동 채워짐 (한 장의 사진으로 파우치 속 여러 화장품을 인식하는 컨셉)
     const pouchScanProducts = [
       { name: '넘버즈인 1번 진정 맑게 담은 청초토너 토너', category: 'toner' },
-      { name: '넘버즈인 1번 판토텐산 액티브업 수딩세럼', category: 'serum' },
       { name: '넘버즈인 1번 청초 진정맑은 물막선크림', category: 'sunscreen' },
       { name: '닥터지 레드 블레미쉬 클리어 수딩 크림', category: 'cream' },
       { name: '비디비치 블랙 퍼펙션 커버 핏 쿠션', category: 'cushion' },
@@ -4900,7 +4899,12 @@ HTML_PAGE = """<!DOCTYPE html>
       { name: '롬앤 베러 댄 컨투어 02 그레이 쿨', category: 'shading' },
       { name: '롬앤 더 쥬시 래스팅 틴트 03 베어그레이프', category: 'lip' },
       { name: '에스쁘아 더브로우', category: 'eye' },
+    ];
+    // 2번째/3번째 파우치 추가 이벤트에서 입력값과 무관하게 강제로 등록되는 제품
+    // (POUCH_CARD_IMG/POUCH_VISUALS/PRODUCT_DETAILS 매핑은 그대로 재사용)
+    const FORCED_ADD_PRODUCTS = [
       { name: '글린트 하이라이터 듀이 문', category: 'highlighter' },
+      { name: '넘버즈인 1번 판토텐산 액티브업 수딩세럼', category: 'serum' },
     ];
 
     // 내 파우치 카드/상세 모달에서 이모지 아이콘 대신 보여줄 실제 제품 사진
@@ -5061,6 +5065,29 @@ HTML_PAGE = """<!DOCTYPE html>
       completeCosmeticScan();
     }
 
+    // 파우치에 제품을 추가하는 두 경로(사진 스캔 완료 / 직접 입력 저장)를 합쳐서 세는
+    // 공통 카운터. 2번째/3번째 이벤트는 사용자가 실제로 뭘 찍었거나 입력했는지와 무관하게
+    // FORCED_ADD_PRODUCTS를 강제로 등록시키는 데 쓰임
+    let pouchAddEventCount = 0;
+
+    // 파우치가 완전히 비어있는 상태에서 호출되면(전체 삭제 후 재시작 등) 카운트를 리셋해
+    // "1번째 이벤트" 취급이 자연스럽게 다시 적용되게 함
+    function advancePouchAddEventCount() {
+      if (getMyProducts().length === 0) pouchAddEventCount = 0;
+      pouchAddEventCount += 1;
+    }
+
+    // 2번째/3번째 이벤트에 강제로 등록할 제품을 반환(해당 없으면 null).
+    // 이미 파우치에 그 제품이 있으면(사용자가 그 사이 직접 같은 이름을 입력한 경우 등) 건너뜀
+    function getForcedAddProduct() {
+      if (pouchAddEventCount === 2 || pouchAddEventCount === 3) {
+        const forced = FORCED_ADD_PRODUCTS[pouchAddEventCount - 2];
+        const existingNames = new Set(getMyProducts().map((product) => product.name));
+        if (!existingNames.has(forced.name)) return forced;
+      }
+      return null;
+    }
+
     function completeCosmeticScan() {
       document.getElementById('cosmeticScanModal').classList.add('hidden');
 
@@ -5068,12 +5095,20 @@ HTML_PAGE = """<!DOCTYPE html>
       // "등록하기" 버튼까지 함께 눈에 보이게 함
       suppressPouchAutoCollapse = true;
       pouchCaptureForceOpen = true;
-      // 이미 등록된 제품은 그대로 두고, 아직 없는 제품만 추가함(재촬영 시 기존 파우치가 통째로
-      // 지워지지 않도록). 최초 1회(파우치가 비어있을 때)는 데모용으로 9개를 한번에 채우고,
-      // 이후("+ 추가"로 재촬영)에는 사진 한 장 = 제품 한 개 인식처럼 1개만 추가함
-      const existingNames = new Set(getMyProducts().map((product) => product.name));
-      const newProducts = pouchScanProducts.filter((product) => !existingNames.has(product.name));
-      const productsToAdd = existingNames.size === 0 ? newProducts : newProducts.slice(0, 1);
+
+      advancePouchAddEventCount();
+      const forcedProduct = getForcedAddProduct();
+      let productsToAdd;
+      if (forcedProduct) {
+        productsToAdd = [forcedProduct];
+      } else {
+        // 이미 등록된 제품은 그대로 두고, 아직 없는 제품만 추가함(재촬영 시 기존 파우치가 통째로
+        // 지워지지 않도록). 최초 1회(파우치가 비어있을 때)는 데모용으로 일괄 채우고,
+        // 이후("+ 추가"로 재촬영)에는 사진 한 장 = 제품 한 개 인식처럼 1개만 추가함
+        const existingNames = new Set(getMyProducts().map((product) => product.name));
+        const newProducts = pouchScanProducts.filter((product) => !existingNames.has(product.name));
+        productsToAdd = existingNames.size === 0 ? newProducts : newProducts.slice(0, 1);
+      }
       productsToAdd.forEach((product) => {
         cosmeticRows.appendChild(buildCosmeticRow(product.name, product.category));
       });
@@ -5946,7 +5981,14 @@ HTML_PAGE = """<!DOCTYPE html>
       const name = nameInput.value.trim();
       if (!name) return;
       const category = document.getElementById('pouchAddTextCategory').value;
-      cosmeticRows.appendChild(buildCosmeticRow(name, category));
+
+      advancePouchAddEventCount();
+      const forcedProduct = getForcedAddProduct();
+      if (forcedProduct) {
+        cosmeticRows.appendChild(buildCosmeticRow(forcedProduct.name, forcedProduct.category));
+      } else {
+        cosmeticRows.appendChild(buildCosmeticRow(name, category));
+      }
       nameInput.value = '';
     });
 
