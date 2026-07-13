@@ -2492,7 +2492,11 @@ HTML_PAGE = """<!DOCTYPE html>
     });
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('load', scheduleResize);
-    setTimeout(scheduleResize, 300); // Tailwind CDN(JIT) 스타일 주입 이후 재계산
+    // Tailwind CDN(JIT)이 이 페이지 전체(용량이 매우 큼)를 스캔해서 스타일을 주입하는 데
+    // 300ms보다 오래 걸리면, 그 사이에 계산된 iframe 높이가 실제 레이아웃보다 작게 고정돼
+    // 화면 하단 버튼(예: 웰컴 화면 "시작하기")이 iframe 클릭 가능 영역 밖으로 밀려나는
+    // 문제가 생길 수 있어 여러 지연 시간으로 반복 재계산함
+    [300, 800, 1500, 3000, 5000].forEach((delay) => setTimeout(scheduleResize, delay));
     scheduleResize();
 
     // 화면이 바뀔 때마다 살짝 페이드인되도록 애니메이션 클래스를 다시 걸어줌
